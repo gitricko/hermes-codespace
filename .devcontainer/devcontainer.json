@@ -2,9 +2,9 @@
   "name": "Hermes-CodeSpace",
   "customizations": {
     "vscode": {
-      "extensions": ["saoudrizwan.claude-dev"]
+      "extensions": ["saoudrizwan.claude-dev","joaompfp.hermes-ai-agent"]
     }
   },
-  "postCreateCommand": "sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay; sudo  ln -s  /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay; ./.devcontainer/init-hermes.sh",
-  "postStartCommand": "modelrelay &"
+  "postCreateCommand": "sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay; sudo  ln -s  /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay; nohup ./.devcontainer/init-hermes.sh > /tmp/init-hermes.log 2>&1 &",
+  "postStartCommand": "nohup modelrelay > /tmp/modelrelay.log 2>&1 &"
 }
