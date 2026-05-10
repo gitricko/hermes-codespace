@@ -1,0 +1,19 @@
+[Unit]
+Description=ModelRelay Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/modelrelay
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/tmp/modelrelay.log
+StandardError=append:/tmp/modelrelay.log
+
+[Install]
+WantedBy=multi-user.target
+
+sudo cp .devcontainer/modelrelay.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable modelrelay
+sudo systemctl start modelrelay
