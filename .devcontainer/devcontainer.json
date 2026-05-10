@@ -5,6 +5,6 @@
       "extensions": ["saoudrizwan.claude-dev"]
     }
   },
-  "postCreateCommand": "sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay; sudo  ln -s  /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay; ./.devcontainer/init-hermes.sh &",
+  "postCreateCommand": "sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay; sudo  ln -s  /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay; ./.devcontainer/init-hermes.sh",
   "postStartCommand": "modelrelay &"
 }
