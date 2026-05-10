@@ -1,13 +1,11 @@
 #!/bin/bash
 
-(
-  sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay
-  sudo  ln -s  /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay
-  sudo npm cache clean --force
-  echo "[post-create-cmd.sh] Starting modelrelay in the background..."
-  touch /tmp/modelrelay.log
-  nohup /usr/local/bin/modelrelay >> /tmp/modelrelay.log 2>&1
-) &
+sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay
+sudo ln -s /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay
+sudo npm cache clean --force
+echo "[post-create-cmd.sh] Starting modelrelay in the background..."
+touch /tmp/modelrelay.log
+nohup /usr/local/bin/modelrelay >> /tmp/modelrelay.log 2>&1 &
 
 curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash -s -- --skip-setup && \
     npm cache clean --force && \

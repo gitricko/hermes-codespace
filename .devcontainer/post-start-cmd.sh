@@ -1,3 +1,3 @@
 #!/bin/bash
 
-/usr/local/bin/modelrelay >> /tmp/modelrelay.log
+nohup /usr/local/bin/modelrelay >> /tmp/modelrelay.log 2>&1 &
