@@ -5,6 +5,6 @@
       "extensions": ["saoudrizwan.claude-dev","joaompfp.hermes-ai-agent"]
     }
   },
-  "postCreateCommand": "sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay; sudo  ln -s  /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay; ./.devcontainer/init-hermes.sh > /tmp/init-hermes.log",
-  "postStartCommand": "sleep 60 && nohup modelrelay > /tmp/modelrelay.log 2>&1 &"
+  "postCreateCommand": "./devcontainer/post-create-cmd.sh",
+  "postStartCommand": "./devcontainer/post-start-cmd.sh"
 }
