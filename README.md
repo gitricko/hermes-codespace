@@ -28,6 +28,43 @@ GitHub Copilot is great — until your free trial ends. Hermes-CodeSpace gives y
 
 Prefer to run locally instead of in the cloud? Check out [hermes-webtop](https://github.com/gitricko/hermes-webtop) for a Docker-based setup that runs on your own machine.
 
+## Forking & Going Private
+
+Forked repositories on GitHub are public by default. If you want to keep your setup private, follow these steps:
+
+### 1. Leave the Fork Network
+
+1. Go to your forked repository on GitHub → **Settings**
+2. Scroll down to the **Danger Zone** section
+3. Click **Leave fork network**
+4. Confirm the action
+
+### 2. Change Visibility to Private
+
+Once unlinked, the **Change visibility** button becomes available in the Danger Zone:
+1. Click **Change visibility**
+2. Select **Private**
+3. Confirm
+
+### 3. Receiving Future Updates
+
+After converting to private, you can still pull updates from this upstream repository:
+
+```bash
+cd .devcontainer && make update-deps
+```
+
+**What this does:**
+- Preserves your files — any custom files you created remain untouched
+- Syncs matching files — updates from upstream overwrite existing files in `.devcontainer/`
+- Excludes hidden files — `.git/`, `.env`, and other hidden files are protected
+
+**Best practice:** Always review changes before committing:
+```bash
+git diff .devcontainer/    # Review what's changed
+git status                 # See what will be committed
+```
+
 ## License
 
 MIT — see [LICENSE](LICENSE)
