@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo "[post-start-cmd.sh] Checking modelrelay..."
 if command -v modelrelay &>/dev/null; then
   if pgrep -x modelrelay > /dev/null; then
     echo "[post-start-cmd.sh] modelrelay is already running, skipping"
