@@ -17,6 +17,18 @@ else
   echo "[post-create-cmd.sh] modelrelay not found, skipping start"
 fi
 
+# Install ripgrep for better search performance in hermes-agent
+if ! command -v rg &>/dev/null; then
+  echo "[post-create-cmd.sh] Installing ripgrep for better search performance in hermes-agent..."
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux
+    cd /tmp
+    curl -LO https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep_14.1.1-1_amd64.deb
+    sudo dpkg -i ripgrep_14.1.1-1_amd64.deb
+    rm ripgrep_14.1.1-1_amd64.deb
+  fi
+fi
+
 # Install hermes-agent
 HERMES_VERSION="v2026.5.7"
 curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh" | bash -s -- --skip-setup
