@@ -1,10 +1,10 @@
 {
-  "name": "Hermes-CodeSpace",
+  "name": "Hermes-Coding-Agent",
   "customizations": {
     "vscode": {
       "extensions": ["saoudrizwan.claude-dev","joaompfp.hermes-ai-agent"]
     }
   },
-  "postCreateCommand": "bash ./.devcontainer/post-create-cmd.sh",
-  "postStartCommand": "bash echo '[post-start-cmd.sh] Container started' >> /tmp/post-start-cmd.log"
+  "postCreateCommand": "bash ./.devcontainer/post-create-cmd.sh > /tmp/post-create-cmd.log",
+  "postStartCommand":  "bash ./.devcontainer/post-start-cmd.sh  > /tmp/post-start-cmd.log"
 }
