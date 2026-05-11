@@ -11,3 +11,5 @@ if command -v modelrelay &>/dev/null; then
 else
   echo "[post-start-cmd.sh] modelrelay not found, skipping start"
 fi
+
+sleep 3000000
