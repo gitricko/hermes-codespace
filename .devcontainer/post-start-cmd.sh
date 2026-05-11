@@ -12,4 +12,5 @@ else
   echo "[post-start-cmd.sh] modelrelay not found, skipping start"
 fi
 
-sleep 3000000
+# so that the script doesn't exit immediately before modelrelay has a chance to start properly
+sleep 60
