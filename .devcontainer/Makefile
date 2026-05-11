@@ -25,7 +25,7 @@ update-deps:
 		mkdir -p $(dir $(EXTERNAL_DEVC)); \
 		git clone --depth 1 --branch main $(EXTERNAL_REPO) $(EXTERNAL_DIR); \
 	fi
-	rsync -av --exclude='.*' "$(EXTERNAL_DEVC)/" "./.devcontainer/"
+	rsync -av --exclude='.*' "$(EXTERNAL_DEVC)/" "."
 	@echo ""
 	@echo "Done! Review changes with: git diff .devcontainer/"
 	@echo "If satisfied, commit: git add -A && git commit -m 'Update .devcontainer from upstream'"
