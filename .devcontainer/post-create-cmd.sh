@@ -18,14 +18,15 @@ else
 fi
 
 # Install ripgrep for better search performance in hermes-agent
+RIPGREP_VERSION=15.1.0
 if ! command -v rg &>/dev/null; then
   echo "[post-create-cmd.sh] Installing ripgrep for better search performance in hermes-agent..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Linux
     cd /tmp
-    curl -LO https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep_14.1.1-1_amd64.deb
-    sudo dpkg -i ripgrep_14.1.1-1_amd64.deb
-    rm ripgrep_14.1.1-1_amd64.deb
+    curl -LO https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep_${RIPGREP_VERSION}-1_amd64.deb
+    sudo dpkg -i ripgrep_${RIPGREP_VERSION}-1_amd64.deb
+    rm ripgrep_${RIPGREP_VERSION}-1_amd64.deb
   fi
 fi
 
