@@ -10,7 +10,7 @@ EXTERNAL_DEVC := $(EXTERNAL_DIR)/.devcontainer
 
 install:
 	@echo "Installing dependencies..."
-	@bash .devcontainer/post-create-cmd.sh
+	@bash post-create-cmd.sh
 
 # === Template Update Commands ===
 
