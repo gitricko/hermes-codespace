@@ -1,6 +1,6 @@
 # Hermes-CodeSpace
 
-A GitHub project starter template with pre-installed AI coding tools. Built on [devcontainers](https://containers.dev/) — ready to clone, fork, or use as a template for any new repository.
+A GitHub project starter template with pre-installed AI coding tools. Built on [devcontainers](https://containers.dev/) — ready to clone, fork, or use as a template for any new repository. (actually, it is just the `.devcontainer` directory)
 
 ## What's included
 
@@ -20,7 +20,7 @@ GitHub Copilot is great — until your free trial ends. Hermes-CodeSpace gives y
 
 1. **Fork the repo** → Click "Fork" on GitHub (or copy folder `.devcontainer` into your repo)
 2. **Open in Codespace** → Green button → Done
-3. **Start coding** → Hermes is ready in the terminal with free models enabled
+3. **Start coding** → Hermes is ready in the terminal with free models enabled (takes a minute or 2 if it is a fresh codespace)
 
 **Want more models?** Open the ModelRelay dashboard via the Codespace Ports panel (`localhost:7352`) to add providers.
 
