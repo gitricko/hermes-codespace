@@ -2,7 +2,7 @@
   "name": "Hermes-Coding-Agent",
   "customizations": {
     "vscode": {
-      "extensions": ["saoudrizwan.claude-dev","joaompfp.hermes-ai-agent"]
+      "extensions": ["joaompfp.hermes-ai-agent"]
     }
   },
   "postCreateCommand": "bash ./.devcontainer/post-create-cmd.sh > /tmp/post-create-cmd.log",
