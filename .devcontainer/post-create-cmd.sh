@@ -20,8 +20,8 @@ fi
 # Install Cline with default configuration
 echo "[post-create-cmd.sh] Installing Cline with default configuration..."
 mkdir -p "$HOME/.cline/data"
-cp "$CODESPACE_VSCODE_FOLDER/.devcontainer/globalState.json" "$HOME/.cline/data/globalState.json"
-cp "$CODESPACE_VSCODE_FOLDER/.devcontainer/secrets.json" "$HOME/.cline/data/secrets.json"
+cp "${BASH_SOURCE[0]}/.devcontainer/globalState.json" "$HOME/.cline/data/globalState.json"
+cp "${BASH_SOURCE[0]}/.devcontainer/secrets.json" "$HOME/.cline/data/secrets.json"
 code --force --install-extension saoudrizwan.claude-dev
 
 # Install ripgrep for better search performance in hermes-agent
