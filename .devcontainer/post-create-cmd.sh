@@ -17,6 +17,12 @@ else
   echo "[post-create-cmd.sh] modelrelay not found, skipping start"
 fi
 
+# Configure Cline
+echo "[post-create-cmd.sh] Configuring Cline..."
+cp ./globalState.json "$HOME/.cline/data/globalState.json"
+cp ./secrets.json "$HOME/.cline/data/secrets.json"
+
+
 # Install ripgrep for better search performance in hermes-agent
 RIPGREP_VERSION=15.1.0
 if ! command -v rg &>/dev/null; then
