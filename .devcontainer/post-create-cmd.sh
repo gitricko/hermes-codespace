@@ -18,11 +18,12 @@ else
 fi
 
 # Install Cline with default configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "[post-create-cmd.sh] Installing Cline with default configuration..."
 mkdir -p "$HOME/.cline/data"
 npm install -g cline
-cp "${BASH_SOURCE[0]}/globalState.json" "$HOME/.cline/data/globalState.json"
-cp "${BASH_SOURCE[0]}/secrets.json" "$HOME/.cline/data/secrets.json"
+cp "${SCRIPT_DIR}/globalState.json" "$HOME/.cline/data/globalState.json"
+cp "${SCRIPT_DIR}/secrets.json" "$HOME/.cline/data/secrets.json"
 code --force --install-extension saoudrizwan.claude-dev
 
 # Install ripgrep for better search performance in hermes-agent
