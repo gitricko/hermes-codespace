@@ -15,7 +15,8 @@ install:
 ext-install:
 	@echo "Installing external dependencies..."
 	mkdir -p ~/.cline/data
-	cp *.json ~/.cline/data/
+	cp globalState.json ~/.cline/data/
+	cp secrets.json ~/.cline/data/
 	code --force --install-extension saoudrizwan.claude-dev
 # === Template Update Commands ===
 
