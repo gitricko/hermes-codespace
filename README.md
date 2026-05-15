@@ -9,6 +9,7 @@ A GitHub project starter template with pre-installed AI coding tools. Built on [
 | **[Hermes Agent](https://github.com/nousresearch/hermes-agent)** | AI coding assistant with memory, skills, and multi-step task execution |
 | **[ModelRelay](https://www.npmjs.com/package/modelrelay)** | OpenAI-compatible local router — benchmarks free coding models and routes requests to the best available provider |
 | **[Hermes AI Agent — VS Code Extension](https://marketplace.visualstudio.com/items?itemName=joaompfp.hermes-ai-agent)** | Full IDE integration — chat, inline suggestions, and terminal access directly in VS Code |
+| **[Cline — VS Code Extension](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev)** | Additional Agent: Cline coding agent right in your IDE, capable of creating/editing files, running commands, using the browser. Also preconfigured with ModelRelay by default |
 
 ![Hermes in action](.devcontainer/screen-shot.png)
 
