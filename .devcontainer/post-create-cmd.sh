@@ -24,7 +24,7 @@ mkdir -p "$HOME/.cline/data"
 npm install -g cline
 cp "${SCRIPT_DIR}/globalState.json" "$HOME/.cline/data/globalState.json"
 cp "${SCRIPT_DIR}/secrets.json" "$HOME/.cline/data/secrets.json"
-code --force --install-extension saoudrizwan.claude-dev
+code --force --install-extension saoudrizwan.claude-dev &
 
 # Install ripgrep for better search performance in hermes-agent
 RIPGREP_VERSION=15.1.0
