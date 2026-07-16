@@ -87,11 +87,11 @@ sudo npm cache clean --force
 sudo mkdir -p /var/run/tailscale /var/lib/tailscale && sudo curl -fsSL https://tailscale.com/install.sh | sh && sudo rm -rf /var/lib/apt/lists/*
 
 # Install mnemon
-MNEMON_ARCH=$(uname -m)
-curl -sL "https://github.com/mnemon-dev/mnemon/releases/download/v${MNEMON_VERSION}/mnemon_${MNEMON_VERSION}_linux_${MNEMON_ARCH}.tar.gz" -o /tmp/mnemon.tar.gz && \
-tar xzf /tmp/mnemon.tar.gz -C /tmp && \
-sudo cp /tmp/mnemon /usr/local/bin/mnemon && \
-sudo chmod +x /usr/local/bin/mnemon && \
+MNEMON_ARCH=amd64
+curl -sL "https://github.com/mnemon-dev/mnemon/releases/download/v${MNEMON_VERSION}/mnemon_${MNEMON_VERSION}_linux_${MNEMON_ARCH}.tar.gz" -o /tmp/mnemon.tar.gz
+tar xzf /tmp/mnemon.tar.gz -C /tmp
+sudo cp /tmp/mnemon /usr/local/bin/mnemon
+sudo chmod +x /usr/local/bin/mnemon
 rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
 
 # Install Cline with default configuration
