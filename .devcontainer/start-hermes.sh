@@ -1,4 +1,5 @@
 #!/bin/bash
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
   if [ -d "$HOME/.hermes/logs" ] && [ -z "$(ls -A "$HOME/.hermes/logs")" ]; then
     echo "[start-hermes] No logs found in $HOME/.hermes/logs, setting up default configuration for custom provider"
@@ -93,4 +94,4 @@
 
   # Run boot-time health self-check after all services are ready
   echo "[start-hermes] Running boot-time health self-check..."
-  /usr/local/bin/self-check || echo "[start-hermes] WARNING: self-check reported issues"
+  ${script_dir}/self-check.sh || echo "[start-hermes] WARNING: self-check reported issues"
