@@ -60,7 +60,8 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
 fi
 
 # Install modelrelay globally
-sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay
+# sudo npm install -g modelrelay@${MODELRELAY_VERSION} && \
+sudo npm install github:gitricko/modelrelay -g --prefix /usr/local/lib/modelrelay
 sudo ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay
 sudo npm cache clean --force
 
@@ -75,6 +76,23 @@ if command -v modelrelay &>/dev/null; then
 else
   echo "[post-create-cmd.sh] modelrelay not found, skipping start"
 fi
+
+# Install OmniRoute and start automatically when desktop loads
+sudo npm install omniroute@${OMNIROUTE_VERSION} -g --prefix /usr/local/lib/omniroute
+sudo ln -sf /usr/local/lib/omniroute/bin/omniroute /usr/local/bin/omniroute
+sudo npm cache clean --force
+# sudo mkdir -p /usr/local/lib/node_modules/omniroute/app/logs/application
+
+# Install TailScale
+sudo mkdir -p /var/run/tailscale /var/lib/tailscale && sudo curl -fsSL https://tailscale.com/install.sh | sh && sudo rm -rf /var/lib/apt/lists/*
+
+# Install mnemon
+MNEMON_ARCH=$(uname -m)
+curl -sL "https://github.com/mnemon-dev/mnemon/releases/download/v${MNEMON_VERSION}/mnemon_${MNEMON_VERSION}_linux_${MNEMON_ARCH}.tar.gz" -o /tmp/mnemon.tar.gz && \
+tar xzf /tmp/mnemon.tar.gz -C /tmp && \
+sudo cp /tmp/mnemon /usr/local/bin/mnemon && \
+sudo chmod +x /usr/local/bin/mnemon && \
+rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
 
 # Install Cline with default configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
