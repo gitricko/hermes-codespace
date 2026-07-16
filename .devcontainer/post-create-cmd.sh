@@ -9,31 +9,10 @@ MNEMON_VERSION=0.1.17
 
 sudo apt-get update && sudo apt-get install -y htop zsh ripgrep gh remmina iputils-ping net-tools socat && sudo rm -rf /var/lib/apt/lists/*
 
-# Install modelrelay globally
-sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay
-sudo ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay
-sudo npm cache clean --force
+# InstallNode.js binaries and libraries
 
-echo "[post-create-cmd.sh] Checking modelrelay..."
-if command -v modelrelay &>/dev/null; then
-  if pgrep -f modelrelay > /dev/null; then
-    echo "[post-create-cmd.sh] modelrelay is already running, skipping"
-  else
-    echo "[post-create-cmd.sh] Starting modelrelay in the background..."
-    setsid /usr/local/bin/modelrelay >> /tmp/modelrelay.log 2>&1 &
-  fi
-else
-  echo "[post-create-cmd.sh] modelrelay not found, skipping start"
-fi
-
-# Install Cline with default configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-echo "[post-create-cmd.sh] Installing Cline with default configuration..."
-mkdir -p "$HOME/.cline/data"
-cp "${SCRIPT_DIR}/globalState.json" "$HOME/.cline/data/globalState.json"
-cp "${SCRIPT_DIR}/secrets.json" "$HOME/.cline/data/secrets.json"
-bash -c 'code --force --install-extension saoudrizwan.claude-dev'
-npm install -g cline
+# Install the Ollama binary from the official image
+curl -fsSL https://ollama.com/install.sh | sh
 
 # Install ripgrep for better search performance in hermes-agent
 # RIPGREP_VERSION=15.1.0
@@ -79,3 +58,30 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
   hermes config set model.base_url http://localhost:7352/v1
   hermes config set model.default auto-fastest
 fi
+
+# Install modelrelay globally
+sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay
+sudo ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay
+sudo npm cache clean --force
+
+echo "[post-create-cmd.sh] Checking modelrelay..."
+if command -v modelrelay &>/dev/null; then
+  if pgrep -f modelrelay > /dev/null; then
+    echo "[post-create-cmd.sh] modelrelay is already running, skipping"
+  else
+    echo "[post-create-cmd.sh] Starting modelrelay in the background..."
+    setsid /usr/local/bin/modelrelay >> /tmp/modelrelay.log 2>&1 &
+  fi
+else
+  echo "[post-create-cmd.sh] modelrelay not found, skipping start"
+fi
+
+# Install Cline with default configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "[post-create-cmd.sh] Installing Cline with default configuration..."
+mkdir -p "$HOME/.cline/data"
+cp "${SCRIPT_DIR}/globalState.json" "$HOME/.cline/data/globalState.json"
+cp "${SCRIPT_DIR}/secrets.json" "$HOME/.cline/data/secrets.json"
+bash -c 'code --force --install-extension saoudrizwan.claude-dev'
+npm install -g cline
+
