@@ -1,5 +1,14 @@
 #!/bin/bash
 
+HERMES_VERSION="v2026.7.7.2"
+OMNIROUTE_VERSION=3.8.48
+MODELRELAY_VERSION=1.18.0
+OLLAMA_VERSION=0.32.0
+NODE_VERSION=24.18.0
+MNEMON_VERSION=0.1.17
+
+sudo apt-get update && sudo apt-get install -y htop zsh ripgrep gh remmina iputils-ping net-tools socat && sudo rm -rf /var/lib/apt/lists/*
+
 # Install modelrelay globally
 sudo npm install modelrelay -g --prefix /usr/local/lib/modelrelay
 sudo ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay
@@ -27,20 +36,19 @@ bash -c 'code --force --install-extension saoudrizwan.claude-dev'
 npm install -g cline
 
 # Install ripgrep for better search performance in hermes-agent
-RIPGREP_VERSION=15.1.0
-if ! command -v rg &>/dev/null; then
-  echo "[post-create-cmd.sh] Installing ripgrep for better search performance in hermes-agent..."
-  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # Linux
-    cd /tmp
-    curl -LO https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep_${RIPGREP_VERSION}-1_amd64.deb
-    sudo dpkg -i ripgrep_${RIPGREP_VERSION}-1_amd64.deb
-    rm ripgrep_${RIPGREP_VERSION}-1_amd64.deb
-  fi
-fi
+# RIPGREP_VERSION=15.1.0
+# if ! command -v rg &>/dev/null; then
+#   echo "[post-create-cmd.sh] Installing ripgrep for better search performance in hermes-agent..."
+#   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+#     # Linux
+#     cd /tmp
+#     curl -LO https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep_${RIPGREP_VERSION}-1_amd64.deb
+#     sudo dpkg -i ripgrep_${RIPGREP_VERSION}-1_amd64.deb
+#     rm ripgrep_${RIPGREP_VERSION}-1_amd64.deb
+#   fi
+# fi
 
 # Install hermes-agent
-HERMES_VERSION="v2026.5.7"
 if ! command -v hermes &>/dev/null; then
   echo "[post-create-cmd.sh] Installing hermes-agent ${HERMES_VERSION}..."
   curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh" | bash -s -- --skip-setup
