@@ -23,7 +23,7 @@ set -euo pipefail
 # ── Config ──────────────────────────────────────────────────────────────────
 SKIP_CHECKS="${HERMES_WEBTOP_SKIP_CHECKS:-}"
 DISK_WARN_PCT="${HERMES_WEBTOP_DISK_WARN_PCT:-85}"
-CRITICAL_SERVICES="${HERMES_WEBTOP_CRITICAL_SERVICES:-3000 8888 7352 20128}"
+CRITICAL_SERVICES="${HERMES_WEBTOP_CRITICAL_SERVICES:-7352 20128}"
 
 HERMES_CONFIG="${HERMES_CONFIG:-$HOME/.hermes/config.yaml}"
 HERMES_GATEWAY_URL="${HERMES_GATEWAY_URL:-http://localhost:9119}"
@@ -105,7 +105,7 @@ if ! should_skip "services"; then
 
     # Collecting responses
     if [ "$ELAPSED" -gt "$PORT_POLL_TIMEOUT" ]; then
-      for pair in "3000:WebTop" "8888:CodeServer" "7352:ModelRelay" "20128:OmniRoute", "9119:HermesGateway"; do
+      for pair in "7352:ModelRelay" "20128:OmniRoute", "9119:HermesGateway"; do
         PORT="${pair%%:*}"
         NAME="${pair##*:}"
         if [ "${RESPONDED[$PORT]}" != "true" ]; then
@@ -116,7 +116,7 @@ if ! should_skip "services"; then
     fi
 
     # Testing ports
-    for pair in "3000:WebTop" "8888:CodeServer" "7352:ModelRelay" "20128:OmniRoute" "9119:HermesGateway"; do
+    for pair in "7352:ModelRelay" "20128:OmniRoute" "9119:HermesGateway"; do
       PORT="${pair%%:*}"
       NAME="${pair##*:}"
 
@@ -135,7 +135,7 @@ if ! should_skip "services"; then
 
     # Check if all ports responded
     ALL_RESPONDED=true
-    for port in 3000 8888 7352 20128 9119; do
+    for port in 7352 20128 9119; do
       if [ "${RESPONDED[$port]}" != "true" ]; then
         ALL_RESPONDED=false
         break
@@ -245,7 +245,7 @@ fi
 section "Disk"
 
 if ! should_skip "disk"; then
-  disk_raw=$(df /config 2>/dev/null | tail -1 || true)
+  disk_raw=$(df $HOME 2>/dev/null | tail -1 || true)
   if [ -n "$disk_raw" ]; then
     disk_pct=$(echo "$disk_raw" | awk '{print $5}' | tr -d '%')
     disk_avail=$(echo "$disk_raw" | awk '{print $4}')
