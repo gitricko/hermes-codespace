@@ -6,5 +6,5 @@
     }
   },
   "postCreateCommand": "bash ./.devcontainer/post-create-cmd.sh > /tmp/post-create-cmd.log",
-  "postStartCommand":  "bash ./.devcontainer/post-start-cmd.sh  > /tmp/post-start-cmd.log"
+  "postStartCommand":  "bash ./.devcontainer/start-hermes.sh  > /tmp/post-start-cmd.log"
 }
