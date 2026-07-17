@@ -11,7 +11,6 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_NAME="$(basename -- "$SCRIPT_PATH")"
 
-
 sudo apt-get update && sudo apt-get install -y zsh ripgrep && sudo rm -rf /var/lib/apt/lists/*
 
 # InstallNode.js binaries and libraries
@@ -72,39 +71,39 @@ fi
 
 # Configure hermes defaults if first run
 if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(ls -A "$HOME/.hermes/sessions")" ]; then
-    echo "[$SCRIPT_NAME] No sessions found, setting up default configuration for custom provider"
-    echo "[start-hermes] Initializing hermes config..."
+  echo "[$SCRIPT_NAME] No sessions found, setting up default configuration for custom provider"
+  echo "[$SCRIPT_NAME] Initializing hermes config..."
 
-    hermes config set model.default auto-fastest
-    hermes config set model.provider omniroute
-    hermes config set providers.omniroute.base_url http://localhost:20128/v1
-    hermes config set providers.omniroute.api_key no-key-needed
-    hermes config set providers.modelrelay.base_url http://localhost:7352/v1
-    hermes config set providers.modelrelay.api_key no-key-needed
-    hermes config set fallback_providers.provider modelrelay
-    hermes config set fallback_providers.model auto-fastest
-  
-    hermes config set auxiliary.title_generation.model auto-fastest
-    hermes config set auxiliary.title_generation.provider modelrelay
-    hermes config set auxiliary.vision.model auto-fastest
-    hermes config set auxiliary.vision.provider modelrelay
-    hermes config set auxiliary.compression.model auto-fastest
-    hermes config set auxiliary.compression.provider modelrelay
+  hermes config set model.default auto-fastest
+  hermes config set model.provider omniroute
+  hermes config set providers.omniroute.base_url http://localhost:20128/v1
+  hermes config set providers.omniroute.api_key no-key-needed
+  hermes config set providers.modelrelay.base_url http://localhost:7352/v1
+  hermes config set providers.modelrelay.api_key no-key-needed
+  hermes config set fallback_providers.provider modelrelay
+  hermes config set fallback_providers.model auto-fastest
 
-    # Turn off approval alert and live dangerously since u are in a self-contained container.
-    hermes config set approvals.mode off
-    # Turn on memory by default and to mnemon
-    hermes config set memory.memory_enabled true
-    hermes config set memory.user_profile_enabled true
-    hermes config set memory.provider mnemon
-    # optimize for kanban
-    hermes config set agent.max_turns 120
-    hermes config set kanban.failure_limit 3
+  hermes config set auxiliary.title_generation.model auto-fastest
+  hermes config set auxiliary.title_generation.provider modelrelay
+  hermes config set auxiliary.vision.model auto-fastest
+  hermes config set auxiliary.vision.provider modelrelay
+  hermes config set auxiliary.compression.model auto-fastest
+  hermes config set auxiliary.compression.provider modelrelay
 
-    # Populate default skill and .hermes.md
-    echo "[start-hermes] Installing Skill: memory-automation.md"
-    mkdir -p "$HOME/.hermes/skills/memory-automation"
-    cp ${SCRIPT_DIR}/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
+  # Turn off approval alert and live dangerously since u are in a self-contained container.
+  hermes config set approvals.mode off
+  # Turn on memory by default and to mnemon
+  hermes config set memory.memory_enabled true
+  hermes config set memory.user_profile_enabled true
+  hermes config set memory.provider mnemon
+  # optimize for kanban
+  hermes config set agent.max_turns 120
+  hermes config set kanban.failure_limit 3
+
+  # Populate default skill and .hermes.md
+  echo "[$SCRIPT_NAME] Installing Skill: memory-automation.md"
+  mkdir -p "$HOME/.hermes/skills/memory-automation"
+  cp ${SCRIPT_DIR}/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
 
 fi
 
