@@ -35,10 +35,9 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
   mkdir -p  ~/.hermes/logs
 
   # Install Telegram gateway dependency if missing
-  ensure_ownership "/usr/local/lib/hermes-agent/venv"
-  /usr/local/lib/hermes-agent/venv/bin/python -m ensurepip --upgrade || true
-  ln -s /usr/local/lib/hermes-agent/venv/bin/pip3 /usr/local/lib/hermes-agent/venv/bin/pip || true
-  /usr/local/lib/hermes-agent/venv/bin/pip install python-telegram-bot 2>/dev/null || true
+  $HOME/.hermes/hermes-agent/venv/bin/python -m ensurepip --upgrade || true
+  ln -s $HOME/.hermes/hermes-agent/venv/bin/pip3 $HOME/.hermes/hermes-agent/venv/bin/pip || true
+  $HOME/.hermes/hermes-agent/venv/bin/pip install python-telegram-bot 2>/dev/null || true
 
   # update mnemon provider if version changes (synced BEFORE gateway starts)
   echo "[start-hermes] Checking mnemon provider..."
@@ -67,8 +66,8 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
   ensure_ownership "/usr/local/lib/hermes-agent/web"
   echo "[start-hermes] Starting Hermes Dashboard..."
   # Start Hermes Dashboard in background and expose it on port 9119 via socat
-  nohup socat TCP4-LISTEN:9119,fork,reuseaddr TCP4:127.0.0.1:9009 > ~/.hermes/logs/socat-9119.log 2>&1 &
-  nohup hermes dashboard --port 9009 --no-open > ~/.hermes/logs/dashboard.log 2>&1 &
+  # nohup socat TCP4-LISTEN:9119,fork,reuseaddr TCP4:127.0.0.1:9009 > ~/.hermes/logs/socat-9119.log 2>&1 &
+  nohup hermes dashboard --port 9119 --no-open > ~/.hermes/logs/dashboard.log 2>&1 &
 
   # Remind Hermes on Mnemon setup if needed
   if [ ! -f "$HOME/.hermes/memories/USER.md" ]; then
