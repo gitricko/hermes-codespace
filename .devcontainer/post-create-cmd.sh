@@ -16,6 +16,20 @@ sudo apt-get update && sudo apt-get install -y htop zsh ripgrep gh remmina iputi
 # Install the Ollama binary from the official image
 curl -fsSL https://ollama.com/install.sh | sh
 
+echo "[post-create-cmd.sh] Checking ollama..."
+if command -v ollama &>/dev/null; then
+  if pgrep -f ollama > /dev/null; then
+    echo "[post-create-cmd.sh] ollama is already running, skipping"
+  else
+    echo "[post-create-cmd.sh] Starting ollama in the background..."
+    setsid /usr/local/bin/ollama serve >> /tmp/ollama.log 2>&1 &
+    ( sleep 60 && ollama pull nomic-embed-text >> /tmp/ollama-pull.log 2>&1 ) &
+  fi
+else
+  echo "[post-create-cmd.sh] ollama not found, skipping start"
+fi
+
+
 # Install ripgrep for better search performance in hermes-agent
 # RIPGREP_VERSION=15.1.0
 # if ! command -v rg &>/dev/null; then

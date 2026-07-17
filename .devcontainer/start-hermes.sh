@@ -1,11 +1,11 @@
 #!/bin/bash
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
   if [ -d "$HOME/.hermes/logs" ] && [ -z "$(ls -A "$HOME/.hermes/logs")" ]; then
     echo "[start-hermes] No logs found in $HOME/.hermes/logs, setting up default configuration for custom provider"
     echo "[start-hermes] Initializing hermes config..."
     hermes config set model.default auto-fastest
-    hermes config set model.provider omniroute
+    hermes config set model.provider modelrelay
     hermes config set providers.omniroute.base_url http://localhost:20128/v1
     hermes config set providers.omniroute.api_key no-key-needed
     hermes config set providers.modelrelay.base_url http://localhost:7352/v1
@@ -26,10 +26,10 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
     # Populate default skill and .hermes.md
     echo "[start-hermes] Installing Skill: memory-automation.md"
     mkdir -p "$HOME/.hermes/skills/memory-automation"
-    cp /custom-cont-init.d/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
+    cp ${SCRIPT_DIR}/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
 
     echo "[start-hermes] Populate .hermes.md"
-    cp /custom-cont-init.d/.hermes.md "$HOME/.hermes.md"
+    cp ${SCRIPT_DIR}/.hermes.md "$HOME/.hermes.md"
   fi
 
   mkdir -p  ~/.hermes/logs
@@ -62,8 +62,6 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
   nohup hermes gateway run --no-supervise > ~/.hermes/logs/gateway.log 2>&1 &
 
   # Start Hermes Dashboard in background
-  ensure_ownership "/usr/local/lib/hermes-agent/hermes_cli"
-  ensure_ownership "/usr/local/lib/hermes-agent/web"
   echo "[start-hermes] Starting Hermes Dashboard..."
   # Start Hermes Dashboard in background and expose it on port 9119 via socat
   # nohup socat TCP4-LISTEN:9119,fork,reuseaddr TCP4:127.0.0.1:9009 > ~/.hermes/logs/socat-9119.log 2>&1 &
@@ -93,4 +91,4 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
   # Run boot-time health self-check after all services are ready
   echo "[start-hermes] Running boot-time health self-check..."
-  ${script_dir}/self-check.sh || echo "[start-hermes] WARNING: self-check reported issues"
+  ${SCRIPT_DIR}/self-check.sh || echo "[start-hermes] WARNING: self-check reported issues"
