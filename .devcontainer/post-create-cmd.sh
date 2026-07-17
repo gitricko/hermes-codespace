@@ -71,6 +71,7 @@ fi
 if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(ls -A "$HOME/.hermes/sessions")" ]; then
     echo "[post-create-cmd.sh] No sessions found, setting up default configuration for custom provider"
     echo "[start-hermes] Initializing hermes config..."
+
     hermes config set model.default auto-fastest
     hermes config set model.provider omniroute
     hermes config set providers.omniroute.base_url http://localhost:20128/v1
@@ -80,6 +81,13 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
     hermes config set fallback_providers.provider modelrelay
     hermes config set fallback_providers.model auto-fastest
   
+    hermes config set auxiliary.title_generation.model auto-fastest
+    hermes config set auxiliary.title_generation.provider modelrelay
+    hermes config set auxiliary.vision.model auto-fastest
+    hermes config set auxiliary.vision.provider modelrelay
+    hermes config set auxiliary.compression.model auto-fastest
+    hermes config set auxiliary.compression.provider modelrelay
+
     # Turn off approval alert and live dangerously since u are in a self-contained container.
     hermes config set approvals.mode off
     # Turn on memory by default and to mnemon
