@@ -7,6 +7,8 @@ OLLAMA_VERSION=0.32.0
 NODE_VERSION=24.18.0
 MNEMON_VERSION=0.1.17
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
 sudo apt-get update && sudo apt-get install -y htop zsh ripgrep gh remmina iputils-ping net-tools socat && sudo rm -rf /var/lib/apt/lists/*
 
 # InstallNode.js binaries and libraries
@@ -53,10 +55,32 @@ fi
 
 # Configure hermes defaults if first run
 if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(ls -A "$HOME/.hermes/sessions")" ]; then
-  echo "[post-create-cmd.sh] No sessions found, setting up default configuration for custom provider"
-  hermes config set model.provider custom
-  hermes config set model.base_url http://localhost:7352/v1
-  hermes config set model.default auto-fastest
+    echo "[post-create-cmd.sh] No sessions found, setting up default configuration for custom provider"
+    echo "[start-hermes] Initializing hermes config..."
+    hermes config set model.default auto-fastest
+    hermes config set model.provider omniroute
+    hermes config set providers.omniroute.base_url http://localhost:20128/v1
+    hermes config set providers.omniroute.api_key no-key-needed
+    hermes config set providers.modelrelay.base_url http://localhost:7352/v1
+    hermes config set providers.modelrelay.api_key no-key-needed
+    hermes config set fallback_providers.provider modelrelay
+    hermes config set fallback_providers.model auto-fastest
+  
+    # Turn off approval alert and live dangerously since u are in a self-contained container.
+    hermes config set approvals.mode off
+    # Turn on memory by default and to mnemon
+    hermes config set memory.memory_enabled true
+    hermes config set memory.user_profile_enabled true
+    hermes config set memory.provider mnemon
+    # optimize for kanban
+    hermes config set agent.max_turns 120
+    hermes config set kanban.failure_limit 3
+
+    # Populate default skill and .hermes.md
+    echo "[start-hermes] Installing Skill: memory-automation.md"
+    mkdir -p "$HOME/.hermes/skills/memory-automation"
+    cp ${SCRIPT_DIR}/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
+
 fi
 
 # Install modelrelay globally
@@ -83,6 +107,19 @@ sudo ln -sf /usr/local/lib/omniroute/bin/omniroute /usr/local/bin/omniroute
 sudo npm cache clean --force
 # sudo mkdir -p /usr/local/lib/node_modules/omniroute/app/logs/application
 
+echo "[post-create-cmd.sh] Checking omniroute..."
+if command -v omniroute &>/dev/null; then
+  if pgrep -f omniroute > /dev/null; then
+    echo "[post-create-cmd.sh] omniroute is already running, skipping"
+  else
+    echo "[post-create-cmd.sh] Starting omniroute in the background..."
+    setsid /usr/local/bin/omniroute >> /tmp/omniroute.log 2>&1 &
+  fi
+else
+  echo "[post-create-cmd.sh] omniroute not found, skipping start"
+fi
+
+
 # Install TailScale
 sudo mkdir -p /var/run/tailscale /var/lib/tailscale && sudo curl -fsSL https://tailscale.com/install.sh | sh && sudo rm -rf /var/lib/apt/lists/*
 
@@ -98,8 +135,7 @@ rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "[post-create-cmd.sh] Installing Cline with default configuration..."
 mkdir -p "$HOME/.cline/data"
-cp "${SCRIPT_DIR}/globalState.json" "$HOME/.cline/data/globalState.json"
-cp "${SCRIPT_DIR}/secrets.json" "$HOME/.cline/data/secrets.json"
+cp "${SCRIPT_DIR}/cline-globalState.json" "$HOME/.cline/data/globalState.json"
+cp "${SCRIPT_DIR}/cline-secrets.json" "$HOME/.cline/data/secrets.json"
 bash -c 'code --force --install-extension saoudrizwan.claude-dev'
 npm install -g cline
-
