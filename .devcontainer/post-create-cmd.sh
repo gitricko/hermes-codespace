@@ -174,16 +174,30 @@ mnemon setup --yes --global  --target claude-code
 
 
 # Preconfigure Omniroute
+
+# Start Hermes Gateway in background (to install omniroute MCP)
+echo "[$SCRIPT_NAME] 4. Starting Hermes Gateway..."
+if command -v hermes &>/dev/null; then
+  if pgrep -f 'hermes gateway' > /dev/null; then
+    echo "[$SCRIPT_NAME] hermes-gateway is already running, skipping"
+  else
+    echo "[$SCRIPT_NAME] Starting hermes-gateway in the background..."
+    setsid hermes gateway run --no-supervise > ~/.hermes/logs/gateway.log 2>&1 &
+  fi
+else
+  echo "[$SCRIPT_NAME] hermes not found, skipping start"
+fi
+
 # Wait for OmniRoute to be ready
 MAX_ATTEMPTS=10
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
-    echo "[start-omniroute] Waiting for OmniRoute to be ready (attempt $attempt/$MAX_ATTEMPTS)..."
+    echo "[$SCRIPT_NAME] Waiting for OmniRoute to be ready (attempt $attempt/$MAX_ATTEMPTS)..."
     
     if curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://localhost:20128/v1/models | grep -q "200"; then
         break
     fi
     if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
-        echo "[start-omniroute] Error: OmniRoute failed to start after $MAX_ATTEMPTS attempts."
+        echo "[$SCRIPT_NAME] Error: OmniRoute failed to start after $MAX_ATTEMPTS attempts."
         exit 1
     fi
     sleep 1
@@ -191,7 +205,7 @@ done
 
 
 # Switch OmniRoute to not require login for now, can enable later
-echo "[start-omniroute] Switching OmniRoute to not require login..."
+echo "[$SCRIPT_NAME] Switching OmniRoute to not require login..."
 python3 -c "
 import sqlite3
 conn = sqlite3.connect('/home/codespace/.omniroute/storage.sqlite')
@@ -202,19 +216,19 @@ conn.close()
 
 # Create auto-fastest combo
 while ! omniroute combo create auto-fastest --strategy auto ; do
-    echo "[start-omniroute] omniroute still not ready yet, retrying..."
+    echo "[$SCRIPT_NAME] omniroute still not ready yet, retrying..."
     sleep 3
 done
-echo "[start-omniroute] OmniRoute Combo auto-fastest created!"
+echo "[$SCRIPT_NAME] OmniRoute Combo auto-fastest created!"
 
 # Enable OmniRoute MCP if not already enabled
 if omniroute mcp status --json 2>/dev/null | python3 -c "import sys,json;exit(0 if json.load(sys.stdin).get('enabled') else 1)"; then
-    echo "[start-omniroute] MCP enabled"
+    echo "[$SCRIPT_NAME] MCP enabled"
 else
-    echo "[start-omniroute] Enabling MCP..."
+    echo "[$SCRIPT_NAME] Enabling MCP..."
     curl -s -X PATCH http://localhost:20128/api/settings \
         -H "Content-Type: application/json" -d '{"mcpEnabled":true}' >/dev/null
-    echo "[start-omniroute] MCP enabled"
+    echo "[$SCRIPT_NAME] MCP enabled"
 fi
 
 # Add omniroute MCP to hermes
@@ -238,4 +252,4 @@ curl -s -X PUT "http://localhost:20128/api/combos/$COMBO_ID" \
     }
 }'
 
-echo "[start-omniroute] OmniRoute initialization complete!"
+echo "[$SCRIPT_NAME] OmniRoute initialization complete!"
