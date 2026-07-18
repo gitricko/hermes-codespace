@@ -98,7 +98,7 @@ else
   echo "[$SCRIPT_NAME] WARNING: Failed to clone gitricko/hermes-plugin-mnemon repository."
 fi
 
-  # Start Hermes Gateway in background (mnemon is ready before this fires)
+# Start Hermes Gateway in background (mnemon is ready before this fires)
 echo "[$SCRIPT_NAME] 4. Starting Hermes Gateway..."
 if command -v hermes &>/dev/null; then
   if pgrep -f 'hermes gateway' > /dev/null; then
@@ -110,13 +110,6 @@ if command -v hermes &>/dev/null; then
 else
   echo "[$SCRIPT_NAME] hermes not found, skipping start"
 fi
-
-  # echo "[$SCRIPT_NAME] Starting Hermes Gateway..."
-  # nohup hermes gateway run --no-supervise > ~/.hermes/logs/gateway.log 2>&1 &
-
-  # Start Hermes Dashboard in background
-  # echo "[$SCRIPT_NAME] Starting Hermes Dashboard..."
-  # nohup hermes dashboard --port 9119 --no-open > ~/.hermes/logs/dashboard.log 2>&1 &
 
 echo "[$SCRIPT_NAME] 5. Starting Hermes Dashboard..."
 if command -v hermes &>/dev/null; then
