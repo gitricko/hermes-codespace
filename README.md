@@ -2,6 +2,22 @@
 
 A GitHub project starter template with pre-installed AI coding tools. Built on [devcontainers](https://containers.dev/) — ready to clone, fork, or use as a template for any new repository. (actually, it is just the `.devcontainer` directory)
 
+## Read this if reading this README.md in codespace
+
+### First-time setup
+When creating this codespace for the first time, the setup process will:
+- **PostCreateCMD**: Install and configure Hermes and its associated OSS software (listed below)
+- Start default services: Hermes Gateway, Dashboard, Ollama, and free LLM proxies (OmniRoute and ModelRelay)
+- Take 5-10 minutes to complete
+
+You can verify everything is ready by checking the **PORTS** panel in the lower sidebar. You should see ports: **7352**, **11434**, **20128**, and **9119**.
+
+### Existing codespace
+If you're using an existing codespace, startup will be faster since installation is already complete. The system will only start the services.
+
+### Checking setup progress
+View detailed creation and startup logs via **Codespaces: View Creation Logs** command.
+
 ## What's included
 
 | Component | Purpose |
