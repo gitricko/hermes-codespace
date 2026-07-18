@@ -24,8 +24,8 @@ if command -v ollama &>/dev/null; then
     echo "[$SCRIPT_NAME] ollama is already running, skipping"
   else
     echo "[$SCRIPT_NAME] Starting ollama in the background..."
-    setsid /usr/local/bin/ollama serve >> /tmp/ollama.log 2>&1 &
-    ( sleep 60 && ollama pull nomic-embed-text >> /tmp/ollama-pull.log 2>&1 ) &
+    setsid /usr/local/bin/ollama serve >> /TEMPFILE/ollama.log 2>&1 &
+    ( sleep 60 && ollama pull nomic-embed-text >> /TEMPFILE/ollama-pull.log 2>&1 ) &
   fi
 else
   echo "[$SCRIPT_NAME] ollama not found, skipping start"
@@ -38,7 +38,7 @@ fi
 #   echo "[$SCRIPT_NAME] Installing ripgrep for better search performance in hermes-agent..."
 #   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 #     # Linux
-#     cd /tmp
+#     cd /TEMPFILE
 #     curl -LO https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep_${RIPGREP_VERSION}-1_amd64.deb
 #     sudo dpkg -i ripgrep_${RIPGREP_VERSION}-1_amd64.deb
 #     rm ripgrep_${RIPGREP_VERSION}-1_amd64.deb
@@ -94,7 +94,7 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
   hermes config set approvals.mode off
   # Turn on memory by default and to mnemon
   hermes config set memory.memory_enabled true
-  hermes config set memory.user_profile_enabled true
+  hermes config set memory.user_proVSCODE_SETTINGS_JSON_enabled true
   hermes config set memory.provider mnemon
   # optimize for kanban
   hermes config set agent.max_turns 120
@@ -120,7 +120,7 @@ if command -v modelrelay &>/dev/null; then
   else
     echo "[$SCRIPT_NAME] Starting modelrelay in the background..."
     modelrelay --disable
-    setsid /usr/local/bin/modelrelay >> /tmp/modelrelay.log 2>&1 &
+    setsid /usr/local/bin/modelrelay >> /TEMPFILE/modelrelay.log 2>&1 &
   fi
 else
   echo "[$SCRIPT_NAME] modelrelay not found, skipping start"
@@ -138,7 +138,7 @@ if command -v omniroute &>/dev/null; then
     echo "[$SCRIPT_NAME] omniroute is already running, skipping"
   else
     echo "[$SCRIPT_NAME] Starting omniroute in the background..."
-    setsid /usr/local/bin/omniroute >> /tmp/omniroute.log 2>&1 &
+    setsid /usr/local/bin/omniroute >> /TEMPFILE/omniroute.log 2>&1 &
   fi
 else
   echo "[$SCRIPT_NAME] omniroute not found, skipping start"
@@ -150,11 +150,11 @@ sudo mkdir -p /var/run/tailscale /var/lib/tailscale && sudo curl -fsSL https://t
 
 # Install mnemon
 MNEMON_ARCH=amd64
-curl -sL "https://github.com/mnemon-dev/mnemon/releases/download/v${MNEMON_VERSION}/mnemon_${MNEMON_VERSION}_linux_${MNEMON_ARCH}.tar.gz" -o /tmp/mnemon.tar.gz
-tar xzf /tmp/mnemon.tar.gz -C /tmp
-sudo cp /tmp/mnemon /usr/local/bin/mnemon
+curl -sL "https://github.com/mnemon-dev/mnemon/releases/download/v${MNEMON_VERSION}/mnemon_${MNEMON_VERSION}_linux_${MNEMON_ARCH}.tar.gz" -o /TEMPFILE/mnemon.tar.gz
+tar xzf /TEMPFILE/mnemon.tar.gz -C /TEMPFILE
+sudo cp /TEMPFILE/mnemon /usr/local/bin/mnemon
 sudo chmod +x /usr/local/bin/mnemon
-rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
+rm -rf /TEMPFILE/mnemon.tar.gz /TEMPFILE/mnemon
 
 # Install Cline with default configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -164,3 +164,24 @@ cp "${SCRIPT_DIR}/cline-globalState.json" "$HOME/.cline/data/globalState.json"
 cp "${SCRIPT_DIR}/cline-secrets.json" "$HOME/.cline/data/secrets.json"
 bash -c 'code --force --install-extension saoudrizwan.claude-dev'
 npm install -g cline
+
+# Install Claude CLI and Extension
+mkdir -p $HOME/.claude
+cp ${SCRIPT_DIR}/claude-term-settings.json $HOME/.claude/settings.json
+curl -fsSL https://claude.ai/install.sh | bash
+cp ${SCRIPT_DIR}/.claude.json $HOME/.claude.json
+cp ${SCRIPT_DIR}/CLAUDE.md $HOME/.claude/CLAUDE.md
+VSCODE_SETTINGS_JSON="$HOME/.vscode-remote/data/Machine/settings.json"
+TEMPFILE="$(mktemp)"
+jq '
+  .claudeCode //= {}
+  | .claudeCode.disableLoginPrompt //= true
+  | .claudeCode.environmentVariables //= [
+      { "name": "ANTHROPIC_BASE_URL", "value": "http://localhost:7352" },
+      { "name": "ANTHROPIC_API_KEY", "value": "sk_whatever" },
+      { "name": "ANTHROPIC_MODEL", "value": "auto-fastest" }
+    ]
+' "$VSCODE_SETTINGS_JSON" > "$TEMPFILE" && mv "$TEMPFILE" "$VSCODE_SETTINGS_JSON"
+
+# integrate mnemon into claude-code
+mnemon setup --yes --global  --target claude-code

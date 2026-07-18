@@ -1,0 +1,9 @@
+{
+    "hasCompletedOnboarding": true,
+    "customApiKeyResponses": {
+        "approved": [
+            "sk-whatever"
+        ],
+        "rejected": []
+    }
+}
