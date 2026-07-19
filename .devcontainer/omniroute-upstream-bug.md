@@ -1,114 +1,210 @@
-# Upstream bug report: `omniroute@3.8.48` npm tarball ships an incomplete `dist/node_modules/` (hollow bundled deps) → MCP server crashes on startup
+# Upstream bug report for OmniRoute repo
 
-## Summary
+> **File via:** https://github.com/diegosouzapw/OmniRoute/issues/new/choose → Bug Report
+> They use a YAML form template with structured fields. This document is organized
+> per-field for easy copy-paste into the GitHub form.
 
-The published `omniroute` npm package (observed on **3.8.48**) contains an
-**incomplete `dist/node_modules/` directory**. Several bundled dependency
-folders ship with **only a `package.json` stub and no JavaScript/native code**.
+---
 
-Because the runtime imports its bundled deps from `dist/node_modules/`, the MCP
-server (`dist/open-sse/mcp-server/server.js`) throws on startup:
+## Before you file
 
+- Searched open issues (173) and closed issues (2,368) — **not reported yet**.
+- Keywords checked: `dist/node_modules`, `undici`, `hollow`, `MCP server`, 
+  `bundled deps missing` — no matches.
+
+---
+
+## Field-by-field values for the Bug Report form
+
+### OmniRoute Version
 ```
-Error: Cannot find package '/usr/local/lib/omniroute/lib/node_modules/omniroute/dist/node_modules/undici/index.js'
-  imported from /usr/local/lib/omniroute/lib/node_modules/omniroute/dist/open-sse/mcp-server/server.js
-```
-
-Any MCP client (in our case Hermes Agent) then fails to connect
-(`✗ Failed to connect: Connection closed`) and the server is left disabled.
-
-## Environment
-
-| | |
-|---|---|
-| omniroute | **3.8.48** (from `npm install omniroute@3.8.48 -g`) |
-| Node.js | v24.14.0 |
-| OS | Ubuntu 24.04 (noble), amd64 |
-| Install cmd | `sudo npm install omniroute@3.8.48 -g --prefix /usr/local/lib/omniroute` |
-
-## Reproduction
-
-1. `npm install omniroute@3.8.48 -g --prefix /usr/local/lib/omniroute`
-2. Start the MCP server:
-   `node <prefix>/lib/node_modules/omniroute/dist/open-sse/mcp-server/server.js --mcp`
-3. Observe the crash: `Error: Cannot find package '.../dist/node_modules/undici/index.js'`
-
-Or inspect the tarball directly — the following dirs under
-`dist/node_modules/` contain only `package.json`:
-
-```
-undici, ioredis, @atjsh/llmlingua-2, sql.js, sqlite-vec-linux-x64,
-lru-cache, mdn-data, @csstools/css-syntax-patches-for-csstree
+3.8.48
 ```
 
-## Root cause analysis
+### Installation Method
+```
+npm (global)
+```
 
-- The runtime resolves bundled dependencies from
-  `omniroute/dist/node_modules/`, **not** from the top-level
-  `omniroute/node_modules/`.
-- In the published tarball, many `dist/node_modules/<pkg>/` dirs are "hollow":
-  they contain a `package.json` but the actual entry files (`index.js`,
-  `lib/**`, `*.node`, `*.so`) are missing.
-- npm's own dependency resolution correctly populated the **sibling**
-  `omniroute/node_modules/` with the full packages, which is what allowed a
-  local workaround (copy sibling → dist). This strongly indicates the
-  `dist/node_modules/` was assembled/pruned by a build or bundling step that
-  dropped file contents (e.g. an `.npmignore`/`files` glob, a `prune`, or a
-  bundler that emitted stub `package.json`s without copying package payloads).
+### Operating System
+```
+Linux
+```
 
-### Two categories of hollow package observed
+### OS Version
+```
+Ubuntu 24.04 (noble), amd64
+```
 
-1. **Hollow but a full copy exists in the sibling `node_modules/`** — these are
-   the ones that actually break the runtime and are trivially repairable:
-   - `undici` (crashes MCP server — the fatal one)
+### Node.js Version
+```
+v24.14.0
+```
+
+### Provider(s) Involved
+```
+N/A — this is a packaging/build issue, not a provider issue
+```
+
+### Model(s) Involved
+```
+N/A
+```
+
+### Client Tool
+```
+Any MCP client that connects to OmniRoute's built-in MCP server.
+Observed with: Hermes Agent (via stdio MCP transport), though any MCP client
+connecting to `omniroute --mcp` will hit the same crash.
+```
+
+### Description
+```
+The published omniroute npm package ships an incomplete `dist/node_modules/`
+directory. Several bundled dependency packages contain ONLY a `package.json`
+stub with zero JavaScript, native (.node), or shared-object (.so) files.
+
+When OmniRoute's MCP server (`dist/open-sse/mcp-server/server.js`) starts, it
+imports from `dist/node_modules/` and crashes immediately:
+
+```
+Error: Cannot find package '.../dist/node_modules/undici/index.js'
+  imported from .../dist/open-sse/mcp-server/server.js
+```
+
+Any MCP client connecting to `omniroute --mcp` gets `Connection closed` and
+the server is unusable out of the box.
+
+**Hollow packages (dist/node_modules/<pkg/> with only package.json, no code):**
+Groups by repairability:
+
+1. **Hollow + full sibling exists in `node_modules/` — break the MCP server:**
+   - `undici` — fatal crash on MCP server startup
    - `ioredis`
    - `@atjsh/llmlingua-2`
    - `sql.js`
-   - `sqlite-vec-linux-x64` (native `vec0.so` missing)
+   - `sqlite-vec-linux-x64` (missing native `vec0.so`)
 
-2. **Hollow and no sibling copy, but not imported from `dist/`** — currently
-   harmless, but still indicate the packaging step is broken:
+2. **Hollow + no sibling copy — not directly imported from dist (currently harmless):**
    - `lru-cache`, `mdn-data`, `@csstools/css-syntax-patches-for-csstree`
-
-## Impact
-
-- MCP server is completely non-functional out of the box on a clean install.
-- Downstream tools that auto-configure omniroute as an MCP server (e.g. Hermes
-  Agent) silently persist it as **disabled** after the failed connection.
-
-## Suggested fix (upstream)
-
-Ensure the packaging/bundling step that produces `dist/node_modules/` copies the
-**complete** package contents, not just `package.json`. Concretely:
-
-- If a bundler/prune step generates `dist/node_modules/`, verify its file globs
-  include package payloads (`index.js`, `lib/**`, `dist/**`, `*.node`, `*.so`,
-  etc.), not only manifests.
-- Add a publish-time smoke test: after `npm pack`, extract the tarball and run
-  `node dist/open-sse/mcp-server/server.js --mcp` (or import the top-level
-  entrypoint) in a clean container; fail the release if it throws
-  `Cannot find package`.
-- Alternatively, drop the private `dist/node_modules/` entirely and resolve
-  bundled deps from the standard `node_modules/` that npm already populates
-  correctly.
-
-## Workaround (consumer side)
-
-Until fixed upstream, copy each hollow package from the sibling `node_modules/`
-over its stub in `dist/node_modules/` after install (auto-detecting the broken
-set so it survives version bumps). Reference implementation (bash), run **after**
-`npm install` and **before** any `npm cache clean`:
-
-```bash
-repair_omniroute_dist_deps() {
-  local omni_root="/usr/local/lib/omniroute/lib/node_modules/omniroute"
-  local dist_nm="$omni_root/dist/node_modules"
-  local parent_nm="$omni_root/node_modules"
-  [ -d "$dist_nm" ] || return 0
-  # for every dist/node_modules/<pkg> (incl. @scope/name) that has no
-  # *.js/*.mjs/*.cjs/*.node/*.so, replace it with the sibling node_modules copy
-  # (see .devcontainer/post-create-cmd.sh for the full implementation)
-}
 ```
 
-After repair: `hermes mcp test omniroute` → `✓ Connected`, 99 tools discovered.
+### Steps to Reproduce
+```
+1. npm install omniroute@3.8.48 -g --prefix /usr/local/lib/omniroute
+2. Run the MCP server:
+     node /usr/local/lib/omniroute/lib/node_modules/omniroute/dist/open-sse/mcp-server/server.js --mcp
+3. Observe crash:
+     Error: Cannot find package '.../dist/node_modules/undici/index.js'
+   imported from .../dist/open-sse/mcp-server/server.js
+
+Alternative MCP-client-level reproduction:
+1. Install omniroute via npm and configure it as an MCP server in any MCP client
+2. Attempt to connect — client reports "Connection closed"
+3. Check stderr — same `Cannot find package undici` error
+```
+
+### Expected Behavior
+```
+Starting `omniroute --mcp` should print:
+  [MCP] OmniRoute MCP Server starting (stdio transport)...
+  [MCP] OmniRoute MCP Server connected and ready.
+
+All dependencies in `dist/node_modules/` should be complete — the bundled
+dependency tree that the published code actually imports from must ship with
+all executable files, not just manifest stubs.
+```
+
+### Actual Behavior
+```
+The MCP server crashes on startup because `dist/node_modules/undici/index.js`
+does not exist — only the package.json was shipped in the npm tarball.
+
+Hermes Agent (and likely other MCP clients) auto-saves the server as disabled
+after the failed connection, requiring manual repair.
+```
+
+### Test Impact
+```
+Needs a new integration test
+```
+
+### Error Logs / Output
+```
+===== starting MCP server 'omniroute' =====
+📋 Loaded env from /home/codespace/.omniroute/.env
+📋 Loaded env from /usr/local/lib/omniroute/lib/node_modules/omniroute/.env
+
+Error: Cannot find package '/usr/local/lib/omniroute/lib/node_modules/omniroute/dist/node_modules/undici/index.js'
+  imported from /usr/local/lib/omniroute/lib/node_modules/omniroute/dist/open-sse/mcp-server/server.js
+
+(Among the hollow packages: undici version 8.7.0 only has a package.json stub
+ — 0 JS files shipped in the tarball's dist/node_modules/undici/)
+
+After manual repair (copy sibling node_modules/undici → dist/node_modules/undici):
+  [MCP] OmniRoute MCP Server starting (stdio transport)...
+  [MCP] OmniRoute MCP Server connected and ready.
+  ✓ Tools discovered: 99
+```
+
+### Screenshots
+```
+N/A — the error is textual and fully captured in the logs above.
+```
+
+### Additional Context
+```
+Root cause analysis:
+
+The runtime differentiates between two `node_modules` trees:
+- `omniroute/node_modules/<pkg>` — populated correctly by npm's standard
+  dependency resolution.
+- `omniroute/dist/node_modules/<pkg>` — a bundled dependency tree that the
+  published code imports from. This is assembled by a build/bundling step.
+
+In the 3.8.48 tarball, the bundling step emitted `package.json` stubs for many
+packages without copying their actual payload files (`index.js`, `lib/**`,
+`*.node`, `*.so`). npm's own resolution in the sibling `node_modules/` is
+correct and complete — the defect is limited to the build step that produces
+`dist/node_modules/`.
+
+The fact that `lru-cache`, `mdn-data`, and `@csstools/css-syntax-patches-for-csstree`
+are hollow AND have no sibling suggests they're genuinely unused dead weights,
+but the rest (undici, ioredis, etc.) ARE used at runtime.
+```
+
+### Validation Plan
+```
+1. `npm pack` → extract tarball → verify every directory under
+   dist/node_modules/ contains at least one *.js or *.mjs file (or a .node/.so
+   for native packages).
+2. `node dist/open-sse/mcp-server/server.js --mcp` must print "connected and
+   ready" without throwing.
+3. Register with an MCP client → `hermes mcp test omniroute` reports
+   "✓ Connected" and tool discovery succeeds.
+```
+
+---
+
+## Workaround (for anyone hitting this before the fix)
+
+```bash
+# After `npm install omniroute`, run this to repair hollow dist deps:
+DIST="/usr/local/lib/omniroute/lib/node_modules/omniroute/dist/node_modules"
+PARENT="/usr/local/lib/omniroute/lib/node_modules/omniroute/node_modules"
+for dst in "$DIST"/*/ "$DIST"/@*/*/; do
+  [ -d "$dst" ] || continue
+  # Skip scope dirs themselves
+  case "$(basename "$dst")" in @*) [ -f "$dst/package.json" ] || continue ;; esac
+  code=$(find "$dst" \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' -o -name '*.node' -o -name '*.so' \) -type f | head -1)
+  [ -n "$code" ] && continue
+  rel="${dst#"$DIST"/}"
+  src="$PARENT/$rel"
+  [ -d "$src" ] || continue
+  src_code=$(find "$src" \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' -o -name '*.node' -o -name '*.so' \) -type f | head -1)
+  [ -n "$src_code" ] || continue
+  sudo rm -rf "$dst"
+  sudo cp -r "$src" "$dst"
+  echo "Repaired: $rel"
+done
+```

@@ -115,6 +115,70 @@ fi
 # Install OmniRoute and start automatically when desktop loads
 sudo npm install omniroute@${OMNIROUTE_VERSION} -g --prefix /usr/local/lib/omniroute
 sudo ln -sf /usr/local/lib/omniroute/bin/omniroute /usr/local/bin/omniroute
+
+# ── WORKAROUND: repair hollow bundled deps in omniroute's dist/node_modules ──
+# The published omniroute npm tarball (observed on 3.8.48) ships an incomplete
+# dist/node_modules/: several bundled dependency dirs contain ONLY a package.json
+# stub with no JS/native code. This crashes the MCP server on startup with e.g.
+#   Error: Cannot find package '.../dist/node_modules/undici/index.js'
+# and Hermes then saves the MCP server as disabled ("Failed to connect").
+# npm's own resolution fills the SIBLING node_modules/ correctly, so we copy the
+# full package over each hollow stub. Auto-detects the broken set so it keeps
+# working across OMNIROUTE_VERSION bumps. Must run BEFORE `npm cache clean`.
+# Upstream bug — remove once the omniroute tarball ships a complete dist/.
+repair_omniroute_dist_deps() {
+  local omni_root="/usr/local/lib/omniroute/lib/node_modules/omniroute"
+  local dist_nm="$omni_root/dist/node_modules"
+  local parent_nm="$omni_root/node_modules"
+
+  [ -d "$dist_nm" ] || { echo "[$SCRIPT_NAME] omniroute dist/node_modules not found, skipping dep repair"; return 0; }
+
+  echo "[$SCRIPT_NAME] Scanning omniroute dist/node_modules for hollow bundled deps..."
+  local repaired=0
+
+  # Enumerate candidate package dirs, including scoped (@scope/name) packages.
+  local pkg_dirs=()
+  while IFS= read -r d; do pkg_dirs+=("$d"); done < <(
+    find "$dist_nm" -mindepth 1 -maxdepth 1 -type d 2>/dev/null
+  )
+  local scope
+  for scope in "$dist_nm"/@*/; do
+    [ -d "$scope" ] || continue
+    while IFS= read -r d; do pkg_dirs+=("$d"); done < <(
+      find "$scope" -mindepth 1 -maxdepth 1 -type d 2>/dev/null
+    )
+  done
+
+  local dst
+  for dst in "${pkg_dirs[@]}"; do
+    # A scope dir (@foo) itself is not a package; skip it (its children are handled).
+    case "$(basename "$dst")" in @*) [ -f "$dst/package.json" ] || continue ;; esac
+
+    # "Hollow" = no executable/native code shipped in this package dir.
+    local code_files
+    code_files=$(find "$dst" \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' -o -name '*.node' -o -name '*.so' \) -type f 2>/dev/null | head -1)
+    [ -n "$code_files" ] && continue
+
+    # Map to the sibling node_modules path (preserves @scope/name).
+    local rel="${dst#"$dist_nm"/}"
+    local src="$parent_nm/$rel"
+    [ -d "$src" ] || { echo "[$SCRIPT_NAME]   ! $rel is hollow but no sibling copy — leaving as-is"; continue; }
+
+    local src_code
+    src_code=$(find "$src" \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' -o -name '*.node' -o -name '*.so' \) -type f 2>/dev/null | head -1)
+    [ -n "$src_code" ] || { echo "[$SCRIPT_NAME]   ! sibling $rel also has no code — leaving as-is"; continue; }
+
+    sudo rm -rf "$dst"
+    sudo mkdir -p "$(dirname "$dst")"
+    sudo cp -r "$src" "$dst"
+    echo "[$SCRIPT_NAME]   ✓ Repaired hollow dist dep: $rel"
+    repaired=$((repaired + 1))
+  done
+
+  echo "[$SCRIPT_NAME] omniroute dep repair complete ($repaired package(s) restored)"
+}
+repair_omniroute_dist_deps
+
 sudo npm cache clean --force
 # sudo mkdir -p /usr/local/lib/node_modules/omniroute/app/logs/application
 
