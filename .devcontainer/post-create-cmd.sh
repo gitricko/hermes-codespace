@@ -238,21 +238,7 @@ mnemon setup --yes --global  --target claude-code
 
 
 # Preconfigure Omniroute
-
-# # Start Hermes Gateway in background (to install omniroute MCP)
-# echo "[$SCRIPT_NAME] 4. Starting Hermes Gateway..."
-# if command -v hermes &>/dev/null; then
-#   if pgrep -f 'hermes gateway' > /dev/null; then
-#     echo "[$SCRIPT_NAME] hermes-gateway is already running, skipping"
-#   else
-#     echo "[$SCRIPT_NAME] Starting hermes-gateway in the background..."
-#     setsid hermes gateway run --no-supervise > ~/.hermes/logs/gateway.log 2>&1 &
-#   fi
-# else
-#   echo "[$SCRIPT_NAME] hermes not found, skipping start"
-# fi
-
-# Wait for OmniRoute to be ready
+#   Wait for OmniRoute to be ready
 MAX_ATTEMPTS=10
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
     echo "[$SCRIPT_NAME] Waiting for OmniRoute to be ready (attempt $attempt/$MAX_ATTEMPTS)..."
