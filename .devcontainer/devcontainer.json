@@ -2,7 +2,7 @@
   "name": "Hermes-Coding-Agent",
   "customizations": {
     "vscode": {
-      "extensions": ["joverina.rina-hermes-acp", "anthropic.claude-code"]
+      "extensions": ["joverina.rina-hermes-acp", "anthropic.claude-code","saoudrizwan.claude-dev"]
     }
   },
   "postCreateCommand": "bash ./.devcontainer/post-create-cmd.sh >> /tmp/hermes-codespace.log 2>&1",
