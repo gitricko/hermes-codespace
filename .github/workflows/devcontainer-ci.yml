@@ -10,7 +10,7 @@ jobs:
   test-devcontainer:
     name: Build & Health Check
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,9 +22,6 @@ jobs:
           push: never
           runCmd: |
             set -e
-            echo "=== Running post-create (one-time setup) ==="
-            bash .devcontainer/post-create-cmd.sh
-
             echo "=== Starting all services via start-hermes.sh ==="
             bash .devcontainer/start-hermes.sh
 
