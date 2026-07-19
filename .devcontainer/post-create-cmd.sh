@@ -223,7 +223,6 @@ rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
 
 # Install Cline with default configuration
 echo "[$SCRIPT_NAME] Installing Cline with default configuration..."
-code --force --install-extension saoudrizwan.claude-dev
 mkdir -p "$HOME/.cline/data"
 smart_copy "${SCRIPT_DIR}/cline-globalState.json" "$HOME/.cline/data/globalState.json"
 smart_copy "${SCRIPT_DIR}/cline-secrets.json" "$HOME/.cline/data/secrets.json"
