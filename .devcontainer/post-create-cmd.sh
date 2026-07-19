@@ -271,7 +271,7 @@ done
 echo "[$SCRIPT_NAME] Switching OmniRoute to not require login..."
 python3 -c "
 import sqlite3
-conn = sqlite3.connect('/home/codespace/.omniroute/storage.sqlite')
+conn = sqlite3.connect('$HOME/.omniroute/storage.sqlite')
 conn.execute('UPDATE key_value SET value = ? WHERE key = ?', ('false', 'requireLogin'))
 conn.commit()
 conn.close()
