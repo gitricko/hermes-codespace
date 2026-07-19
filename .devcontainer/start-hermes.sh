@@ -4,7 +4,7 @@ SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_NAME="$(basename -- "$SCRIPT_PATH")"
 
 echo
-echo "*****   Starting Hermes Agent Services ....    *****
+echo "*****   Starting Hermes Agent Services ....    *****"
 echo 
 
 # 1. Starting modelrelay...

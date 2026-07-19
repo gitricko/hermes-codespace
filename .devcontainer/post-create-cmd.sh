@@ -22,7 +22,7 @@ smart_copy() {
 }
 
 echo
-echo "*****   Installing/Setup Hermes Agent Services ....    *****
+echo "*****   Installing/Setup Hermes Agent Services ....    *****"
 echo 
 
 sudo apt-get update && sudo apt-get install -y zsh ripgrep && sudo rm -rf /var/lib/apt/lists/*
