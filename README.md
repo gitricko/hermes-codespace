@@ -15,8 +15,8 @@ You can verify everything is ready by checking the **PORTS** panel in the lower 
 ### Existing codespace
 If you're using an existing codespace, startup will be faster since installation is already complete. The system will only start the services.
 
-### Checking setup progress
-View detailed creation and startup logs via **Codespaces: View Creation Logs** command.
+### Checking setup/start-up progress
+Logs for container creation (which is 1 time) or start up is in this path: `/tmp/hermes-codespace.log`. You can use this command in terminal to view the file. `code /tmp/hermes-codespace.log`
 
 ## What's included
 
