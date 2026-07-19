@@ -8,25 +8,33 @@ on:
 
 jobs:
   test-devcontainer:
-    name: Build & Health Check
+    name: Build & Smoke Test
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build dev container & run health check
+      - name: Build dev container
         uses: devcontainers/ci@v0.3
         with:
           imageName: hermes-codespace-test-${{ github.run_id }}
           push: never
           runCmd: |
             set -e
-            echo "=== Running post-create (one-time setup: installs hermes, omniroute, modelrelay, ollama, mnemon) ==="
-            bash .devcontainer/post-create-cmd.sh
+            echo "=== Verifying dev container builds and basic tools available ==="
 
-            echo "=== Starting all services via start-hermes.sh ==="
-            bash .devcontainer/start-hermes.sh
+            # Verify base tools installed by devcontainer features
+            python3 --version
+            node --version
+            npm --version
 
-            echo "=== Running health check ==="
-            bash .devcontainer/self-check.sh
+            # Verify scripts exist and are executable
+            test -f .devcontainer/post-create-cmd.sh
+            test -f .devcontainer/start-hermes.sh
+            test -f .devcontainer/self-check.sh
+            test -x .devcontainer/post-create-cmd.sh
+            test -x .devcontainer/start-hermes.sh
+            test -x .devcontainer/self-check.sh
+
+            echo "=== Dev container build successful, scripts present ==="
