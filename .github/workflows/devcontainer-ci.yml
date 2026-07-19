@@ -15,26 +15,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build dev container
-        uses: devcontainers/ci@v0.3
-        with:
-          imageName: hermes-codespace-test-${{ github.run_id }}
-          push: never
-          runCmd: |
-            set -e
-            echo "=== Verifying dev container builds and basic tools available ==="
+      - name: run post-create-cmd.sh
+        run: bash ./.devcontainer/post-create-cmd.sh
 
-            # Verify base tools installed by devcontainer features
-            python3 --version
-            node --version
-            npm --version
+      - name: run start-hermes.sh
+        run: bash ./.devcontainer/start-hermes.sh
 
-            # Verify scripts exist and are executable
-            test -f .devcontainer/post-create-cmd.sh
-            test -f .devcontainer/start-hermes.sh
-            test -f .devcontainer/self-check.sh
-            test -x .devcontainer/post-create-cmd.sh
-            test -x .devcontainer/start-hermes.sh
-            test -x .devcontainer/self-check.sh
-
-            echo "=== Dev container build successful, scripts present ==="
+      - name: Smoke Test
+        run: |
+          bash ./.devcontainer/self-check.sh
+          echo "Smoke test passed!"
