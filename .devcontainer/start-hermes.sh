@@ -3,7 +3,11 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_NAME="$(basename -- "$SCRIPT_PATH")"
 
-echo "[$SCRIPT_NAME] 1. Starting modelrelay..."
+echo
+echo "*****   Starting Hermes Agent Services ....    *****
+echo 
+
+# 1. Starting modelrelay...
 if command -v modelrelay &>/dev/null; then
   if pgrep -f modelrelay > /dev/null; then
     echo "[$SCRIPT_NAME] modelrelay is already running, skipping"
@@ -15,7 +19,7 @@ else
   echo "[$SCRIPT_NAME] modelrelay not found, skipping start"
 fi
 
-echo "[$SCRIPT_NAME] 2. Starting omniroute..."
+# 2. Starting omniroute...
 if command -v omniroute &>/dev/null; then
   if pgrep -f omniroute > /dev/null; then
     echo "[$SCRIPT_NAME] omniroute is already running, skipping"
@@ -27,7 +31,7 @@ else
   echo "[$SCRIPT_NAME] omniroute not found, skipping start"
 fi
 
-echo "[$SCRIPT_NAME] 3. Starting ollama..."
+# 3. Starting ollama...
 if command -v ollama &>/dev/null; then
   if pgrep -f ollama > /dev/null; then
     echo "[$SCRIPT_NAME] ollama is already running, skipping"
@@ -40,6 +44,7 @@ else
   echo "[$SCRIPT_NAME] ollama not found, skipping start"
 fi
 
+# 4. Starting Hermes Gateway and Dashboard
 
 if [ -d "$HOME/.hermes/logs" ] && [ -z "$(ls -A "$HOME/.hermes/logs")" ]; then
   echo "[$SCRIPT_NAME] No logs found in $HOME/.hermes/logs, setting up default configuration for custom provider"
@@ -99,7 +104,7 @@ else
 fi
 
 # Start Hermes Gateway in background (mnemon is ready before this fires)
-echo "[$SCRIPT_NAME] 4. Starting Hermes Gateway..."
+# 4. Starting Hermes Gateway..."
 if command -v hermes &>/dev/null; then
   if pgrep -f 'hermes gateway' > /dev/null; then
     echo "[$SCRIPT_NAME] hermes-gateway is already running, skipping"

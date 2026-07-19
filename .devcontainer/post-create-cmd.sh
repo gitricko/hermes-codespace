@@ -21,9 +21,11 @@ smart_copy() {
   fi
 }
 
-sudo apt-get update && sudo apt-get install -y zsh ripgrep && sudo rm -rf /var/lib/apt/lists/*
+echo
+echo "*****   Installing/Setup Hermes Agent Services ....    *****
+echo 
 
-# InstallNode.js binaries and libraries
+sudo apt-get update && sudo apt-get install -y zsh ripgrep && sudo rm -rf /var/lib/apt/lists/*
 
 # Install the Ollama binary from the official image
 curl -fsSL https://ollama.com/install.sh | sh
