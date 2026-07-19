@@ -305,7 +305,7 @@ python3 -c "import sys,json; d=json.load(sys.stdin); print([c['id'] for c in d['
 curl -s -X PUT "http://localhost:20128/api/combos/$COMBO_ID" \
 -H "Content-Type: application/json" \
 -d '{
-    "models": ["oc/deepseek-v4-flash-free","mimocode/mimo-auto","oc/big-pickle"],
+    "models": ["oc/deepseek-v4-flash-free","oc/big-pickle","opencode-zen/deepseek-v4-flash-free","opencode-zen/hy3-free","opencode-zen/mimo-v2.5-free","opencode-zen/north-mini-code-free","opencode-zen/nemotron-3-ultra-free","opencode-zen/big-pickle"],
     "strategy": "auto",
     "config": {
     "maxRetries": 2,
