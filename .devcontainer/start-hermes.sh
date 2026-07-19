@@ -46,40 +46,6 @@ fi
 
 # 4. Starting Hermes Gateway and Dashboard
 
-if [ -d "$HOME/.hermes/logs" ] && [ -z "$(ls -A "$HOME/.hermes/logs")" ]; then
-  echo "[$SCRIPT_NAME] No logs found in $HOME/.hermes/logs, setting up default configuration for custom provider"
-  echo "[$SCRIPT_NAME] Initializing hermes config..."
-  hermes config set model.default auto-fastest
-  hermes config set model.provider modelrelay
-  hermes config set providers.omniroute.base_url http://localhost:20128/v1
-  hermes config set providers.omniroute.api_key no-key-needed
-  hermes config set providers.modelrelay.base_url http://localhost:7352/v1
-  hermes config set providers.modelrelay.api_key no-key-needed
-  hermes config set fallback_providers.provider modelrelay
-  hermes config set fallback_providers.model auto-fastest
-
-  # Turn off approval alert and live dangerously since u are in a self-contained container.
-  hermes config set approvals.mode off
-  # Turn on memory by default and to mnemon
-  hermes config set memory.memory_enabled true
-  hermes config set memory.user_profile_enabled true
-  hermes config set memory.provider mnemon
-  # optimize for kanban
-  hermes config set agent.max_turns 120
-  hermes config set kanban.failure_limit 3
-
-  # Populate default skill and .hermes.md
-  echo "[$SCRIPT_NAME] Installing Skill: memory-automation.md"
-  mkdir -p "$HOME/.hermes/skills/memory-automation"
-  cp ${SCRIPT_DIR}/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
-
-  echo "[$SCRIPT_NAME] Populate .hermes.md"
-  cp ${SCRIPT_DIR}/.hermes.md "$HOME/.hermes.md"
-
-fi
-
-mkdir -p  ~/.hermes/logs
-
 # Install Telegram gateway dependency if missing
 $HOME/.hermes/hermes-agent/venv/bin/python -m ensurepip --upgrade || true
 ln -s $HOME/.hermes/hermes-agent/venv/bin/pip3 $HOME/.hermes/hermes-agent/venv/bin/pip || true

@@ -103,6 +103,9 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
   mkdir -p "$HOME/.hermes/skills/memory-automation"
   cp ${SCRIPT_DIR}/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
 
+  echo "[$SCRIPT_NAME] Populate .hermes.md"
+  cp ${SCRIPT_DIR}/.hermes.md "$HOME/.hermes.md"
+
 fi
 
 # Install modelrelay globally

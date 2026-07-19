@@ -23,8 +23,10 @@ Logs for container creation (which is 1 time) or start up is in this path: `/tmp
 | Component | Purpose |
 |-----------|---------|
 | **[Hermes Agent](https://github.com/nousresearch/hermes-agent)** | AI coding assistant with memory, skills, and multi-step task execution |
+| **[Hermes VS Code Extension](https://marketplace.visualstudio.com/items?itemName=JoveRina.rina-hermes-acp)** | Full IDE integration — chat, inline suggestions, and terminal access directly in VS Code |
 | **[ModelRelay](https://www.npmjs.com/package/modelrelay)** | OpenAI-compatible local router — benchmarks free coding models and routes requests to the best available provider |
-| **[Hermes AI Agent — VS Code Extension](https://marketplace.visualstudio.com/items?itemName=joaompfp.hermes-ai-agent)** | Full IDE integration — chat, inline suggestions, and terminal access directly in VS Code |
+| **[OmniRoute](https://www.npmjs.com/package/modelrelay)** | OpenAI-compatible local router — benchmarks free coding models and routes requests to the best available provider |
+| **[Claude CLI and VS Code Extension](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code)** | Additional Agent: Claude in your IDE, capable of creating/editing files, running commands, using the browser. Also preconfigured with ModelRelay by default |
 | **[Cline — VS Code Extension](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev)** | Additional Agent: Cline coding agent right in your IDE, capable of creating/editing files, running commands, using the browser. Also preconfigured with ModelRelay by default |
 
 ![Hermes in action](.devcontainer/screen-shot.png)
