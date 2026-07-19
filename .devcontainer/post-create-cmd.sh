@@ -11,6 +11,16 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_NAME="$(basename -- "$SCRIPT_PATH")"
 
+# Smart copy: only copies if files differ or destination doesn't exist
+smart_copy() {
+  if ! cmp -s "$1" "$2" 2>/dev/null; then
+    cp "$1" "$2"
+    echo "✓ Updated $(basename "$2")"
+  else
+    echo "✓ $(basename "$2") already in sync"
+  fi
+}
+
 sudo apt-get update && sudo apt-get install -y zsh ripgrep && sudo rm -rf /var/lib/apt/lists/*
 
 # InstallNode.js binaries and libraries
@@ -207,12 +217,11 @@ sudo chmod +x /usr/local/bin/mnemon
 rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
 
 # Install Cline with default configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "[$SCRIPT_NAME] Installing Cline with default configuration..."
-mkdir -p "$HOME/.cline/data"
-cp "${SCRIPT_DIR}/cline-globalState.json" "$HOME/.cline/data/globalState.json"
-cp "${SCRIPT_DIR}/cline-secrets.json" "$HOME/.cline/data/secrets.json"
 code --force --install-extension saoudrizwan.claude-dev
+mkdir -p "$HOME/.cline/data"
+smart_copy "${SCRIPT_DIR}/cline-globalState.json" "$HOME/.cline/data/globalState.json"
+smart_copy "${SCRIPT_DIR}/cline-secrets.json" "$HOME/.cline/data/secrets.json"
 npm install -g cline
 
 # Install Claude CLI and Extension
