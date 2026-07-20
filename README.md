@@ -3,6 +3,7 @@
 > **A GitHub Codespaces-ready dev container template pre-configured with Hermes AI coding agent, free LLM routers, and local AI infrastructure — ready to code in seconds.**
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/gitricko/hermes-codespace)
+
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Dev Container](https://img.shields.io/badge/devcontainer-ready-blue?logo=docker)](https://containers.dev/)
 [![Hermes Agent](https://img.shields.io/badge/Hermes%20Agent-v2026.7.7.2-purple?logo=github)](https://github.com/NousResearch/hermes-agent)
@@ -19,13 +20,12 @@ Hermes-CodeSpace is a **zero-config GitHub Codespaces template** that spins up a
 |-----------|---------|------|
 | **[Hermes Agent](https://github.com/NousResearch/hermes-agent)** | AI coding agent with memory, skills, and multi-step task execution | 9119 (Dashboard) |
 | **[Hermes VS Code Extension](https://marketplace.visualstudio.com/items?itemName=JoveRina.rina-hermes-acp)** | Full IDE integration — chat, inline suggestions, terminal access | — |
+| **[Claude Code](https://github.com/anthropics/claude-code)** | Anthropic's CLI agent — preconfigured with Omniroute | — |
+| **[Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev)** | VS Code coding agent — preconfigured with Omniroute | — |
 | **[ModelRelay](https://www.npmjs.com/package/modelrelay)** | OpenAI-compatible local router — benchmarks free coding models and routes to the best provider | 7352 |
 | **[OmniRoute](https://www.npmjs.com/package/omniroute)** | OpenAI-compatible local router with MCP support — benchmarks free models and routes to the best provider | 20128 |
-| **[Ollama](https://ollama.com/)** | Local LLM inference server | 11434 |
-| **[Claude Code CLI](https://github.com/anthropics/claude-code)** | Anthropic's CLI agent — preconfigured with ModelRelay | — |
-| **[Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev)** | VS Code coding agent — preconfigured with ModelRelay | — |
 | **[Mnemon](https://github.com/mnemon-dev/mnemon)** | Persistent memory layer for AI agents (no token limits) | — |
-| **[Ollama](https://ollama.com/)** | Local LLM inference (pulls `nomic-embed-text` by default) | 11434 |
+| **[Ollama](https://ollama.com/)** | Local LLM inference server for `nomic-embed-text` to support Mnemon | 11434 |
 
 ---
 
@@ -33,12 +33,11 @@ Hermes-CodeSpace is a **zero-config GitHub Codespaces template** that spins up a
 
 | Problem | Solution |
 |---------|----------|
-| GitHub Copilot free trial expires | **Free forever** — runs on free tier models via OmniRoute/ModelRelay |
+| GitHub Copilot free monthly trial expires | **Free forever** — runs on free tier models via OmniRoute/ModelRelay |
 | Vendor lock-in | **Multi-provider routing** — auto-routes to best free model (DeepSeek, Nemotron, etc.) |
 | Context loss between sessions | **Mnemon memory** — persistent, unlimited memory across sessions |
 | Context switching between tools | **Unified IDE** — Hermes, Claude Code, and Cline all in VS Code |
 | Local hardware limits | **Cloud-native** — runs in GitHub Codespaces (free tier: 60 hrs/mo) |
-| Context switching between tools | **Unified IDE** — Hermes, Claude Code, and Cline all in VS Code |
 
 ---
 
@@ -50,7 +49,7 @@ Hermes-CodeSpace is a **zero-config GitHub Codespaces template** that spins up a
 2. Name your repo → **Create**
 3. Open your new repo → **Code** → **Codespaces** → **Create codespace on main**
 4. Wait 5–10 minutes for initial setup (first time only)
-5. Start coding with Hermes!
+5. Start coding with Hermes/Claude/Cline !
 
 ### Option 2: Fork & Go Private
 
@@ -78,12 +77,12 @@ The `postCreateCommand` runs once during container creation (~5–10 min):
 | 2️⃣ | Install **Ollama** + pull `nomic-embed-text` embedding model |
 | 3️⃣ | Install **Hermes Agent** (v2026.7.7.2) with ACP protocol |
 | 4️⃣ | Install **ModelRelay** (global npm) + start on port 7352 |
-| 5️⃣ | Install **OmniRoute** (v3.8.48) + auto-repair bundled deps |
+| 5️⃣ | Install **OmniRoute** (v3.8.48) |
 | 6️⃣ | Configure **OmniRoute**: disable login, create `auto-fastest` combo with 8 free models |
 | 7️⃣ | Configure **Hermes**: `auto-fastest` model, OmniRoute provider, ModelRelay fallback, memory enabled (Mnemon), approvals off |
 | 8️⃣ | Install **Mnemon** memory CLI + integrate with Hermes & Claude Code |
 | 9️⃣ | Install **Cline** + **Claude Code CLI** + VS Code extensions |
-| 🔟 | Pre-configure VS Code settings for Claude Code (ModelRelay endpoint) |
+| 🔟 | Pre-configure VS Code settings for Claude Code (Omniroute endpoint) |
 
 The `postStartCommand` runs on every codespace start (~30 sec):
 - Starts ModelRelay, OmniRoute, Ollama
@@ -113,8 +112,6 @@ After startup, check the **PORTS** panel (VS Code bottom panel) for:
 ```bash
 hermes                    # Interactive chat
 hermes "refactor foo.ts"  # One-shot task
-hermes gateway run        # REST API on :9119
-hermes dashboard          # Web UI on :9119
 ```
 
 ### Hermes VS Code Extension
@@ -129,27 +126,21 @@ claude -p "fix bug"       # One-shot
 ```
 
 ### Cline (VS Code Extension)
-- Click Cline icon in sidebar → Chat with free models via ModelRelay
+- Click Cline icon in sidebar → Chat with free models via Omniroute
 
 ---
 
 ## Memory & Persistence (Mnemon)
 
-Hermes-CodeSpace integrates **Mnemon** for persistent, unlimited memory:
+Hermes-CodeSpace's Agents integrates **Mnemon** for persistent, unlimited memory. **Hermes auto-uses Mnemon** when `memory.provider=mnemon` (configured by default).
+Claude Code also gets Mnemon via `mnemon setup --yes --global --target claude-code`.
 
 ```bash
-# Recall relevant memories for current task
-mnemon recall "your query" --limit 10
+# Cross agent/session memory
+claude -p "remember my name is fart-man"  
 
 # Remember something important
-mnemon remember "User prefers TypeScript strict mode" --category preference --importance 5
-
-# List memories
-mnemon list --category preference
-```
-
-**Hermes auto-uses Mnemon** when `memory.provider=mnemon` (configured by default).
-Claude Code also gets Mnemon via `mnemon setup --yes --global --target claude-code`.
+hermes -p "what is my name"
 
 ---
 
@@ -229,7 +220,7 @@ git add -A && git commit -m "Update .devcontainer from upstream"
 
 ## Local Development Alternative
 
-Prefer running locally? See **[hermes-webtop](https://github.com/gitricko/hermes-webtop)** — Docker-based setup for your own machine with the same stack.
+Prefer running locally? See **[hermes-webtop](https://github.com/gitricko/hermes-webtop)** — Docker-based setup for your own machine with the same stack + Linux WebTop
 
 ---
 
@@ -289,8 +280,7 @@ rm -rf ~/.hermes ~/.mnemon ~/.omniroute ~/.ollama
 ├─────────────────────────────────────────────────────────────────┤
 │  Terminal Agents                                                │
 │  ├─ hermes (CLI + Gateway + Dashboard)                          │
-│  ├─ claude (CLI via ModelRelay)                                 │
-│  └─ cline (via VS Code)                                         │
+│  ├─ claude (CLI via Omniroute)                                  │
 ├─────────────────────────────────────────────────────────────────┤
 │  Model Routers (OpenAI-compatible)                              │
 │  ├─ OmniRoute  :20128  → 8 free models (auto-fastest)           │
@@ -352,8 +342,8 @@ MIT — see [LICENSE](LICENSE)
 Built on amazing open-source projects:
 
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) by Nous Research
-- [ModelRelay](https://github.com/gitricko/modelrelay) by gitricko
-- [OmniRoute](https://github.com/gitricko/omniroute) by gitricko
+- [ModelRelay](https://github.com/gitricko/modelrelay) by rolandorojas
+- [OmniRoute](https://github.com/gitricko/omniroute) by diegosouzapw
 - [Mnemon](https://github.com/mnemon-dev/mnemon) by mnemon-dev
 - [Ollama](https://ollama.com/) by Ollama Team
 - [Claude Code](https://github.com/anthropics/claude-code) by Anthropic
