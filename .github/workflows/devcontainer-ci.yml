@@ -2,7 +2,7 @@ name: Dev Container CI
 
 on:
   push:
-    branches: [main, readme]
+    branches: [main]
   pull_request:
     branches: [main]
 
