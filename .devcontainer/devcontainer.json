@@ -2,9 +2,13 @@
   "name": "Hermes-Coding-Agent",
   "customizations": {
     "vscode": {
-      "extensions": ["joaompfp.hermes-ai-agent"]
+      "extensions": [
+        "joverina.rina-hermes-acp",
+        "anthropic.claude-code",
+        "saoudrizwan.claude-dev"
+      ]
     }
   },
-  "postCreateCommand": "bash ./.devcontainer/post-create-cmd.sh > /tmp/post-create-cmd.log",
-  "postStartCommand":  "bash ./.devcontainer/start-hermes.sh  > /tmp/post-start-cmd.log"
+  "postCreateCommand": "bash ./.devcontainer/post-create-cmd.sh >> /tmp/hermes-codespace.log 2>&1",
+  "postStartCommand":  "bash ./.devcontainer/start-hermes.sh    >> /tmp/hermes-codespace.log 2>&1"
 }

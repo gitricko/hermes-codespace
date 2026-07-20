@@ -3,7 +3,11 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_NAME="$(basename -- "$SCRIPT_PATH")"
 
-echo "[$SCRIPT_NAME] 1. Starting modelrelay..."
+echo
+echo "*****   Starting Hermes Agent Services ....    *****"
+echo 
+
+# 1. Starting modelrelay...
 if command -v modelrelay &>/dev/null; then
   if pgrep -f modelrelay > /dev/null; then
     echo "[$SCRIPT_NAME] modelrelay is already running, skipping"
@@ -15,7 +19,7 @@ else
   echo "[$SCRIPT_NAME] modelrelay not found, skipping start"
 fi
 
-echo "[$SCRIPT_NAME] 2. Starting omniroute..."
+# 2. Starting omniroute...
 if command -v omniroute &>/dev/null; then
   if pgrep -f omniroute > /dev/null; then
     echo "[$SCRIPT_NAME] omniroute is already running, skipping"
@@ -27,7 +31,7 @@ else
   echo "[$SCRIPT_NAME] omniroute not found, skipping start"
 fi
 
-echo "[$SCRIPT_NAME] 3. Starting ollama..."
+# 3. Starting ollama...
 if command -v ollama &>/dev/null; then
   if pgrep -f ollama > /dev/null; then
     echo "[$SCRIPT_NAME] ollama is already running, skipping"
@@ -40,40 +44,7 @@ else
   echo "[$SCRIPT_NAME] ollama not found, skipping start"
 fi
 
-
-if [ -d "$HOME/.hermes/logs" ] && [ -z "$(ls -A "$HOME/.hermes/logs")" ]; then
-  echo "[$SCRIPT_NAME] No logs found in $HOME/.hermes/logs, setting up default configuration for custom provider"
-  echo "[$SCRIPT_NAME] Initializing hermes config..."
-  hermes config set model.default auto-fastest
-  hermes config set model.provider modelrelay
-  hermes config set providers.omniroute.base_url http://localhost:20128/v1
-  hermes config set providers.omniroute.api_key no-key-needed
-  hermes config set providers.modelrelay.base_url http://localhost:7352/v1
-  hermes config set providers.modelrelay.api_key no-key-needed
-  hermes config set fallback_providers.provider modelrelay
-  hermes config set fallback_providers.model auto-fastest
-
-  # Turn off approval alert and live dangerously since u are in a self-contained container.
-  hermes config set approvals.mode off
-  # Turn on memory by default and to mnemon
-  hermes config set memory.memory_enabled true
-  hermes config set memory.user_profile_enabled true
-  hermes config set memory.provider mnemon
-  # optimize for kanban
-  hermes config set agent.max_turns 120
-  hermes config set kanban.failure_limit 3
-
-  # Populate default skill and .hermes.md
-  echo "[$SCRIPT_NAME] Installing Skill: memory-automation.md"
-  mkdir -p "$HOME/.hermes/skills/memory-automation"
-  cp ${SCRIPT_DIR}/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
-
-  echo "[$SCRIPT_NAME] Populate .hermes.md"
-  cp ${SCRIPT_DIR}/.hermes.md "$HOME/.hermes.md"
-
-fi
-
-mkdir -p  ~/.hermes/logs
+# 4. Starting Hermes Gateway and Dashboard
 
 # Install Telegram gateway dependency if missing
 $HOME/.hermes/hermes-agent/venv/bin/python -m ensurepip --upgrade || true
@@ -98,8 +69,8 @@ else
   echo "[$SCRIPT_NAME] WARNING: Failed to clone gitricko/hermes-plugin-mnemon repository."
 fi
 
-  # Start Hermes Gateway in background (mnemon is ready before this fires)
-echo "[$SCRIPT_NAME] 4. Starting Hermes Gateway..."
+# Start Hermes Gateway in background (mnemon is ready before this fires)
+# 4. Starting Hermes Gateway..."
 if command -v hermes &>/dev/null; then
   if pgrep -f 'hermes gateway' > /dev/null; then
     echo "[$SCRIPT_NAME] hermes-gateway is already running, skipping"
@@ -111,14 +82,7 @@ else
   echo "[$SCRIPT_NAME] hermes not found, skipping start"
 fi
 
-  # echo "[$SCRIPT_NAME] Starting Hermes Gateway..."
-  # nohup hermes gateway run --no-supervise > ~/.hermes/logs/gateway.log 2>&1 &
-
-  # Start Hermes Dashboard in background
-  # echo "[$SCRIPT_NAME] Starting Hermes Dashboard..."
-  # nohup hermes dashboard --port 9119 --no-open > ~/.hermes/logs/dashboard.log 2>&1 &
-
-echo "[$SCRIPT_NAME] 5. Starting Hermes Dashboard..."
+echo "[$SCRIPT_NAME] Starting Hermes Dashboard..."
 if command -v hermes &>/dev/null; then
   if pgrep -f 'hermes dashboard' > /dev/null; then
     echo "[$SCRIPT_NAME] hermes-dashboard is already running, skipping"

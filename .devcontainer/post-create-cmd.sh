@@ -11,9 +11,21 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_NAME="$(basename -- "$SCRIPT_PATH")"
 
-sudo apt-get update && sudo apt-get install -y zsh ripgrep && sudo rm -rf /var/lib/apt/lists/*
+# Smart copy: only copies if files differ or destination doesn't exist
+smart_copy() {
+  if ! cmp -s "$1" "$2" 2>/dev/null; then
+    cp "$1" "$2"
+    echo "✓ Updated $(basename "$2")"
+  else
+    echo "✓ $(basename "$2") already in sync"
+  fi
+}
 
-# InstallNode.js binaries and libraries
+echo
+echo "*****   Installing/Setup Hermes Agent Services ....    *****"
+echo 
+
+sudo apt-get update && sudo apt-get install -y zsh ripgrep && sudo rm -rf /var/lib/apt/lists/*
 
 # Install the Ollama binary from the official image
 curl -fsSL https://ollama.com/install.sh | sh
@@ -30,20 +42,6 @@ if command -v ollama &>/dev/null; then
 else
   echo "[$SCRIPT_NAME] ollama not found, skipping start"
 fi
-
-
-# Install ripgrep for better search performance in hermes-agent
-# RIPGREP_VERSION=15.1.0
-# if ! command -v rg &>/dev/null; then
-#   echo "[$SCRIPT_NAME] Installing ripgrep for better search performance in hermes-agent..."
-#   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-#     # Linux
-#     cd /tmp
-#     curl -LO https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep_${RIPGREP_VERSION}-1_amd64.deb
-#     sudo dpkg -i ripgrep_${RIPGREP_VERSION}-1_amd64.deb
-#     rm ripgrep_${RIPGREP_VERSION}-1_amd64.deb
-#   fi
-# fi
 
 # Install hermes-agent
 if ! command -v hermes &>/dev/null; then
@@ -105,6 +103,9 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
   mkdir -p "$HOME/.hermes/skills/memory-automation"
   cp ${SCRIPT_DIR}/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
 
+  echo "[$SCRIPT_NAME] Populate .hermes.md"
+  cp ${SCRIPT_DIR}/.hermes.md "$HOME/.hermes.md"
+
 fi
 
 # Install modelrelay globally
@@ -129,6 +130,70 @@ fi
 # Install OmniRoute and start automatically when desktop loads
 sudo npm install omniroute@${OMNIROUTE_VERSION} -g --prefix /usr/local/lib/omniroute
 sudo ln -sf /usr/local/lib/omniroute/bin/omniroute /usr/local/bin/omniroute
+
+# ── WORKAROUND: repair hollow bundled deps in omniroute's dist/node_modules ──
+# The published omniroute npm tarball (observed on 3.8.48) ships an incomplete
+# dist/node_modules/: several bundled dependency dirs contain ONLY a package.json
+# stub with no JS/native code. This crashes the MCP server on startup with e.g.
+#   Error: Cannot find package '.../dist/node_modules/undici/index.js'
+# and Hermes then saves the MCP server as disabled ("Failed to connect").
+# npm's own resolution fills the SIBLING node_modules/ correctly, so we copy the
+# full package over each hollow stub. Auto-detects the broken set so it keeps
+# working across OMNIROUTE_VERSION bumps. Must run BEFORE `npm cache clean`.
+# Upstream bug — remove once the omniroute tarball ships a complete dist/.
+repair_omniroute_dist_deps() {
+  local omni_root="/usr/local/lib/omniroute/lib/node_modules/omniroute"
+  local dist_nm="$omni_root/dist/node_modules"
+  local parent_nm="$omni_root/node_modules"
+
+  [ -d "$dist_nm" ] || { echo "[$SCRIPT_NAME] omniroute dist/node_modules not found, skipping dep repair"; return 0; }
+
+  echo "[$SCRIPT_NAME] Scanning omniroute dist/node_modules for hollow bundled deps..."
+  local repaired=0
+
+  # Enumerate candidate package dirs, including scoped (@scope/name) packages.
+  local pkg_dirs=()
+  while IFS= read -r d; do pkg_dirs+=("$d"); done < <(
+    find "$dist_nm" -mindepth 1 -maxdepth 1 -type d 2>/dev/null
+  )
+  local scope
+  for scope in "$dist_nm"/@*/; do
+    [ -d "$scope" ] || continue
+    while IFS= read -r d; do pkg_dirs+=("$d"); done < <(
+      find "$scope" -mindepth 1 -maxdepth 1 -type d 2>/dev/null
+    )
+  done
+
+  local dst
+  for dst in "${pkg_dirs[@]}"; do
+    # A scope dir (@foo) itself is not a package; skip it (its children are handled).
+    case "$(basename "$dst")" in @*) [ -f "$dst/package.json" ] || continue ;; esac
+
+    # "Hollow" = no executable/native code shipped in this package dir.
+    local code_files
+    code_files=$(find "$dst" \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' -o -name '*.node' -o -name '*.so' \) -type f 2>/dev/null | head -1)
+    [ -n "$code_files" ] && continue
+
+    # Map to the sibling node_modules path (preserves @scope/name).
+    local rel="${dst#"$dist_nm"/}"
+    local src="$parent_nm/$rel"
+    [ -d "$src" ] || { echo "[$SCRIPT_NAME]   ! $rel is hollow but no sibling copy — leaving as-is"; continue; }
+
+    local src_code
+    src_code=$(find "$src" \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' -o -name '*.node' -o -name '*.so' \) -type f 2>/dev/null | head -1)
+    [ -n "$src_code" ] || { echo "[$SCRIPT_NAME]   ! sibling $rel also has no code — leaving as-is"; continue; }
+
+    sudo rm -rf "$dst"
+    sudo mkdir -p "$(dirname "$dst")"
+    sudo cp -r "$src" "$dst"
+    echo "[$SCRIPT_NAME]   ✓ Repaired hollow dist dep: $rel"
+    repaired=$((repaired + 1))
+  done
+
+  echo "[$SCRIPT_NAME] omniroute dep repair complete ($repaired package(s) restored)"
+}
+repair_omniroute_dist_deps
+
 sudo npm cache clean --force
 # sudo mkdir -p /usr/local/lib/node_modules/omniroute/app/logs/application
 
@@ -157,10 +222,97 @@ sudo chmod +x /usr/local/bin/mnemon
 rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
 
 # Install Cline with default configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "[$SCRIPT_NAME] Installing Cline with default configuration..."
 mkdir -p "$HOME/.cline/data"
-cp "${SCRIPT_DIR}/cline-globalState.json" "$HOME/.cline/data/globalState.json"
-cp "${SCRIPT_DIR}/cline-secrets.json" "$HOME/.cline/data/secrets.json"
-bash -c 'code --force --install-extension saoudrizwan.claude-dev'
+smart_copy "${SCRIPT_DIR}/cline-globalState.json" "$HOME/.cline/data/globalState.json"
+smart_copy "${SCRIPT_DIR}/cline-secrets.json" "$HOME/.cline/data/secrets.json"
 npm install -g cline
+
+# Install Claude CLI and Extension
+mkdir -p $HOME/.claude
+cp ${SCRIPT_DIR}/claude-term-settings.json $HOME/.claude/settings.json
+curl -fsSL https://claude.ai/install.sh | bash
+cp ${SCRIPT_DIR}/.claude.json $HOME/.claude.json
+cp ${SCRIPT_DIR}/CLAUDE.md $HOME/.claude/CLAUDE.md
+VSCODE_SETTINGS_JSON="$HOME/.vscode-remote/data/Machine/settings.json"
+TEMPFILE="$(mktemp)"
+jq '
+  .claudeCode //= {}
+  | .claudeCode.disableLoginPrompt //= true
+  | .claudeCode.environmentVariables //= [
+      { "name": "ANTHROPIC_BASE_URL", "value": "http://localhost:7352" },
+      { "name": "ANTHROPIC_API_KEY", "value": "sk_whatever" },
+      { "name": "ANTHROPIC_MODEL", "value": "auto-fastest" }
+    ]
+' "$VSCODE_SETTINGS_JSON" > "$TEMPFILE" && mv "$TEMPFILE" "$VSCODE_SETTINGS_JSON"
+
+# integrate mnemon into claude-code
+mnemon setup --yes --global  --target claude-code
+
+
+# Preconfigure Omniroute
+#   Wait for OmniRoute to be ready
+MAX_ATTEMPTS=10
+for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
+    echo "[$SCRIPT_NAME] Waiting for OmniRoute to be ready (attempt $attempt/$MAX_ATTEMPTS)..."
+    
+    if curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://localhost:20128/v1/models | grep -q "200"; then
+        break
+    fi
+    if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
+        echo "[$SCRIPT_NAME] Error: OmniRoute failed to start after $MAX_ATTEMPTS attempts."
+        exit 1
+    fi
+    sleep 1
+done
+
+
+# Switch OmniRoute to not require login for now, can enable later
+echo "[$SCRIPT_NAME] Switching OmniRoute to not require login..."
+python3 -c "
+import sqlite3
+conn = sqlite3.connect('$HOME/.omniroute/storage.sqlite')
+conn.execute('UPDATE key_value SET value = ? WHERE key = ?', ('false', 'requireLogin'))
+conn.commit()
+conn.close()
+"
+
+# Create auto-fastest combo
+while ! omniroute combo create auto-fastest --strategy auto ; do
+    echo "[$SCRIPT_NAME] omniroute still not ready yet, retrying..."
+    sleep 3
+done
+echo "[$SCRIPT_NAME] OmniRoute Combo auto-fastest created!"
+
+# Enable OmniRoute MCP if not already enabled
+if omniroute mcp status --json 2>/dev/null | python3 -c "import sys,json;exit(0 if json.load(sys.stdin).get('enabled') else 1)"; then
+    echo "[$SCRIPT_NAME] MCP enabled"
+else
+    echo "[$SCRIPT_NAME] Enabling MCP..."
+    curl -s -X PATCH http://localhost:20128/api/settings \
+        -H "Content-Type: application/json" -d '{"mcpEnabled":true}' >/dev/null
+    echo "[$SCRIPT_NAME] MCP enabled"
+fi
+
+# Add omniroute MCP to hermes
+yes Y | hermes mcp add omniroute --command omniroute --args --mcp
+
+# 2. Get the combo ID (skip the banner line from CLI output)
+COMBO_ID=$(omniroute combo list --json | grep -v "📋" | \
+python3 -c "import sys,json; d=json.load(sys.stdin); print([c['id'] for c in d['combos'] if c['name']=='auto-fastest'][0])")
+
+# 3. Add models + config via API
+curl -s -X PUT "http://localhost:20128/api/combos/$COMBO_ID" \
+-H "Content-Type: application/json" \
+-d '{
+    "models": ["oc/deepseek-v4-flash-free","oc/big-pickle","opencode-zen/deepseek-v4-flash-free","opencode-zen/hy3-free","opencode-zen/mimo-v2.5-free","opencode-zen/north-mini-code-free","opencode-zen/nemotron-3-ultra-free","opencode-zen/big-pickle"],
+    "strategy": "auto",
+    "config": {
+    "maxRetries": 2,
+    "retryDelayMs": 1000,
+    "timeoutMs": 120000,
+    "healthCheckEnabled": true
+    }
+}'
+
+echo "[$SCRIPT_NAME] OmniRoute initialization complete!"

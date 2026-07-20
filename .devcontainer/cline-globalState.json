@@ -10,7 +10,7 @@
   "ocaMode": "internal",
   "planModeApiProvider": "openai",
   "actModeApiProvider": "openai",
-  "openAiBaseUrl": "http://localhost:7352/v1",
+  "openAiBaseUrl": "http://localhost:20128/v1",
   "planModeOpenAiModelId": "auto-fastest",
   "actModeOpenAiModelId": "auto-fastest",
   "azureApiVersion": "",
