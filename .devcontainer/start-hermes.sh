@@ -82,7 +82,7 @@ else
   echo "[$SCRIPT_NAME] hermes not found, skipping start"
 fi
 
-echo "[$SCRIPT_NAME] 5. Starting Hermes Dashboard..."
+echo "[$SCRIPT_NAME] Starting Hermes Dashboard..."
 if command -v hermes &>/dev/null; then
   if pgrep -f 'hermes dashboard' > /dev/null; then
     echo "[$SCRIPT_NAME] hermes-dashboard is already running, skipping"

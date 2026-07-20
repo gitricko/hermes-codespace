@@ -132,16 +132,16 @@ claude -p "fix bug"       # One-shot
 
 ## Memory & Persistence (Mnemon)
 
-Hermes-CodeSpace's Agents integrates **Mnemon** for persistent, unlimited memory. **Hermes auto-uses Mnemon** when `memory.provider=mnemon` (configured by default).
-Claude Code also gets Mnemon via `mnemon setup --yes --global --target claude-code`.
+Hermes-CodeSpace's Agents integrates **Mnemon** for persistent, unlimited memory that are across session and agents. **Hermes auto-uses Mnemon** when `memory.provider=mnemon` (configured by default). Claude Code also gets Mnemon via `mnemon setup --yes --global --target claude-code`.
 
+#### Example
 ```bash
-# Cross agent/session memory
+# Get Claude to remember something
 claude -p "remember my name is fart-man"  
 
-# Remember something important
-hermes -p "what is my name"
-
+# Get Hermes to recall
+hermes chat -q "what is my name"
+```
 ---
 
 ## Configuration
