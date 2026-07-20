@@ -1,0 +1,55 @@
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-whatever",
+    "ANTHROPIC_BASE_URL": "http://localhost:20128",
+    "ANTHROPIC_MODEL": "auto-fastest"
+  },
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(mnemon *)",
+      "Skill(update-config)",
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "Bash(ls *)",
+      "Bash(cd *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/mnemon/prime.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/mnemon/stop.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/mnemon/user_prompt.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "theme": "dark",
+  "skipDangerousModePermissionPrompt": true
+}

@@ -1,0 +1,27 @@
+name: Dev Container CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-devcontainer:
+    name: Build & Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: run post-create-cmd.sh
+        run: bash ./.devcontainer/post-create-cmd.sh
+
+      - name: run start-hermes.sh
+        run: bash ./.devcontainer/start-hermes.sh
+
+      - name: Smoke Test
+        run: |
+          bash ./.devcontainer/self-check.sh
+          echo "Smoke test passed!"
