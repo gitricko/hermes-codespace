@@ -3,25 +3,244 @@ name: Dev Container CI
 on:
   push:
     branches: [main]
+    paths:
+      - '.devcontainer/**'
+      - '!.devcontainer/screen-shot.png'
   pull_request:
     branches: [main]
+    paths:
+      - '.devcontainer/**'
+      - '!.devcontainer/screen-shot.png'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/devcontainer
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  test-devcontainer:
-    name: Build & Smoke Test
+  # ── Job 1: Build the Docker image ────────────────────────────────────
+  build:
+    name: Build Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      ci_image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:ci-${{ github.run_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=ci-${{ github.run_id }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Job 2: Smoke test the built image ───────────────────────────────
+  smoke-test:
+    name: Smoke Test
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: run post-create-cmd.sh
-        run: bash ./.devcontainer/post-create-cmd.sh
-
-      - name: run start-hermes.sh
-        run: bash ./.devcontainer/start-hermes.sh
-
-      - name: Smoke Test
+      - name: Pull pre-built image
         run: |
-          bash ./.devcontainer/self-check.sh
-          echo "Smoke test passed!"
+          echo "Pulling ${{ needs.build.outputs.ci_image }}"
+          docker pull ${{ needs.build.outputs.ci_image }}
+          docker tag ${{ needs.build.outputs.ci_image }} hermes-codespace:test
+
+      - name: Verify baked tools exist
+        run: |
+          docker run --rm --entrypoint bash hermes-codespace:test -c '
+            echo "=== Verifying baked tools ==="
+            PASS=0; FAIL=0
+            check() { if eval "$2"; then echo "✅ $1"; PASS=$((PASS+1)); else echo "❌ $1"; FAIL=$((FAIL+1)); fi; }
+
+            check "ollama installed"          "command -v ollama"
+            check "hermes installed"          "command -v hermes"
+            check "omniroute installed"       "command -v omniroute"
+            check "modelrelay installed"      "command -v modelrelay"
+            check "mnemon installed"          "command -v mnemon"
+            check "tailscale installed"       "command -v tailscale || true"
+            check "cline installed"           "command -v cline"
+            check "zsh installed"             "command -v zsh"
+            check "ripgrep installed"         "command -v rg"
+            check "entrypoint.sh exists"      "[ -x /usr/local/bin/entrypoint.sh ]"
+
+            echo ""
+            echo "=== Results: $PASS passed, $FAIL failed ==="
+            [ "$FAIL" -eq 0 ] && echo "🎉 All tools baked!" || exit 1
+          '
+
+      - name: Verify entrypoint.sh syntax
+        run: |
+          docker run --rm --entrypoint bash hermes-codespace:test -c '
+            echo "=== Checking entrypoint syntax ==="
+            bash -n /usr/local/bin/entrypoint.sh && echo "✅ entrypoint.sh syntax OK"
+          '
+
+      - name: Verify config files copied to image
+        run: |
+          docker run --rm --entrypoint bash hermes-codespace:test -c '
+            echo "=== Checking config files ==="
+            [ -f /tmp/devcontainer-config/CLAUDE.md ]                && echo "✅ CLAUDE.md present"
+            [ -f /tmp/devcontainer-config/.claude.json ]              && echo "✅ .claude.json present"
+            [ -f /tmp/devcontainer-config/.hermes.md ]                && echo "✅ .hermes.md present"
+            [ -f /tmp/devcontainer-config/skill-memory-automation.md ] && echo "✅ memory-automation skill present"
+          '
+
+  # ── Job 3: Full integration test (devcontainer CLI) ──────────────────
+  integration-test:
+    name: Integration Test
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Pull pre-built image
+        run: |
+          docker pull ${{ needs.build.outputs.ci_image }}
+          docker tag ${{ needs.build.outputs.ci_image }} hermes-codespace:test
+
+      - name: Run self-check inside container
+        run: |
+          docker run --rm -d --name test-hc \
+            -v "$(pwd):/workspace" \
+            hermes-codespace:test
+
+          echo "Waiting for services to start..."
+          sleep 30
+
+          docker cp .devcontainer/self-check.sh test-hc:/tmp/self-check.sh
+          docker exec test-hc bash /tmp/self-check.sh
+
+          docker stop test-hc
+
+  # ── Job 4: Generate image size report ────────────────────────────────
+  image-report:
+    name: Image Size Report
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull pre-built image
+        run: |
+          docker pull ${{ needs.build.outputs.ci_image }}
+          docker tag ${{ needs.build.outputs.ci_image }} hermes-codespace:test
+
+      - name: Report image size
+        run: |
+          echo "=== Devcontainer Image Size ==="
+          docker images hermes-codespace:test --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
+          SIZE=$(docker images hermes-codespace:test --format "{{.Size}}")
+          echo ""
+          echo "📊 Image size: **$SIZE**"
+
+          SIZE_BYTES=$(docker image inspect hermes-codespace:test --format '{{.Size}}')
+          if [ "$SIZE_BYTES" -gt 4294967296 ]; then
+            echo "⚠️  WARNING: Image exceeds 4GB — may hit Codespace storage limits"
+          fi
+
+  # ── Job 5: Cleanup temp image from GHCR ─────────────────────────────
+  cleanup:
+    name: Cleanup
+    needs: [build, smoke-test, integration-test, image-report]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete temp image tag from GHCR
+        env:
+          TAG: ci-${{ github.run_id }}
+          PACKAGE: ${{ env.IMAGE_NAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_CLEANUP_TOKEN }}
+        run: |
+          echo "Cleaning up: ${PACKAGE}:${TAG}"
+
+          if [ -z "$GHCR_TOKEN" ]; then
+            echo "⚠️  GHCR_CLEANUP_TOKEN secret not set — skipping cleanup"
+            echo "   Create a classic PAT at: https://github.com/settings/tokens/new?scopes=read:packages,write:packages"
+            echo "   Then: gh secret set GHCR_CLEANUP_TOKEN --body 'ghp_...' -R ${{ github.repository }}"
+            exit 0
+          fi
+
+          # URL-encode the package name for the REST API
+          # Strip the username prefix — user/packages endpoint scopes to authenticated user
+          PKG_ENCODED=$(echo "$PACKAGE" | sed 's|^[^/]*/||' | tr '[:upper:]' '[:lower:]' | sed 's|/|%2F|g')
+
+          # Find the version with our temp tag
+          FOUND=0
+          for PAGE in 1 2 3; do
+            VERSIONS=$(curl -sf \
+              -H "Authorization: token ${GHCR_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/user/packages/container/${PKG_ENCODED}/versions?per_page=100&page=${PAGE}" 2>/dev/null || echo "[]")
+
+            for VERSION_ID in $(echo "$VERSIONS" | jq -r '.[].id'); do
+              TAGS=$(echo "$VERSIONS" | jq -r --arg vid "$VERSION_ID" '.[] | select(.id == ($vid|tonumber)) | .metadata.container.tags[]' 2>/dev/null)
+              if echo "$TAGS" | grep -q "^${TAG}$"; then
+                echo "Found version ${VERSION_ID} with tag ${TAG}"
+                echo "Deleting..."
+                HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+                  -X DELETE \
+                  -H "Authorization: token ${GHCR_TOKEN}" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/user/packages/container/${PKG_ENCODED}/versions/${VERSION_ID}")
+
+                if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
+                  echo "✅ Deleted ${TAG} (version ${VERSION_ID})"
+                else
+                  echo "⚠️  Delete returned HTTP ${HTTP_CODE}"
+                fi
+                FOUND=1
+                break 2
+              fi
+            done
+
+            # Stop paging if we got fewer results than the page size
+            COUNT=$(echo "$VERSIONS" | jq 'length' 2>/dev/null)
+            [ "$COUNT" -lt 100 ] && break
+          done
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✅ No version with tag ${TAG} found — may have been cleaned already"
+          fi
