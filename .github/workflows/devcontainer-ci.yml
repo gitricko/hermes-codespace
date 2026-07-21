@@ -194,7 +194,7 @@ jobs:
         run: |
           TAG="ci-${{ github.run_id }}"
           # URL-encode the package name for the GHCR API
-          PACKAGE_NAME=$(echo "${{ github.repository }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]' | sed 's|/|%2F|g')
+          PACKAGE_NAME=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]' | sed 's|/|%2F|g')
           echo "Looking for package: ${PACKAGE_NAME}, tag: ${TAG}"
 
           # Get all versions and find the one with our temp tag
