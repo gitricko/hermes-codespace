@@ -191,42 +191,55 @@ jobs:
       - name: Delete temp image tag from GHCR
         env:
           TAG: ci-${{ github.run_id }}
-          IMAGE: ${{ env.IMAGE_NAME }}
+          PACKAGE: ${{ env.IMAGE_NAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_CLEANUP_TOKEN }}
         run: |
-          echo "Cleaning up: ghcr.io/${IMAGE}:${TAG}"
+          echo "Cleaning up: ${PACKAGE}:${TAG}"
 
-          # Get a bearer token from GHCR with delete scope
-          # GITHUB_TOKEN has packages:write which maps to OCI push+delete scope
-          TOKEN=$(curl -sf "https://ghcr.io/token?service=ghcr.io&scope=repository:${IMAGE}:delete" \
-            -u "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | jq -r '.token')
-
-          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-            echo "⚠️  Could not get GHCR token — skipping cleanup"
+          if [ -z "$GHCR_TOKEN" ]; then
+            echo "⚠️  GHCR_CLEANUP_TOKEN secret not set — skipping cleanup"
+            echo "   Create a classic PAT at: https://github.com/settings/tokens/new?scopes=read:packages,write:packages"
+            echo "   Then: gh secret set GHCR_CLEANUP_TOKEN --body 'ghp_...' -R ${{ github.repository }}"
             exit 0
           fi
 
-          # Get manifest digest for the temp tag
-          DIGEST=$(curl -sI \
-            -H "Authorization: Bearer ${TOKEN}" \
-            -H "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.index.v1+json" \
-            "https://ghcr.io/v2/${IMAGE}/manifests/${TAG}" \
-            | grep -i docker-content-digest | awk '{print $2}' | tr -d '\r')
+          # URL-encode the package name for the REST API
+          PKG_ENCODED=$(echo "$PACKAGE" | tr '[:upper:]' '[:lower:]' | sed 's|/|%2F|g')
 
-          if [ -z "$DIGEST" ]; then
-            echo "✅ No manifest for tag ${TAG} — already cleaned"
-            exit 0
-          fi
+          # Find the version with our temp tag
+          FOUND=0
+          for PAGE in 1 2 3; do
+            VERSIONS=$(curl -sf \
+              -H "Authorization: token ${GHCR_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/user/packages/container/${PKG_ENCODED}/versions?per_page=100&page=${PAGE}" 2>/dev/null || echo "[]")
 
-          echo "Found manifest digest: ${DIGEST:0:16}..."
+            for VERSION_ID in $(echo "$VERSIONS" | jq -r '.[].id'); do
+              TAGS=$(echo "$VERSIONS" | jq -r --arg vid "$VERSION_ID" '.[] | select(.id == ($vid|tonumber)) | .metadata.container.tags[]' 2>/dev/null)
+              if echo "$TAGS" | grep -q "^${TAG}$"; then
+                echo "Found version ${VERSION_ID} with tag ${TAG}"
+                echo "Deleting..."
+                HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+                  -X DELETE \
+                  -H "Authorization: token ${GHCR_TOKEN}" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/user/packages/container/${PKG_ENCODED}/versions/${VERSION_ID}")
 
-          # Delete the manifest by digest
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X DELETE \
-            -H "Authorization: Bearer ${TOKEN}" \
-            "https://ghcr.io/v2/${IMAGE}/manifests/${DIGEST}")
+                if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
+                  echo "✅ Deleted ${TAG} (version ${VERSION_ID})"
+                else
+                  echo "⚠️  Delete returned HTTP ${HTTP_CODE}"
+                fi
+                FOUND=1
+                break 2
+              fi
+            done
 
-          if [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "200" ]; then
-            echo "✅ Deleted ${TAG} (digest: ${DIGEST:0:16}...)"
-          else
-            echo "⚠️  Delete returned HTTP ${HTTP_CODE} — may already be cleaned"
+            # Stop paging if we got fewer results than the page size
+            COUNT=$(echo "$VERSIONS" | jq 'length' 2>/dev/null)
+            [ "$COUNT" -lt 100 ] && break
+          done
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✅ No version with tag ${TAG} found — may have been cleaned already"
           fi
