@@ -204,7 +204,8 @@ jobs:
           fi
 
           # URL-encode the package name for the REST API
-          PKG_ENCODED=$(echo "$PACKAGE" | tr '[:upper:]' '[:lower:]' | sed 's|/|%2F|g')
+          # Strip the username prefix — user/packages endpoint scopes to authenticated user
+          PKG_ENCODED=$(echo "$PACKAGE" | sed 's|^[^/]*/||' | tr '[:upper:]' '[:lower:]' | sed 's|/|%2F|g')
 
           # Find the version with our temp tag
           FOUND=0
