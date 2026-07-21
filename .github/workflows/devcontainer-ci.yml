@@ -146,14 +146,14 @@ jobs:
       - name: Run self-check inside container
         run: |
           docker run --rm -d --name test-hc \
-            --entrypoint bash \
             -v "$(pwd):/workspace" \
-            hermes-codespace:test -c 'sleep 300'
+            hermes-codespace:test
 
-          sleep 2
+          echo "Waiting for services to start..."
+          sleep 30
 
           docker cp .devcontainer/self-check.sh test-hc:/tmp/self-check.sh
-          docker exec test-hc bash /tmp/self-check.sh || echo "⚠️  Self-check reported issues (non-blocking)"
+          docker exec test-hc bash /tmp/self-check.sh
 
           docker stop test-hc
 
