@@ -12,6 +12,11 @@ ARG OLLAMA_VERSION=0.32.1
 ARG NODE_VERSION=24.18.0
 ARG MNEMON_VERSION=0.1.17
 
+# Export as env so install scripts can see them
+ENV OLLAMA_VERSION=${OLLAMA_VERSION}
+ENV OLLAMA_NO_START=1
+ENV DEBIAN_FRONTEND=noninteractive
+
 # ── System packages ──────────────────────────────────────────────────
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
