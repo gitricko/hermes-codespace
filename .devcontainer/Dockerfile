@@ -1,11 +1,11 @@
 # ── Baked Devcontainer Image ──────────────────────────────────────────
 # Pre-installs all heavy tooling so containers start in seconds, not minutes.
 # Rebuild:  docker build -t hermes-codespace:latest -f .devcontainer/Dockerfile .
-# ──────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
-# ── Versions (single source of truth) ────────────────────────────────
+# ── Versions (single source of truth) ─────────────────────────────────
 ARG HERMES_VERSION=v2026.7.7.2
 ARG OMNIROUTE_VERSION=3.8.48
 ARG OLLAMA_VERSION=0.32.1
@@ -17,43 +17,37 @@ ENV OLLAMA_VERSION=${OLLAMA_VERSION}
 ENV OLLAMA_NO_START=1
 ENV DEBIAN_FRONTEND=noninteractive
 
-# ── System packages ──────────────────────────────────────────────────
+# ── System packages + ALL heavy installs in ONE layer ──────────────────
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         zsh ripgrep jq curl git ca-certificates gnupg zstd \
-    && rm -rf /var/lib/apt/lists/*
-
-# ── Node.js (required by npm installs below) ─────────────────────────
-# The devcontainer base already has Node, but pin if needed:
-# RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
-#     && apt-get install -y nodejs
-
-# ── Ollama ────────────────────────────────────────────────────────────
-RUN curl -fsSL https://ollama.com/install.sh | sh
-
-# ── Hermes Agent ──────────────────────────────────────────────────────
-RUN curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh" \
-    | bash -s -- --skip-setup \
+    && rm -rf /var/lib/apt/lists/* \
+    \
+    # ── Ollama ────────────────────────────────────────────────────────
+    && curl -fsSL https://ollama.com/install.sh | sh \
+    \
+    # ── Hermes Agent ─────────────────────────────────────────────────
+    && curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh" \
+        | bash -s -- --skip-setup \
     && npm cache clean --force \
-    && rm -rf /var/lib/apt/lists/*
-
-# ── agent-client-protocol (inside hermes venv) ───────────────────────
-RUN if [ -x "$HOME/.hermes/hermes-agent/venv/bin/python" ]; then \
-        "$HOME/.hermes/hermes-agent/venv/bin/python" -m pip install "agent-client-protocol>=0.9.0,<1.0" ; \
-    fi
-
-# ── ModelRelay ────────────────────────────────────────────────────────
-RUN npm install github:gitricko/modelrelay -g --prefix /usr/local/lib/modelrelay \
+    \
+    # ── agent-client-protocol (inside hermes venv) ────────────────────
+    && if [ -x "$HOME/.hermes/hermes-agent/venv/bin/python" ]; then \
+        "$HOME/.hermes/hermes-agent/venv/bin/python" -m pip install "agent-client-protocol>=0.9.0,<1.0"; \
+    fi \
+    \
+    # ── ModelRelay ────────────────────────────────────────────────────
+    && npm install github:gitricko/modelrelay -g --prefix /usr/local/lib/modelrelay \
     && ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay \
-    && npm cache clean --force
-
-# ── OmniRoute ─────────────────────────────────────────────────────────
-RUN npm install omniroute@${OMNIROUTE_VERSION} -g --prefix /usr/local/lib/omniroute \
+    && npm cache clean --force \
+    \
+    # ── OmniRoute ─────────────────────────────────────────────────────
+    && npm install omniroute@${OMNIROUTE_VERSION} -g --prefix /usr/local/lib/omniroute \
     && ln -sf /usr/local/lib/omniroute/bin/omniroute /usr/local/bin/omniroute \
-    && npm cache clean --force
-
-# ── OmniRoute dist/ dep repair (workaround for hollow bundled deps) ──
-RUN omni_root="/usr/local/lib/omniroute/lib/node_modules/omniroute" \
+    && npm cache clean --force \
+    \
+    # ── OmniRoute dist/ dep repair (hollow deps workaround) ──────────
+    && omni_root="/usr/local/lib/omniroute/lib/node_modules/omniroute" \
     && dist_nm="$omni_root/dist/node_modules" \
     && parent_nm="$omni_root/node_modules" \
     && if [ -d "$dist_nm" ]; then \
@@ -61,34 +55,40 @@ RUN omni_root="/usr/local/lib/omniroute/lib/node_modules/omniroute" \
             rel="${dst#"$dist_nm"/}" \
             && src="$parent_nm/$rel" \
             && if [ -d "$src" ] && [ ! "$(find "$dst" \( -name '*.js' -o -name '*.mjs' -o -name '*.node' \) -type f 2>/dev/null | head -1)" ] \
-               && [ "$(find "$src" \( -name '*.js' -o -name '*.mjs' -o -name '*.node' \) -type f 2>/dev/null | head -1)" ]; then \
+                && [ "$(find "$src" \( -name '*.js' -o -name '*.mjs' -o -name '*.node' \) -type f 2>/dev/null | head -1)" ]; then \
                 rm -rf "$dst" && cp -r "$src" "$dst" \
                 && echo "Repaired hollow dep: $rel"; \
             fi; \
         done; \
-    fi
-
-# ── TailScale ─────────────────────────────────────────────────────────
-RUN mkdir -p /var/run/tailscale /var/lib/tailscale \
+    fi \
+    \
+    # ── TailScale ─────────────────────────────────────────────────────
+    && mkdir -p /var/run/tailscale /var/lib/tailscale \
     && (curl -fsSL https://tailscale.com/install.sh | sh || echo "WARN: tailscale install failed, continuing") \
-    && rm -rf /var/lib/apt/lists/*
-
-# ── Mnemon ────────────────────────────────────────────────────────────
-RUN ARCH=amd64 \
+    && rm -rf /var/lib/apt/lists/* \
+    \
+    # ── Mnemon ────────────────────────────────────────────────────────
+    && ARCH=amd64 \
     && curl -sL "https://github.com/mnemon-dev/mnemon/releases/download/v${MNEMON_VERSION}/mnemon_${MNEMON_VERSION}_linux_${ARCH}.tar.gz" \
-       -o /tmp/mnemon.tar.gz \
+        -o /tmp/mnemon.tar.gz \
     && tar xzf /tmp/mnemon.tar.gz -C /tmp \
     && cp /tmp/mnemon /usr/local/bin/mnemon \
     && chmod +x /usr/local/bin/mnemon \
-    && rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
+    && rm -rf /tmp/mnemon.tar.gz /tmp/mnemon \
+    \
+    # ── Cline ─────────────────────────────────────────────────────────
+    && npm install -g cline \
+    \
+    # ── Claude CLI ────────────────────────────────────────────────────
+    && curl -fsSL https://claude.ai/install.sh | bash \
+    \
+    # ── Final cleanup ─────────────────────────────────────────────────
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /root/.npm /tmp/* /var/tmp/* \
+    && rm -rf /root/.cache/pip 2>/dev/null || true
 
-# ── Cline ─────────────────────────────────────────────────────────────
-RUN npm install -g cline
-
-# ── Claude CLI ────────────────────────────────────────────────────────
-RUN curl -fsSL https://claude.ai/install.sh | bash
-
-# ── Copy config files ────────────────────────────────────────────────
+# ── Copy config files ─────────────────────────────────────────────────
 COPY .devcontainer/CLAUDE.md /tmp/devcontainer-config/CLAUDE.md
 COPY .devcontainer/claude-term-settings.json /tmp/devcontainer-config/claude-term-settings.json
 COPY .devcontainer/.claude.json /tmp/devcontainer-config/.claude.json
@@ -100,7 +100,7 @@ COPY .devcontainer/self-check.sh /usr/local/bin/self-check.sh
 
 # ── Entrypoint: lightweight service start + config placement ──────────
 COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/self-check.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]
