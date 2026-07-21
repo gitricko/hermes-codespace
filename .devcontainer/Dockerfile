@@ -70,7 +70,7 @@ RUN omni_root="/usr/local/lib/omniroute/lib/node_modules/omniroute" \
 
 # ── TailScale ─────────────────────────────────────────────────────────
 RUN mkdir -p /var/run/tailscale /var/lib/tailscale \
-    && curl -fsSL https://tailscale.com/install.sh | sh \
+    && (curl -fsSL https://tailscale.com/install.sh | sh || echo "WARN: tailscale install failed, continuing") \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Mnemon ────────────────────────────────────────────────────────────
