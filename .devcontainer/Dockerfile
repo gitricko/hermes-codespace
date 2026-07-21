@@ -15,7 +15,7 @@ ARG MNEMON_VERSION=0.1.17
 # ── System packages ──────────────────────────────────────────────────
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        zsh ripgrep jq curl git ca-certificates gnupg \
+        zsh ripgrep jq curl git ca-certificates gnupg zstd \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Node.js (required by npm installs below) ─────────────────────────
