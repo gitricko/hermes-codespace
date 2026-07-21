@@ -190,29 +190,43 @@ jobs:
     steps:
       - name: Delete temp image tag from GHCR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ci-${{ github.run_id }}
+          IMAGE: ${{ env.IMAGE_NAME }}
         run: |
-          TAG="ci-${{ github.run_id }}"
-          # URL-encode the package name for the GHCR API
-          PACKAGE_NAME=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]' | sed 's|/|%2F|g')
-          echo "Looking for package: ${PACKAGE_NAME}, tag: ${TAG}"
+          echo "Cleaning up: ghcr.io/${IMAGE}:${TAG}"
 
-          # Get all versions and find the one with our temp tag
-          VERSIONS=$(gh api "user/packages/container/${PACKAGE_NAME}/versions" --paginate -q '.[].id'  || true)
-          FOUND=0
+          # Get a bearer token from GHCR with delete scope
+          # GITHUB_TOKEN has packages:write which maps to OCI push+delete scope
+          TOKEN=$(curl -sf "https://ghcr.io/token?service=ghcr.io&scope=repository:${IMAGE}:delete" \
+            -u "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | jq -r '.token')
 
-          for VERSION_ID in $VERSIONS; do
-            TAGS=$(gh api "user/packages/container/${PACKAGE_NAME}/versions/${VERSION_ID}" -q '.metadata.container.tags[]'  || true)
-            if echo "$TAGS" | grep -q "^${TAG}$"; then
-              echo "Deleting version ${VERSION_ID} (tag: ${TAG})..."
-              gh api -X DELETE "user/packages/container/${PACKAGE_NAME}/versions/${VERSION_ID}"  || true
-              FOUND=1
-              break
-            fi
-          done
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "⚠️  Could not get GHCR token — skipping cleanup"
+            exit 0
+          fi
 
-          if [ "$FOUND" -eq 0 ]; then
-            echo "No version found with tag ${TAG} — may have been cleaned already"
+          # Get manifest digest for the temp tag
+          DIGEST=$(curl -sI \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.index.v1+json" \
+            "https://ghcr.io/v2/${IMAGE}/manifests/${TAG}" \
+            | grep -i docker-content-digest | awk '{print $2}' | tr -d '\r')
+
+          if [ -z "$DIGEST" ]; then
+            echo "✅ No manifest for tag ${TAG} — already cleaned"
+            exit 0
+          fi
+
+          echo "Found manifest digest: ${DIGEST:0:16}..."
+
+          # Delete the manifest by digest
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X DELETE \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "https://ghcr.io/v2/${IMAGE}/manifests/${DIGEST}")
+
+          if [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Deleted ${TAG} (digest: ${DIGEST:0:16}...)"
           else
-            echo "✅ Temp image tag ${TAG} deleted"
+            echo "⚠️  Delete returned HTTP ${HTTP_CODE} — may already be cleaned"
           fi
