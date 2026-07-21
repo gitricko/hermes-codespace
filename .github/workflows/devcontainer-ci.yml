@@ -193,18 +193,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="ci-${{ github.run_id }}"
-          PACKAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          # URL-encode the package name for the GHCR API
+          PACKAGE_NAME=$(echo "${{ github.repository }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]' | sed 's|/|%2F|g')
           echo "Looking for package: ${PACKAGE_NAME}, tag: ${TAG}"
 
           # Get all versions and find the one with our temp tag
-          VERSIONS=$(gh api "user/packages/container/${PACKAGE_NAME}/versions" --paginate -q '.[].id')
+          VERSIONS=$(gh api "user/packages/container/${PACKAGE_NAME}/versions" --paginate -q '.[].id' 2>/dev/null || true)
           FOUND=0
 
           for VERSION_ID in $VERSIONS; do
             TAGS=$(gh api "user/packages/container/${PACKAGE_NAME}/versions/${VERSION_ID}" -q '.metadata.container.tags[]' 2>/dev/null || true)
             if echo "$TAGS" | grep -q "^${TAG}$"; then
               echo "Deleting version ${VERSION_ID} (tag: ${TAG})..."
-              gh api -X DELETE "user/packages/container/${PACKAGE_NAME}/versions/${VERSION_ID}" || true
+              gh api -X DELETE "user/packages/container/${PACKAGE_NAME}/versions/${VERSION_ID}" 2>/dev/null || true
               FOUND=1
               break
             fi
