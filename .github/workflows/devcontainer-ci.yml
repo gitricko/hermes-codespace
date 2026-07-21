@@ -90,7 +90,7 @@ jobs:
 
       - name: Verify baked tools exist
         run: |
-          docker run --rm hermes-codespace:test bash -c '
+          docker run --rm --entrypoint bash hermes-codespace:test -c '
             echo "=== Verifying baked tools ==="
             PASS=0; FAIL=0
             check() { if eval "$2"; then echo "✅ $1"; PASS=$((PASS+1)); else echo "❌ $1"; FAIL=$((FAIL+1)); fi; }
@@ -113,14 +113,14 @@ jobs:
 
       - name: Verify entrypoint.sh syntax
         run: |
-          docker run --rm hermes-codespace:test bash -c '
+          docker run --rm --entrypoint bash hermes-codespace:test -c '
             echo "=== Checking entrypoint syntax ==="
             bash -n /usr/local/bin/entrypoint.sh && echo "✅ entrypoint.sh syntax OK"
           '
 
       - name: Verify config files copied to image
         run: |
-          docker run --rm hermes-codespace:test bash -c '
+          docker run --rm --entrypoint bash hermes-codespace:test -c '
             echo "=== Checking config files ==="
             [ -f /tmp/devcontainer-config/CLAUDE.md ]                && echo "✅ CLAUDE.md present"
             [ -f /tmp/devcontainer-config/.claude.json ]              && echo "✅ .claude.json present"
@@ -153,8 +153,9 @@ jobs:
       - name: Run self-check inside container
         run: |
           docker run --rm -d --name test-hc \
+            --entrypoint bash \
             -v "$(pwd):/workspace" \
-            hermes-codespace:test sleep 300
+            hermes-codespace:test -c 'sleep 300'
 
           sleep 2
 

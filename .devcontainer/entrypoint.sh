@@ -64,11 +64,12 @@ fi
 # ── Start services (only if not already running) ─────────────────────
 start_service() {
     local name="$1" cmd="$2"
+    local logfile="/tmp/$(echo "$name" | tr ' ' '-').log"
     if pgrep -f "$name" > /dev/null 2>&1; then
         echo "[$SCRIPT_NAME] $name already running, skipping"
     else
         echo "[$SCRIPT_NAME] Starting $name..."
-        setsid $cmd >> /tmp/${name}.log 2>&1 &
+        setsid $cmd >> "$logfile" 2>&1 &
     fi
 }
 
