@@ -150,7 +150,7 @@ if git clone https://github.com/gitricko/hermes-plugin-mnemon /tmp/mnemon_repo 2
 fi
 
 start_service "hermes gateway"   "hermes gateway run --no-supervise"
-start_service "hermes dashboard" "hermes dashboard --port 9119 --no-open"
+start_service "hermes dashboard" "hermes dashboard --port 9119 --no-open --skip-build"
 
 # Telegram bot deps (use hermes venv Python if available)
 if [ -x "$HERMES_PYTHON" ]; then

@@ -1,6 +1,7 @@
 {
   "name": "Hermes-Coding-Agent",
   "image": "ghcr.io/gitricko/hermes-codespace/devcontainer:pr-15",
+  "overrideCommand": false,
   "runArgs": [
     "--name", "hermes-codespace"
   ],

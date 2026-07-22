@@ -98,7 +98,7 @@ if command -v hermes &>/dev/null; then
     echo "[$SCRIPT_NAME] hermes-dashboard is already running, skipping"
   else
     echo "[$SCRIPT_NAME] Starting hermes-dashboard in the background..."
-    setsid hermes dashboard --port 9119 --no-open > ~/.hermes/logs/dashboard.log 2>&1 &
+    setsid hermes dashboard --port 9119 --no-open --skip-build > ~/.hermes/logs/dashboard.log 2>&1 &
   fi
 else
   echo "[$SCRIPT_NAME] hermes not found, skipping start"
