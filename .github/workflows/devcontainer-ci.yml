@@ -152,9 +152,10 @@ jobs:
             hermes-codespace:test
 
           echo "Waiting for services to start..."
-          sleep 30
+          sleep 60
 
           docker cp .devcontainer/self-check.sh test-hc:/tmp/self-check.sh
+          docker exec test-hc bash whoami
           docker exec test-hc bash /tmp/self-check.sh
 
           docker stop test-hc
