@@ -37,10 +37,13 @@ RUN apt-get update \
     
     # ── agent-client-protocol (inside hermes venv) ────────────────────
     # FHS root layout puts venv at /usr/local/lib/hermes-agent/venv/
+    # uv venvs don't include pip by default — ensurepip first, || true to
+    # never break the && chain (non-critical package).
     && VENV_PYTHON="/usr/local/lib/hermes-agent/venv/bin/python" \
     && if [ ! -x "$VENV_PYTHON" ]; then VENV_PYTHON="$HOME/.hermes/hermes-agent/venv/bin/python"; fi \
     && if [ -x "$VENV_PYTHON" ]; then \
-        "$VENV_PYTHON" -m pip install "agent-client-protocol>=0.9.0,<1.0"; \
+        "$VENV_PYTHON" -m ensurepip --upgrade 2>/dev/null || true; \
+        "$VENV_PYTHON" -m pip install "agent-client-protocol>=0.9.0,<1.0" 2>/dev/null || true; \
     fi \
     
     # ── ModelRelay ────────────────────────────────────────────────────
