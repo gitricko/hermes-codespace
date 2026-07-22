@@ -220,7 +220,16 @@ jobs:
             for VERSION_ID in $(echo "$VERSIONS" | jq -r '.[].id'); do
               TAGS=$(echo "$VERSIONS" | jq -r --arg vid "$VERSION_ID" '.[] | select(.id == ($vid|tonumber)) | .metadata.container.tags[]' 2>/dev/null)
               if echo "$TAGS" | grep -q "^${TAG}$"; then
-                echo "Found version ${VERSION_ID} with tag ${TAG}"
+                # Check if this version has non-ci tags (pr-*, latest, etc.)
+                # If so, skip deletion — we only want to remove pure ci-* temp versions
+                NON_CI_TAGS=$(echo "$TAGS" | grep -v '^ci-' || true)
+                if [ -n "$NON_CI_TAGS" ]; then
+                  echo "Skipping version ${VERSION_ID} — has persistent tags: ${NON_CI_TAGS}"
+                  FOUND=1
+                  continue 2
+                fi
+
+                echo "Found version ${VERSION_ID} with tag ${TAG} (no persistent tags)"
                 echo "Deleting..."
                 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
                   -X DELETE \
