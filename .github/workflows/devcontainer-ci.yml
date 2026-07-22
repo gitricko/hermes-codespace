@@ -50,6 +50,8 @@ jobs:
           tags: |
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value={{branch_name}},enable=${{ !github.event.pull_request.number }}
+            type=raw,value=pr-${{ github.event.pull_request.number }},enable=${{ github.event.pull_request.number }}
             type=raw,value=ci-${{ github.run_id }}
 
       - name: Build and push

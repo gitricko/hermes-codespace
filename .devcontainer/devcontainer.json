@@ -1,9 +1,6 @@
 {
   "name": "Hermes-Coding-Agent",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
-  },
+  "image": "ghcr.io/gitricko/hermes-codespace/devcontainer:dockerizeation2",
   "runArgs": [
     "--name", "hermes-codespace"
   ],
