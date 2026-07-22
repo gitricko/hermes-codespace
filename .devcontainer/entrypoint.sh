@@ -7,6 +7,14 @@ set -e
 SCRIPT_NAME="entrypoint.sh"
 echo "*****   Hermes Codespace — Baked Image Entrypoint   *****"
 
+# ── Locate hermes venv (FHS root layout vs legacy) ───────────────────
+HERMES_VENV="/usr/local/lib/hermes-agent/venv"
+if [ ! -d "$HERMES_VENV" ]; then
+    HERMES_VENV="$HOME/.hermes/hermes-agent/venv"
+fi
+HERMES_PYTHON="$HERMES_VENV/bin/python"
+HERMES_PIP="$HERMES_VENV/bin/pip"
+
 # ── Place config files into $HOME (only if not already customized) ───
 place_config() {
     local src="$1" dst="$2"
@@ -144,10 +152,12 @@ fi
 start_service "hermes gateway"   "hermes gateway run --no-supervise"
 start_service "hermes dashboard" "hermes dashboard --port 9119 --no-open"
 
-# Telegram bot deps
-$HOME/.hermes/hermes-agent/venv/bin/python -m ensurepip --upgrade 2>/dev/null || true
-ln -sf $HOME/.hermes/hermes-agent/venv/bin/pip3 $HOME/.hermes/hermes-agent/venv/bin/pip 2>/dev/null || true
-$HOME/.hermes/hermes-agent/venv/bin/pip install python-telegram-bot 2>/dev/null || true
+# Telegram bot deps (use hermes venv Python if available)
+if [ -x "$HERMES_PYTHON" ]; then
+    "$HERMES_PYTHON" -m ensurepip --upgrade 2>/dev/null || true
+    ln -sf "$HERMES_PIP" "$HERMES_VENV/bin/pip" 2>/dev/null || true
+    "$HERMES_PIP" install python-telegram-bot 2>/dev/null || true
+fi
 
 # Mnemon -> claude-code integration
 mnemon setup --yes --global --target claude-code 2>/dev/null || true
