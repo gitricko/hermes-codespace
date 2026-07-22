@@ -3,7 +3,7 @@
 # Rebuild:  docker build -t hermes-codespace:latest -f .devcontainer/Dockerfile .
 # ────────────────────────────────────────────────────────────────────────
 
-FROM mcr.microsoft.com/devcontainers/base:ubuntu
+FROM mcr.microsoft.com/devcontainers/universal
 
 # ── Versions (single source of truth) ─────────────────────────────────
 ARG HERMES_VERSION=v2026.7.7.2
