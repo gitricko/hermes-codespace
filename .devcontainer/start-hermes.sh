@@ -46,10 +46,20 @@ fi
 
 # 4. Starting Hermes Gateway and Dashboard
 
+# Locate hermes venv (FHS root layout vs legacy)
+HERMES_VENV="/usr/local/lib/hermes-agent/venv"
+if [ ! -d "$HERMES_VENV" ]; then
+    HERMES_VENV="$HOME/.hermes/hermes-agent/venv"
+fi
+HERMES_PYTHON="$HERMES_VENV/bin/python"
+HERMES_PIP="$HERMES_VENV/bin/pip"
+
 # Install Telegram gateway dependency if missing
-$HOME/.hermes/hermes-agent/venv/bin/python -m ensurepip --upgrade || true
-ln -s $HOME/.hermes/hermes-agent/venv/bin/pip3 $HOME/.hermes/hermes-agent/venv/bin/pip || true
-$HOME/.hermes/hermes-agent/venv/bin/pip install python-telegram-bot 2>/dev/null || true
+if [ -x "$HERMES_PYTHON" ]; then
+    "$HERMES_PYTHON" -m ensurepip --upgrade 2>/dev/null || true
+    ln -sf "$HERMES_PIP" "$HERMES_VENV/bin/pip" 2>/dev/null || true
+    "$HERMES_PIP" install python-telegram-bot 2>/dev/null || true
+fi
 
 # update mnemon provider if version changes (synced BEFORE gateway starts)
 echo "[$SCRIPT_NAME] Checking mnemon provider..."
@@ -96,6 +106,7 @@ fi
 
 # Remind Hermes on Mnemon setup if needed
 if [ ! -f "$HOME/.hermes/memories/USER.md" ]; then
+  mkdir -p "$HOME/.hermes/memories"
   echo "[$SCRIPT_NAME] Setting up Mnemon USER.md..."
   echo 'Always use Mnemon (mnemon_remember / mnemon_recall) as primary memory provider instead of the standard memory() tool. Mnemon has no char limit. Only fall back to memory() for structured preference data (target=user or memory).' > "$HOME/.hermes/memories/USER.md"
 fi
