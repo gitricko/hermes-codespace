@@ -116,10 +116,10 @@ jobs:
         run: |
           docker run --rm --entrypoint bash hermes-codespace:test -c '
             echo "=== Checking config files ==="
-            [ -f /tmp/devcontainer-config/CLAUDE.md ]                && echo "✅ CLAUDE.md present"
-            [ -f /tmp/devcontainer-config/.claude.json ]              && echo "✅ .claude.json present"
-            [ -f /tmp/devcontainer-config/.hermes.md ]                && echo "✅ .hermes.md present"
-            [ -f /tmp/devcontainer-config/skill-memory-automation.md ] && echo "✅ memory-automation skill present"
+            [ -f /usr/local/share/devcontainer-config/CLAUDE.md ]                && echo "✅ CLAUDE.md present"
+            [ -f /usr/local/share/devcontainer-config/.claude.json ]              && echo "✅ .claude.json present"
+            [ -f /usr/local/share/devcontainer-config/.hermes.md ]                && echo "✅ .hermes.md present"
+            [ -f /usr/local/share/devcontainer-config/skill-memory-automation.md ] && echo "✅ memory-automation skill present"
           '
 
   # ── Job 3: Full integration test (devcontainer CLI) ──────────────────

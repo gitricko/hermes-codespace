@@ -3,6 +3,8 @@
 .vscode
 *.md
 !README.md
+!.devcontainer/*.md
+!README.md
 node_modules
 *.log
 tmp

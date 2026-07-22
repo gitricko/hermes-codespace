@@ -25,14 +25,14 @@ place_config() {
     fi
 }
 
-place_config /tmp/devcontainer-config/CLAUDE.md               "$HOME/.claude/CLAUDE.md"
-place_config /tmp/devcontainer-config/claude-term-settings.json "$HOME/.claude/settings.json"
-place_config /tmp/devcontainer-config/.claude.json             "$HOME/.claude.json"
-place_config /tmp/devcontainer-config/.hermes.md               "$HOME/.hermes.md"
-place_config /tmp/devcontainer-config/cline-globalState.json   "$HOME/.cline/data/globalState.json"
-place_config /tmp/devcontainer-config/cline-secrets.json       "$HOME/.cline/data/secrets.json"
+place_config /usr/local/share/devcontainer-config/CLAUDE.md               "$HOME/.claude/CLAUDE.md"
+place_config /usr/local/share/devcontainer-config/claude-term-settings.json "$HOME/.claude/settings.json"
+place_config /usr/local/share/devcontainer-config/.claude.json             "$HOME/.claude.json"
+place_config /usr/local/share/devcontainer-config/.hermes.md               "$HOME/.hermes.md"
+place_config /usr/local/share/devcontainer-config/cline-globalState.json   "$HOME/.cline/data/globalState.json"
+place_config /usr/local/share/devcontainer-config/cline-secrets.json       "$HOME/.cline/data/secrets.json"
 mkdir -p "$HOME/.hermes/skills/memory-automation"
-place_config /tmp/devcontainer-config/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
+place_config /usr/local/share/devcontainer-config/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
 
 # ── Hermes config defaults (first session only) ──────────────────────
 if command -v hermes &>/dev/null \

@@ -132,13 +132,13 @@ RUN CLAUDE_BIN="$(find /root/.local /usr/local -name claude -type f 2>/dev/null 
     fi
 
 # ── Copy config files ─────────────────────────────────────────────────
-COPY .devcontainer/CLAUDE.md /tmp/devcontainer-config/CLAUDE.md
-COPY .devcontainer/claude-term-settings.json /tmp/devcontainer-config/claude-term-settings.json
-COPY .devcontainer/.claude.json /tmp/devcontainer-config/.claude.json
-COPY .devcontainer/skill-memory-automation.md /tmp/devcontainer-config/skill-memory-automation.md
-COPY .devcontainer/.hermes.md /tmp/devcontainer-config/.hermes.md
-COPY .devcontainer/cline-globalState.json /tmp/devcontainer-config/cline-globalState.json
-COPY .devcontainer/cline-secrets.json /tmp/devcontainer-config/cline-secrets.json
+COPY .devcontainer/CLAUDE.md /usr/local/share/devcontainer-config/CLAUDE.md
+COPY .devcontainer/claude-term-settings.json /usr/local/share/devcontainer-config/claude-term-settings.json
+COPY .devcontainer/.claude.json /usr/local/share/devcontainer-config/.claude.json
+COPY .devcontainer/skill-memory-automation.md /usr/local/share/devcontainer-config/skill-memory-automation.md
+COPY .devcontainer/.hermes.md /usr/local/share/devcontainer-config/.hermes.md
+COPY .devcontainer/cline-globalState.json /usr/local/share/devcontainer-config/cline-globalState.json
+COPY .devcontainer/cline-secrets.json /usr/local/share/devcontainer-config/cline-secrets.json
 COPY .devcontainer/self-check.sh /usr/local/bin/self-check.sh
 
 # ── Entrypoint: lightweight service start + config placement ──────────
