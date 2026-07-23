@@ -8,8 +8,7 @@
 [![ModelRelay](https://img.shields.io/badge/ModelRelay-1.18.0-green?logo=npm)](https://www.npmjs.com/package/modelrelay)
 [![OmniRoute](https://img.shields.io/badge/OmniRoute-3.8.48-orange?logo=npm)](https://www.npmjs.com/package/omniroute)
 
-Fork this repo and 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/gitricko/hermes-codespace)
+Fork this repo before [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/gitricko/hermes-codespace)
 
 ---
 
