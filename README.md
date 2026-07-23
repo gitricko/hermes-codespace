@@ -2,13 +2,14 @@
 
 > **A GitHub Codespaces-ready dev container template pre-configured with Hermes AI coding agent, free LLM routers, and local AI infrastructure — ready to code in seconds.**
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/gitricko/hermes-codespace)
-
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Dev Container](https://img.shields.io/badge/devcontainer-ready-blue?logo=docker)](https://containers.dev/)
 [![Hermes Agent](https://img.shields.io/badge/Hermes%20Agent-v2026.7.7.2-purple?logo=github)](https://github.com/NousResearch/hermes-agent)
 [![ModelRelay](https://img.shields.io/badge/ModelRelay-1.18.0-green?logo=npm)](https://www.npmjs.com/package/modelrelay)
 [![OmniRoute](https://img.shields.io/badge/OmniRoute-3.8.48-orange?logo=npm)](https://www.npmjs.com/package/omniroute)
+
+Fork this repo and 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/gitricko/hermes-codespace)
 
 ---
 
