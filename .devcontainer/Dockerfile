@@ -145,6 +145,7 @@ COPY .devcontainer/self-check.sh /usr/local/bin/self-check.sh
 COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/self-check.sh
 
+# ── Switch to non-root user ─────────────────────────────────────────────
 USER vscode
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
