@@ -146,14 +146,22 @@ COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/self-check.sh
 
 # ── Ensure vscode user (UID 1000) exists for non-root execution ──────────
-# Universal base image may already have vscode user; create only if missing
-RUN if ! id vscode >/dev/null 2>&1; then \
-        groupadd --gid 1000 vscode && \
-        useradd --uid 1000 --gid 1000 -m -s /bin/bash vscode && \
-        apt-get update && apt-get install -y sudo && \
-        echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode && \
-        chmod 0440 /etc/sudoers.d/vscode; \
-    fi
+# Universal base image already has vscode user; verify UID/GID and add sudo
+RUN id vscode >/dev/null 2>&1 \
+    && echo "vscode user exists, verifying UID/GID..." \
+    && (id -u vscode | grep -q '^1000$' || usermod -u 1000 vscode) \
+    && (id -g vscode | grep -q '^1000$' || groupmod -g 1000 vscode) \
+    && apt-get update && apt-get install -y sudo \
+    && echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
+    && chmod 0440 /etc/sudoers.d/vscode \
+    && echo "vscode user configured" \
+    || (echo "Creating vscode user..." \
+    && groupadd --gid 1000 vscode \
+    && useradd --uid 1000 --gid 1000 -m -s /bin/bash vscode \
+    && apt-get update && apt-get install -y sudo \
+    && echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
+    && chmod 0440 /etc/sudoers.d/vscode \
+    && echo "vscode user created")
 
 # ── Switch to non-root user ─────────────────────────────────────────────
 USER vscode
