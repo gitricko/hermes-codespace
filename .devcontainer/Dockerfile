@@ -20,9 +20,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 # ── System packages + ALL heavy installs in ONE layer ──────────────────
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        zsh ripgrep jq curl git ca-certificates gnupg zstd \
+        zsh ripgrep jq curl git ca-certificates gnupg zstd sudo \
     && rm -rf /var/lib/apt/lists/* \
-    
+    \
+    # ── Ensure vscode user (UID 1000) has sudo for non-root execution ──
+    # Universal base already has vscode user; just add sudo
+    && echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
+    && chmod 0440 /etc/sudoers.d/vscode \
+    \
     # ── Ollama ────────────────────────────────────────────────────────
     && curl -fsSL https://ollama.com/install.sh | sh \
     
@@ -144,12 +149,6 @@ COPY .devcontainer/self-check.sh /usr/local/bin/self-check.sh
 # ── Entrypoint: lightweight service start + config placement ──────────
 COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/self-check.sh
-
-# ── Ensure vscode user has sudo for non-root execution ────────────────────
-# Universal base image already has vscode user (UID 1000); just add sudo
-RUN apt-get update && apt-get install -y sudo \
-    && echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
-    && chmod 0440 /etc/sudoers.d/vscode
 
 # ── Switch to non-root user ─────────────────────────────────────────────
 USER vscode
