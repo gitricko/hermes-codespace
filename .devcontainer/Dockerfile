@@ -145,6 +145,13 @@ COPY .devcontainer/self-check.sh /usr/local/bin/self-check.sh
 COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/self-check.sh
 
+# ── Create vscode user (UID 1000) for non-root execution ─────────────────
+RUN groupadd --gid 1000 vscode \
+    && useradd --uid 1000 --gid 1000 -m -s /bin/bash vscode \
+    && apt-get update && apt-get install -y sudo \
+    && echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
+    && chmod 0440 /etc/sudoers.d/vscode
+
 # ── Switch to non-root user ─────────────────────────────────────────────
 USER vscode
 
