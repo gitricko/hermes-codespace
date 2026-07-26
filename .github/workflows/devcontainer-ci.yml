@@ -63,8 +63,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=vscode-user-v2
+          cache-to: type=gha,mode=max,scope=vscode-user-v2
 
   # ── Job 2: Smoke test the built image ───────────────────────────────
   smoke-test:
