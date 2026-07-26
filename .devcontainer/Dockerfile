@@ -23,11 +23,16 @@ RUN apt-get update \
         zsh ripgrep jq curl git ca-certificates gnupg zstd sudo \
     && rm -rf /var/lib/apt/lists/* \
     \
-    # ── Create vscode user (UID 1000) for non-root devcontainer ─────────
-    # Base image may already have GID 1000; check before creating
-    && (getent group 1000 >/dev/null || groupadd --gid 1000 vscode) \
-    && (id vscode >/dev/null 2>&1 || useradd --uid 1000 --gid 1000 -m -s /bin/bash vscode) \
-    && echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
+    # ── Ensure a non-root user with UID 1000 exists ──────────────────────
+    # Universal base image may already have a UID-1000 user (e.g. "codespace").
+    # Find the existing name if any, otherwise create "vscode".
+    && UID1000_USER=$(getent passwd 1000 | cut -d: -f1) \
+    && if [ -z "$UID1000_USER" ]; then \
+        (getent group 1000 >/dev/null || groupadd --gid 1000 vscode) \
+        && useradd --uid 1000 --gid 1000 -m -s /bin/bash vscode \
+        && UID1000_USER=vscode; \
+    fi \
+    && echo "${UID1000_USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
     && chmod 0440 /etc/sudoers.d/vscode \
     \
     # ── Ollama ────────────────────────────────────────────────────────
@@ -152,8 +157,8 @@ COPY .devcontainer/self-check.sh /usr/local/bin/self-check.sh
 COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/self-check.sh
 
-# ── Switch to non-root user ─────────────────────────────────────────────
-USER vscode
+# ── Switch to non-root user (by UID, works with any username) ────────────
+USER 1000
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]
