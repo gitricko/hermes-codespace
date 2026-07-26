@@ -23,8 +23,9 @@ RUN apt-get update \
         zsh ripgrep jq curl git ca-certificates gnupg zstd sudo \
     && rm -rf /var/lib/apt/lists/* \
     \
-    # ── Ensure vscode user (UID 1000) has sudo for non-root execution ──
-    # Universal base already has vscode user; just add sudo
+    # ── Create vscode user (UID 1000) for non-root devcontainer ─────────
+    && groupadd --gid 1000 vscode \
+    && useradd --uid 1000 --gid 1000 -m -s /bin/bash vscode \
     && echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
     && chmod 0440 /etc/sudoers.d/vscode \
     \
