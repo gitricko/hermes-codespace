@@ -24,8 +24,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     \
     # ── Create vscode user (UID 1000) for non-root devcontainer ─────────
-    && groupadd --gid 1000 vscode \
-    && useradd --uid 1000 --gid 1000 -m -s /bin/bash vscode \
+    # Base image may already have GID 1000; check before creating
+    && (getent group 1000 >/dev/null || groupadd --gid 1000 vscode) \
+    && (id vscode >/dev/null 2>&1 || useradd --uid 1000 --gid 1000 -m -s /bin/bash vscode) \
     && echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
     && chmod 0440 /etc/sudoers.d/vscode \
     \
