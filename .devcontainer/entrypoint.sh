@@ -36,7 +36,7 @@ place_config /usr/local/share/devcontainer-config/skill-memory-automation.md "$H
 
 # ── Hermes config defaults (first session only) ──────────────────────
 if command -v hermes &>/dev/null \
-   && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(ls -A "$HOME/.hermes/sessions" 2>/dev/null)" ]; then
+   && [ ! -f "$HOME/.hermes/config.yaml" ]; then
     echo "[$SCRIPT_NAME] Setting up default Hermes config..."
     hermes config set model.default auto-fastest
     hermes config set model.provider omniroute
