@@ -156,6 +156,7 @@ jobs:
           sleep 60
 
           docker cp .devcontainer/self-check.sh test-hc:/tmp/self-check.sh
+          docker exec test-hc bash cat /tmp/hermes-dashboard.log || true
           docker exec test-hc bash /tmp/self-check.sh
 
           docker stop test-hc
