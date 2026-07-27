@@ -23,6 +23,7 @@ RUN apt-get update \
         zsh ripgrep jq curl git ca-certificates gnupg zstd sudo \
     && rm -rf /var/lib/apt/lists/* \
     \
+
     # ── Ensure a non-root user with UID 1000 exists ──────────────────────
     # Universal base image may already have a UID-1000 user (e.g. "codespace").
     # Find the existing name if any, otherwise create "vscode".
@@ -35,9 +36,11 @@ RUN apt-get update \
     && echo "${UID1000_USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
     && chmod 0440 /etc/sudoers.d/vscode \
     \
+
     # ── Ollama ────────────────────────────────────────────────────────
     && curl -fsSL https://ollama.com/install.sh | sh \
-    
+    \
+
     # ── Hermes Agent ─────────────────────────────────────────────────
     # Runs as root → FHS layout: code at /usr/local/lib/hermes-agent,
     # command at /usr/local/bin/hermes.  Node.js goes to $HERMES_HOME/node/
@@ -46,7 +49,8 @@ RUN apt-get update \
     && curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh" \
         | bash -s -- --skip-setup \
     && npm cache clean --force \
-    
+    \
+
     # ── agent-client-protocol (inside hermes venv) ────────────────────
     # FHS root layout puts venv at /usr/local/lib/hermes-agent/venv/
     # uv venvs don't include pip by default — ensurepip first, || true to
@@ -57,17 +61,20 @@ RUN apt-get update \
         "$VENV_PYTHON" -m ensurepip --upgrade 2>/dev/null || true; \
         "$VENV_PYTHON" -m pip install "agent-client-protocol>=0.9.0,<1.0" 2>/dev/null || true; \
     fi \
-    
+    \
+
     # ── ModelRelay ────────────────────────────────────────────────────
     && npm install github:gitricko/modelrelay -g --prefix /usr/local/lib/modelrelay \
     && ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay \
     && npm cache clean --force \
-    
+    \
+
     # ── OmniRoute ─────────────────────────────────────────────────────
     && npm install omniroute@${OMNIROUTE_VERSION} -g --prefix /usr/local/lib/omniroute \
     && ln -sf /usr/local/lib/omniroute/bin/omniroute /usr/local/bin/omniroute \
     && npm cache clean --force \
-    
+    \
+
     # ── OmniRoute dist/ dep repair (hollow deps workaround) ──────────
     && omni_root="/usr/local/lib/omniroute/lib/node_modules/omniroute" \
     && dist_nm="$omni_root/dist/node_modules" \
@@ -83,12 +90,14 @@ RUN apt-get update \
             fi; \
         done; \
     fi \
-    
+    \
+
     # ── TailScale ─────────────────────────────────────────────────────
     && mkdir -p /var/run/tailscale /var/lib/tailscale \
     && (curl -fsSL https://tailscale.com/install.sh | sh || echo "WARN: tailscale install failed, continuing") \
     && rm -rf /var/lib/apt/lists/* \
-    
+    \
+
     # ── Mnemon ────────────────────────────────────────────────────────
     && ARCH=amd64 \
     && curl -sL "https://github.com/mnemon-dev/mnemon/releases/download/v${MNEMON_VERSION}/mnemon_${MNEMON_VERSION}_linux_${ARCH}.tar.gz" \
@@ -97,13 +106,28 @@ RUN apt-get update \
     && cp /tmp/mnemon /usr/local/bin/mnemon \
     && chmod +x /usr/local/bin/mnemon \
     && rm -rf /tmp/mnemon.tar.gz /tmp/mnemon \
-    
+    \
+
     # ── Cline ─────────────────────────────────────────────────────────
     && npm install -g cline \
-    
+    \
+
+    # ── Build Hermes Web UI ──────────────────────────────────────────
+    # The installer places source at /root/.hermes/hermes-agent/web (FHS layout)
+    # or /usr/local/lib/hermes-agent/web. Build outputs to hermes_cli/web_dist.
+    && if [ -d "/root/.hermes/hermes-agent/web" ]; then \
+        cd /root/.hermes/hermes-agent/web && npm install --silent && npm run build; \
+    elif [ -d "/usr/local/lib/hermes-agent/web" ]; then \
+        cd /usr/local/lib/hermes-agent/web && npm install --silent && npm run build; \
+    else \
+        echo "WARN: Hermes web source not found, skipping web UI build"; \
+    fi \
+    \
+
     # ── Claude CLI ────────────────────────────────────────────────────
     && curl -fsSL https://claude.ai/install.sh | bash \
-    
+    \
+
     # ── Final cleanup ─────────────────────────────────────────────────
     && apt-get autoremove -y \
     && apt-get clean \
