@@ -161,6 +161,28 @@ jobs:
 
           docker stop test-hc
 
+      - name: Copy logs from container
+        if: failure()
+        run: |
+          # Container is still running if self-check failed before docker stop
+          docker cp test-hc:/tmp/hermes-dashboard.log /tmp/ || true
+          docker cp test-hc:/tmp/self-check.log /tmp/ || true
+          # Grab everything in /tmp as a fallback
+          mkdir -p /tmp/container-logs
+          docker cp test-hc:/tmp/ /tmp/container-logs/ || true
+          find /tmp/container-logs -name '*.log' -exec cp {} /tmp/ \; 2>/dev/null || true
+          ls -la /tmp/*.log 2>/dev/null || echo "No log files found"
+          # Clean up the orphan container
+          docker stop test-hc 2>/dev/null || true
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-logs-${{ github.run_id }}
+          path: /tmp/*.log
+          if-no-files-found: warn
+
   # ── Job 4: Generate image size report ────────────────────────────────
   image-report:
     name: Image Size Report
