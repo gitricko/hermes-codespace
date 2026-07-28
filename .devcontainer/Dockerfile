@@ -21,6 +21,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         zsh ripgrep jq curl git ca-certificates gnupg zstd sudo \
+        python3 python3-pip nodejs npm \
     && rm -rf /var/lib/apt/lists/* \
     \
 
