@@ -95,7 +95,7 @@ jobs:
             check "modelrelay installed"      "command -v modelrelay"
             check "mnemon installed"          "command -v mnemon"
             check "tailscale installed"       "command -v tailscale || true"
-            check "cline installed"           "command -v cline"
+
             check "zsh installed"             "command -v zsh"
             check "ripgrep installed"         "command -v rg"
             check "entrypoint.sh exists"      "[ -x /usr/local/bin/entrypoint.sh ]"

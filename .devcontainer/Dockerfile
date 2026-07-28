@@ -3,7 +3,7 @@
 # Rebuild:  docker build -t hermes-codespace:latest -f .devcontainer/Dockerfile .
 # ────────────────────────────────────────────────────────────────────────
 
-FROM mcr.microsoft.com/devcontainers/universal
+FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
 # ── Versions (single source of truth) ─────────────────────────────────
 ARG HERMES_VERSION=v2026.7.7.2
@@ -108,11 +108,7 @@ RUN apt-get update \
     && rm -rf /tmp/mnemon.tar.gz /tmp/mnemon \
     \
 
-    # ── Cline ─────────────────────────────────────────────────────────
-    && npm install -g cline \
-    \
-
-    # ── Build Hermes Web UI ──────────────────────────────────────────
+    # ── Build Hermes Web UI
     # The installer places source at /root/.hermes/hermes-agent/web (FHS layout)
     # or /usr/local/lib/hermes-agent/web. Build outputs to hermes_cli/web_dist.
     # After build, remove node_modules to save ~3.5GB (electron etc.) — only
@@ -134,23 +130,6 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /root/.npm /tmp/* /var/tmp/* \
     && rm -rf /root/.cache/pip 2>/dev/null || true
-
-# ── Relocate Node.js for non-root user access ──────────────────────────
-# The hermes installer puts Node.js at $HERMES_HOME/node/ which resolves to
-# /root/.hermes/node/ during build.  The devcontainer runs as the vscode user
-# (uid 1000) who cannot traverse /root (drwx------).  We move Node.js to a
-# system-wide location and re-point the symlinks.
-RUN NODE_HERMES_DIR="$HOME/.hermes/node" \
-    && NODE_SYSTEM_DIR="/usr/local/lib/nodejs" \
-    && if [ -d "$NODE_HERMES_DIR" ]; then \
-        mv "$NODE_HERMES_DIR" "$NODE_SYSTEM_DIR" \
-        && ln -sf "$NODE_SYSTEM_DIR/bin/node"  /usr/local/bin/node \
-        && ln -sf "$NODE_SYSTEM_DIR/bin/npm"   /usr/local/bin/npm \
-        && ln -sf "$NODE_SYSTEM_DIR/bin/npx"   /usr/local/bin/npx \
-        && mkdir -p "$NODE_SYSTEM_DIR/etc" \
-        && printf 'prefix=/usr/local\n' > "$NODE_SYSTEM_DIR/etc/npmrc" \
-        && echo "Node.js relocated to $NODE_SYSTEM_DIR"; \
-    fi
 
 # ── Ensure hermes venv is world-readable ───────────────────────────────
 # FHS root layout places the venv at /usr/local/lib/hermes-agent/venv/.
