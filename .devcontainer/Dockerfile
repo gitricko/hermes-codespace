@@ -117,18 +117,15 @@ RUN apt-get update \
     # or /usr/local/lib/hermes-agent/web. Build outputs to hermes_cli/web_dist.
     # After build, remove node_modules to save ~3.5GB (electron etc.) — only
     # the built web_dist output is needed at runtime.
-    && if [ -d "/root/.hermes/hermes-agent/web" ]; then
+    && if [ -d "/root/.hermes/hermes-agent/web" ]; then \
         cd /root/.hermes/hermes-agent/web && npm install --silent && npm run build \
-        && rm -rf node_modules;
-    elif [ -d "/usr/local/lib/hermes-agent/web" ]; then
+        && rm -rf node_modules; \
+    elif [ -d "/usr/local/lib/hermes-agent/web" ]; then \
         cd /usr/local/lib/hermes-agent/web && npm install --silent && npm run build \
-        && rm -rf node_modules;
-    else
-        echo "WARN: Hermes web source not found, skipping web UI build";
-    fi
-    \
-
-    # ── Claude CLI ────────────────────────────────────────────────────
+        && rm -rf node_modules; \
+    else \
+        echo "WARN: Hermes web source not found, skipping web UI build"; \
+    fi \
     && curl -fsSL https://claude.ai/install.sh | bash \
     \
 
