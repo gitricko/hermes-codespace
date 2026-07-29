@@ -45,7 +45,7 @@ RUN apt-get update \
     # Pull nomic-embed-text at build time so it's available instantly
     # at runtime with zero RAM spike or download delay. (~300MB)
     && mkdir -p /usr/share/ollama/.ollama/models \
-    && chmod 755 /usr/share/ollama/.ollama/models \
+    && chmod -R 755 /usr/share/ollama/.ollama \
     && OLLAMA_HOST=0.0.0.0 ollama serve & \
     sleep 3 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
