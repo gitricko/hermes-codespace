@@ -48,7 +48,7 @@ RUN apt-get update \
     && mkdir -p /usr/share/ollama/.ollama/models \
     && chmod -R a+rwX /usr/share/ollama/.ollama \
     && chmod a+rx /usr/share/ollama \
-    && OLLAMA_HOST=0.0.0.0 ollama serve & \
+    && OLLAMA_HOST=0.0.0.0 OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama serve & \
     sleep 3 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
     kill %1 && wait 2>/dev/null || true \
