@@ -1,0 +1,10 @@
+.git
+.github
+.vscode
+*.md
+!README.md
+node_modules
+*.log
+tmp
+.cache
+.hermes
