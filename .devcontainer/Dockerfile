@@ -46,7 +46,7 @@ RUN apt-get update \
     # at runtime with zero RAM spike or download delay. (~300MB)
     && OLLAMA_HOST=0.0.0.0 ollama serve & \
     sleep 3 && \
-    ollama pull nomic-embed-text && \
+    OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
     kill %1 && wait 2>/dev/null || true \
     \
 

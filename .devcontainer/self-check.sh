@@ -339,7 +339,8 @@ if ! should_skip "ollama"; then
   fi
 
   # 3. Model listed
-  MODEL_LISTED=$(ollama list 2>/dev/null | grep -c "nomic-embed-text" || echo "0")
+  MODEL_LISTED=$(ollama list 2>/dev/null | grep -c "nomic-embed-text")
+  [ -z "$MODEL_LISTED" ] && MODEL_LISTED=0
   if [ "$MODEL_LISTED" -gt 0 ]; then
     _ok "Model" "nomic-embed-text available"
   else

@@ -132,7 +132,7 @@ jobs:
             check "Model dir exists"       "[ -d /usr/share/ollama/.ollama/models ]"
 
             # Start ollama, wait for API, check model
-            OLLAMA_HOST=0.0.0.0 ollama serve &
+            OLLAMA_HOST=0.0.0.0 OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama serve &
             sleep 3
 
             check "Ollama API responds"    "curl -s --max-time 5 http://localhost:11434/api/tags | grep -q models"
