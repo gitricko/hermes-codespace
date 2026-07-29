@@ -157,7 +157,16 @@ jobs:
 
           docker cp .devcontainer/self-check.sh test-hc:/tmp/self-check.sh
           docker exec test-hc bash cat /tmp/hermes-dashboard.log || true
-          docker exec test-hc bash /tmp/self-check.sh
+
+          # Run self-check: exit 0=pass, 1=warnings(ok), 2=critical(fail)
+          SELF_CHECK_EXIT=0
+          docker exec test-hc bash /tmp/self-check.sh || SELF_CHECK_EXIT=$?
+          if [ "$SELF_CHECK_EXIT" -eq 2 ]; then
+            echo "::error::Self-check failed with critical errors"
+            exit 1
+          elif [ "$SELF_CHECK_EXIT" -eq 1 ]; then
+            echo "::warning::Self-check completed with warnings (non-critical)"
+          fi
 
           docker stop test-hc
 

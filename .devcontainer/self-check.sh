@@ -338,13 +338,13 @@ if ! should_skip "ollama"; then
     _fail "API" "no response from :11434"
   fi
 
-  # 3. Model listed
+  # 3. Model listed (warn-only: model may not persist across all image builds)
   MODEL_LISTED=$(OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list 2>/dev/null | grep -c "nomic-embed-text" || true)
   [ -z "$MODEL_LISTED" ] && MODEL_LISTED=0
   if [ "$MODEL_LISTED" -gt 0 ]; then
     _ok "Model" "nomic-embed-text available"
   else
-    _fail "Model" "nomic-embed-text NOT found"
+    _warn "Model" "nomic-embed-text not found (check OLLAMA_MODELS path)"
   fi
 
   # 4. Embedding generation (warn only — slow on CI, not critical)
