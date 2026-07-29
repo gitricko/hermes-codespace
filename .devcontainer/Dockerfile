@@ -44,8 +44,9 @@ RUN apt-get update \
     # ── Bake Ollama embedding model into image ───────────────────────
     # Pull nomic-embed-text at build time so it's available instantly
     # at runtime with zero RAM spike or download delay. (~300MB)
+    # Ensure full directory tree exists with proper permissions for vscode user
     && mkdir -p /usr/share/ollama/.ollama/models \
-    && chmod -R 777 /usr/share/ollama/.ollama \
+    && chmod -R a+rwX /usr/share/ollama/.ollama \
     && OLLAMA_HOST=0.0.0.0 ollama serve & \
     sleep 3 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
