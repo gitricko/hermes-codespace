@@ -136,7 +136,7 @@ jobs:
             sleep 3
 
             check "Ollama API responds"    "curl -s --max-time 5 http://localhost:11434/api/tags | grep -q models"
-            check "nomic-embed-text listed" "ollama list | grep -q nomic-embed-text"
+            check "nomic-embed-text listed" "OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list | grep -q nomic-embed-text"
 
             # Quick embedding test
             EMBED=$(curl -s --max-time 15 -X POST http://localhost:11434/api/embed \
