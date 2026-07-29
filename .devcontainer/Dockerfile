@@ -47,6 +47,7 @@ RUN apt-get update \
     # Ensure full directory tree exists with proper permissions for vscode user
     && mkdir -p /usr/share/ollama/.ollama/models \
     && chmod -R a+rwX /usr/share/ollama/.ollama \
+    && chmod a+rx /usr/share/ollama \
     && OLLAMA_HOST=0.0.0.0 ollama serve & \
     sleep 3 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
@@ -144,7 +145,9 @@ RUN apt-get update \
     && rm -rf /root/.cache/pip 2>/dev/null || true \
     # Ensure Ollama model directory and all parent dirs are writable by vscode user
     && mkdir -p /usr/share/ollama/.ollama/models \
-    && chmod -R a+rwX /usr/share/ollama/.ollama
+    && chmod -R a+rwX /usr/share/ollama/.ollama \
+    # Ensure /usr/share/ollama itself is traversable by vscode user
+    && chmod a+rx /usr/share/ollama
 
 # ── Ensure hermes venv is world-readable ───────────────────────────────
 # FHS root layout places the venv at /usr/local/lib/hermes-agent/venv/.
