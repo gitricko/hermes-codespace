@@ -45,7 +45,7 @@ RUN apt-get update \
     # Pull nomic-embed-text at build time so it's available instantly
     # at runtime with zero RAM spike or download delay. (~300MB)
     && mkdir -p /usr/share/ollama/.ollama/models \
-    && chmod -R 755 /usr/share/ollama/.ollama \
+    && chmod -R 777 /usr/share/ollama/.ollama \
     && OLLAMA_HOST=0.0.0.0 ollama serve & \
     sleep 3 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
@@ -148,7 +148,7 @@ RUN apt-get update \
 # so the vscode user can exec hermes and its bundled Python.
 RUN chmod -R a+rX /usr/local/lib/hermes-agent 2>/dev/null || true \
     && chmod -R a+rX /usr/local/lib/nodejs 2>/dev/null || true \
-    && chmod -R a+rX /usr/share/ollama/.ollama/models 2>/dev/null || true
+    && chmod -R a+rwX /usr/share/ollama/.ollama 2>/dev/null || true
 
 # ── Make claude CLI accessible if installed to /root ───────────────────
 # The claude.ai installer may put the binary under $HOME/.local/bin/.

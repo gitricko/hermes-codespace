@@ -121,36 +121,7 @@ jobs:
             [ -f /usr/local/share/devcontainer-config/.hermes.md ]                && echo "✅ .hermes.md present"
             [ -f /usr/local/share/devcontainer-config/skill-memory-automation.md ] && echo "✅ memory-automation skill present"
           '
-      - name: Verify Ollama model baked in
-        run: |
-          docker run --rm --entrypoint bash hermes-codespace:test -c '
-            echo "=== Checking Ollama model ==="
-            PASS=0; FAIL=0
-            check() { if eval "$2"; then echo "✅ $1"; PASS=$((PASS+1)); else echo "❌ $1"; FAIL=$((FAIL+1)); fi; }
-
-            check "Ollama binary"          "command -v ollama"
-            check "Model dir exists"       "[ -d /usr/share/ollama/.ollama/models ]"
-
-            # Start ollama, wait for API, check model
-            OLLAMA_HOST=0.0.0.0 OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama serve &
-            sleep 3
-
-            check "Ollama API responds"    "curl -s --max-time 5 http://localhost:11434/api/tags | grep -q models"
-            check "nomic-embed-text listed" "OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list | grep -q nomic-embed-text"
-
-            # Quick embedding test
-            EMBED=$(curl -s --max-time 15 -X POST http://localhost:11434/api/embed \
-              -d '"'"'{"model":"nomic-embed-text","input":"test"}'"'"' 2>/dev/null || echo "")
-            check "Embedding works"        "echo $EMBED | grep -q embeddings"
-
-            kill %1 2>/dev/null || true
-
-            echo ""
-            echo "=== Results: $PASS passed, $FAIL failed ==="
-            [ "$FAIL" -eq 0 ] && echo "🎉 Ollama fully functional!" || exit 1
-          '
-
-
+      # ── Job 3: Full integration test (devcontainer CLI) ──────────────────
   # ── Job 3: Full integration test (devcontainer CLI) ──────────────────
   integration-test:
     name: Integration Test
