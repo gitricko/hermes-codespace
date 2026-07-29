@@ -81,6 +81,9 @@ start_service() {
     fi
 }
 
+# Set Ollama model path to baked location before starting
+export OLLAMA_MODELS=/usr/share/ollama/.ollama/models
+
 start_service "ollama serve"     "/usr/local/bin/ollama serve"
 start_service "modelrelay"       "/usr/local/bin/modelrelay"
 start_service "omniroute"        "/usr/local/bin/omniroute --no-open --log"
