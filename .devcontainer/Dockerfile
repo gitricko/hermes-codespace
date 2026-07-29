@@ -140,15 +140,17 @@ RUN apt-get update \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /root/.npm /tmp/* /var/tmp/* \
-    && rm -rf /root/.cache/pip 2>/dev/null || true
+    && rm -rf /root/.cache/pip 2>/dev/null || true \
+    # Ensure Ollama model directory exists and is writable by vscode user
+    && mkdir -p /usr/share/ollama/.ollama/models \
+    && chmod -R a+rwX /usr/share/ollama/.ollama
 
 # ── Ensure hermes venv is world-readable ───────────────────────────────
 # FHS root layout places the venv at /usr/local/lib/hermes-agent/venv/.
 # Some sub-directories may be mode 700 (root-only).  Make them traversable
 # so the vscode user can exec hermes and its bundled Python.
 RUN chmod -R a+rX /usr/local/lib/hermes-agent 2>/dev/null || true \
-    && chmod -R a+rX /usr/local/lib/nodejs 2>/dev/null || true \
-    && chmod -R a+rwX /usr/share/ollama/.ollama 2>/dev/null || true
+    && chmod -R a+rX /usr/local/lib/nodejs 2>/dev/null || true
 
 # ── Make claude CLI accessible if installed to /root ───────────────────
 # The claude.ai installer may put the binary under $HOME/.local/bin/.
