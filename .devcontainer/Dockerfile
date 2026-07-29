@@ -41,6 +41,14 @@ RUN apt-get update \
     # ── Ollama ────────────────────────────────────────────────────────
     && curl -fsSL https://ollama.com/install.sh | sh \
     \
+    # ── Bake Ollama embedding model into image ───────────────────────
+    # Pull nomic-embed-text at build time so it's available instantly
+    # at runtime with zero RAM spike or download delay. (~300MB)
+    && OLLAMA_HOST=0.0.0.0 ollama serve & \
+    sleep 3 && \
+    ollama pull nomic-embed-text && \
+    kill %1 && wait 2>/dev/null || true \
+    \
 
     # ── Hermes Agent ─────────────────────────────────────────────────
     # Runs as root → FHS layout: code at /usr/local/lib/hermes-agent,
@@ -137,7 +145,8 @@ RUN apt-get update \
 # Some sub-directories may be mode 700 (root-only).  Make them traversable
 # so the vscode user can exec hermes and its bundled Python.
 RUN chmod -R a+rX /usr/local/lib/hermes-agent 2>/dev/null || true \
-    && chmod -R a+rX /usr/local/lib/nodejs 2>/dev/null || true
+    && chmod -R a+rX /usr/local/lib/nodejs 2>/dev/null || true \
+    && chmod -R a+rX /usr/share/ollama/.ollama/models 2>/dev/null || true
 
 # ── Make claude CLI accessible if installed to /root ───────────────────
 # The claude.ai installer may put the binary under $HOME/.local/bin/.

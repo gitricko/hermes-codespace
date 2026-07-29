@@ -85,9 +85,6 @@ start_service "ollama serve"     "/usr/local/bin/ollama serve"
 start_service "modelrelay"       "/usr/local/bin/modelrelay"
 start_service "omniroute"        "/usr/local/bin/omniroute --no-open --log"
 
-# Pull nomic-embed-text in background after 60s (DISABLED: adds RAM pressure on fresh start)
-( sleep 180 && ollama pull nomic-embed-text >> /tmp/ollama-pull.log 2>&1 ) &
-
 # ── OmniRoute: wait for ready, disable login, create combo ────────────
 MAX_ATTEMPTS=10
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
