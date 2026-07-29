@@ -319,9 +319,48 @@ else
   echo "   (skipped)"
 fi
 
-# ── Summary ──────────────────────────────────────────────────────────────────
-section "Summary"
+# ── 8. Ollama ───────────────────────────────────────────────────────────────
+section "Ollama"
+
+if ! should_skip "ollama"; then
+  # 1. Binary
+  if command -v ollama >/dev/null 2>&1; then
+    _ok "Binary" "$(ollama --version 2>/dev/null || echo 'installed')"
+  else
+    _fail "Binary" "ollama not in PATH"
+  fi
+
+  # 2. API responds
+  OLLAMA_API=$(curl -s --max-time 5 http://localhost:11434/api/tags 2>/dev/null || echo "")
+  if [ -n "$OLLAMA_API" ]; then
+    _ok "API" "responding on :11434"
+  else
+    _fail "API" "no response from :11434"
+  fi
+
+  # 3. Model listed
+  MODEL_LISTED=$(ollama list 2>/dev/null | grep -c "nomic-embed-text" || echo "0")
+  if [ "$MODEL_LISTED" -gt 0 ]; then
+    _ok "Model" "nomic-embed-text available"
+  else
+    _fail "Model" "nomic-embed-text NOT found"
+  fi
+
+  # 4. Embedding generation (warn only — slow on CI, not critical)
+  EMBED_RESULT=$(curl -s --max-time 30 -X POST http://localhost:11434/api/embed \
+    -d '{"model":"nomic-embed-text","input":"hello world"}' 2>/dev/null || echo "")
+  if echo "$EMBED_RESULT" | grep -q '"embeddings"'; then
+    EMBED_DIM=$(echo "$EMBED_RESULT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d['embeddings'][0]))" 2>/dev/null || echo "?")
+    _ok "Embedding" "generated (dim=${EMBED_DIM})"
+  else
+    _warn "Embedding" "failed to generate embedding (non-critical)"
+  fi
+else
+  echo "   (skipped)"
+fi
+
 echo ""
+section "Summary"
 if [ "$CRITICAL" -gt 0 ]; then
   echo "  ${RED}${BOLD}FAILED${NC} — ${CRITICAL} critical, ${WARNINGS} warning(s)"
   EXIT_CODE=2
