@@ -141,7 +141,7 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /root/.npm /tmp/* /var/tmp/* \
     && rm -rf /root/.cache/pip 2>/dev/null || true \
-    # Ensure Ollama model directory exists and is writable by vscode user
+    # Ensure Ollama model directory and all parent dirs are writable by vscode user
     && mkdir -p /usr/share/ollama/.ollama/models \
     && chmod -R a+rwX /usr/share/ollama/.ollama
 
