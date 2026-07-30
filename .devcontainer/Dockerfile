@@ -97,7 +97,7 @@ RUN apt-get update \
     && chmod -R a+rwX /usr/share/ollama/.ollama \
     && chmod a+rx /usr/share/ollama \
     && OLLAMA_HOST=0.0.0.0 OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama serve & \
-    for i in 1 2 3 4 5; do sleep 5; curl -sf http://localhost:11434/api/tags && break; done; \
+    for i in 1 2 3 4 5; do sleep 10; curl -sf http://localhost:11434/api/tags && break; done; \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models /usr/local/bin/ollama pull nomic-embed-text && \
     ls -la /usr/share/ollama/.ollama/models/ && \
     find /usr/share/ollama/.ollama/models -type f | head -20 && \
