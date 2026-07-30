@@ -9,6 +9,47 @@ ARG OLLAMA_VERSION=0.32.5
 # Use the official Ollama image to get the binary
 FROM ollama/ollama:${OLLAMA_VERSION} AS ollama-bin
 
+# ── Node.js builder: ModelRelay + OmniRoute + Hermes Web UI ─────────────
+FROM node:24-slim AS node-builder
+
+ARG OMNIROUTE_VERSION
+ARG HERMES_VERSION
+
+# Install git for GitHub-based npm installs
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── ModelRelay ────────────────────────────────────────────────────────
+RUN npm install github:gitricko/modelrelay -g --prefix /build/modelrelay
+
+# ── OmniRoute ─────────────────────────────────────────────────────────
+RUN npm install omniroute@${OMNIROUTE_VERSION} -g --prefix /build/omniroute
+
+# ── OmniRoute dist/ dep repair (hollow deps workaround) ──────────────
+RUN omni_root="/build/omniroute/lib/node_modules/omniroute" \
+    && dist_nm="$omni_root/dist/node_modules" \
+    && parent_nm="$omni_root/node_modules" \
+    && if [ -d "$dist_nm" ]; then \
+        for dst in $(find "$dist_nm" -mindepth 1 -maxdepth 1 -type d 2>/dev/null); do \
+            rel="${dst#"$dist_nm"/}" \
+            && src="$parent_nm/$rel" \
+            && if [ -d "$src" ] && [ ! "$(find "$dst" \( -name '*.js' -o -name '*.mjs' -o -name '*.node' \) -type f 2>/dev/null | head -1)" ] \
+                && [ "$(find "$src" \( -name '*.js' -o -name '*.mjs' -o -name '*.node' \) -type f 2>/dev/null | head -1)" ]; then \
+                rm -rf "$dst" && cp -r "$src" "$dst" \
+                && echo "Repaired hollow dep: $rel"; \
+            fi; \
+        done; \
+    fi
+
+# ── Hermes Web UI ─────────────────────────────────────────────────────
+RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /tmp/hermes \
+    && cd /tmp/hermes/web \
+    && npm install --silent \
+    && npm run build \
+    && cp -r hermes_cli/web_dist /build/web_dist \
+    && rm -rf /tmp/hermes
+
+# ── Final stage ───────────────────────────────────────────────────────
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
 # Tool versions — passed from workflow via --build-arg (single source of truth)
@@ -31,11 +72,8 @@ RUN apt-get update \
         zsh ripgrep jq curl git ca-certificates gnupg zstd sudo \
         python3 python3-pip nodejs npm \
     && rm -rf /var/lib/apt/lists/* \
-    \
-
+    
     # ── Ensure a non-root user with UID 1000 exists ──────────────────────
-    # Universal base image may already have a UID-1000 user (e.g. "codespace").
-    # Find the existing name if any, otherwise create "vscode".
     && UID1000_USER=$(getent passwd 1000 | cut -d: -f1) \
     && if [ -z "$UID1000_USER" ]; then \
         (getent group 1000 >/dev/null || groupadd --gid 1000 vscode) \
@@ -44,10 +82,10 @@ RUN apt-get update \
     fi \
     && echo "${UID1000_USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
     && chmod 0440 /etc/sudoers.d/vscode \
-    \
+    
     # ── Ollama (direct binary install – reliable in Docker) ───────────
     && ollama --version \
-    \
+    
     # ── Bake Ollama embedding model into image ───────────────────────
     # Pull nomic-embed-text at build time so it's available instantly
     # at runtime with zero RAM spike or download delay. (~300MB)
@@ -62,7 +100,7 @@ RUN apt-get update \
     find /usr/share/ollama/.ollama/models -type f | head -20 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list && \
     kill %1 && wait 2>/dev/null || true \
-    \
+    
     # ── Hermes Agent ─────────────────────────────────────────────────
     # Runs as root → FHS layout: code at /usr/local/lib/hermes-agent,
     # command at /usr/local/bin/hermes.  Node.js goes to $HERMES_HOME/node/
@@ -71,7 +109,7 @@ RUN apt-get update \
     && curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh" \
         | bash -s -- --skip-setup \
     && npm cache clean --force \
-    \
+    
 
     # ── agent-client-protocol (inside hermes venv) ────────────────────
     # FHS root layout puts venv at /usr/local/lib/hermes-agent/venv/
@@ -83,42 +121,13 @@ RUN apt-get update \
         "$VENV_PYTHON" -m ensurepip --upgrade 2>/dev/null || true; \
         "$VENV_PYTHON" -m pip install "agent-client-protocol>=0.9.0,<1.0" 2>/dev/null || true; \
     fi \
-    \
-
-    # ── ModelRelay ────────────────────────────────────────────────────
-    && npm install github:gitricko/modelrelay -g --prefix /usr/local/lib/modelrelay \
-    && ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay \
-    && npm cache clean --force \
-    \
-
-    # ── OmniRoute ─────────────────────────────────────────────────────
-    && npm install omniroute@${OMNIROUTE_VERSION} -g --prefix /usr/local/lib/omniroute \
-    && ln -sf /usr/local/lib/omniroute/bin/omniroute /usr/local/bin/omniroute \
-    && npm cache clean --force \
-    \
-
-    # ── OmniRoute dist/ dep repair (hollow deps workaround) ──────────
-    && omni_root="/usr/local/lib/omniroute/lib/node_modules/omniroute" \
-    && dist_nm="$omni_root/dist/node_modules" \
-    && parent_nm="$omni_root/node_modules" \
-    && if [ -d "$dist_nm" ]; then \
-        for dst in $(find "$dist_nm" -mindepth 1 -maxdepth 1 -type d 2>/dev/null); do \
-            rel="${dst#"$dist_nm"/}" \
-            && src="$parent_nm/$rel" \
-            && if [ -d "$src" ] && [ ! "$(find "$dst" \( -name '*.js' -o -name '*.mjs' -o -name '*.node' \) -type f 2>/dev/null | head -1)" ] \
-                && [ "$(find "$src" \( -name '*.js' -o -name '*.mjs' -o -name '*.node' \) -type f 2>/dev/null | head -1)" ]; then \
-                rm -rf "$dst" && cp -r "$src" "$dst" \
-                && echo "Repaired hollow dep: $rel"; \
-            fi; \
-        done; \
-    fi \
-    \
+    
 
     # ── TailScale ─────────────────────────────────────────────────────
     && mkdir -p /var/run/tailscale /var/lib/tailscale \
     && (curl -fsSL https://tailscale.com/install.sh | bash || echo "WARN: tailscale install failed, continuing") \
     && rm -rf /var/lib/apt/lists/* \
-    \
+    
 
     # ── Mnemon ────────────────────────────────────────────────────────
     && ARCH=amd64 \
@@ -128,24 +137,10 @@ RUN apt-get update \
     && cp /tmp/mnemon /usr/local/bin/mnemon \
     && chmod +x /usr/local/bin/mnemon \
     && rm -rf /tmp/mnemon.tar.gz /tmp/mnemon \
-    \
+    
 
-    # ── Build Hermes Web UI
-    # The installer places source at /root/.hermes/hermes-agent/web (FHS layout)
-    # or /usr/local/lib/hermes-agent/web. Build outputs to hermes_cli/web_dist.
-    # After build, remove node_modules to save ~3.5GB (electron etc.) — only
-    # the built web_dist output is needed at runtime.
-    && if [ -d "/root/.hermes/hermes-agent/web" ]; then \
-        cd /root/.hermes/hermes-agent/web && npm install --silent && npm run build \
-        && rm -rf node_modules; \
-    elif [ -d "/usr/local/lib/hermes-agent/web" ]; then \
-        cd /usr/local/lib/hermes-agent/web && npm install --silent && npm run build \
-        && rm -rf node_modules; \
-    else \
-        echo "WARN: Hermes web source not found, skipping web UI build"; \
-    fi \
     && curl -fsSL https://claude.ai/install.sh | bash \
-    \
+    
 
     # ── Final cleanup ─────────────────────────────────────────────────
     && apt-get autoremove -y \
@@ -157,6 +152,15 @@ RUN apt-get update \
     && chmod -R a+rwX /usr/share/ollama/.ollama \
     # Ensure /usr/share/ollama itself is traversable by vscode user
     && chmod a+rx /usr/share/ollama
+
+# ── Copy Node.js packages from builder stage ──────────────────────────
+COPY --from=node-builder /build/modelrelay/ /usr/local/lib/modelrelay/
+COPY --from=node-builder /build/omniroute/ /usr/local/lib/omniroute/
+COPY --from=node-builder /build/web_dist/ /usr/local/lib/hermes-agent/web/hermes_cli/web_dist/
+
+# ── Create symlinks for Node.js packages ──────────────────────────────
+RUN ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay \
+    && ln -sf /usr/local/lib/omniroute/bin/omniroute /usr/local/bin/omniroute
 
 # ── Ensure hermes venv is world-readable ───────────────────────────────
 # FHS root layout places the venv at /usr/local/lib/hermes-agent/venv/.
