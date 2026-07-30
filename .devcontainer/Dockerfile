@@ -53,6 +53,8 @@ RUN apt-get update \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
     # Verify model files were actually created
     ls -la /usr/share/ollama/.ollama/models/ && \
+    # Verify manifests and blobs directories exist (critical for model discovery)
+    find /usr/share/ollama/.ollama/models -type f | head -20 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list && \
     kill %1 && wait 2>/dev/null || true \
     \
