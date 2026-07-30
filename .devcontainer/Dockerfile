@@ -48,11 +48,13 @@ RUN apt-get update \
     && mkdir -p /usr/share/ollama/.ollama/models \
     && chmod -R a+rwX /usr/share/ollama/.ollama \
     && chmod a+rx /usr/share/ollama \
-    && OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
+    && OLLAMA_HOST=0.0.0.0 OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama serve & \
+    for i in 1 2 3 4 5; do sleep 1; OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list >/dev/null 2>&1 && break; done && \
+    OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
     ls -la /usr/share/ollama/.ollama/models/ && \
     find /usr/share/ollama/.ollama/models -type f | head -20 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list && \
-    true \
+    kill %1 && wait 2>/dev/null || true \
     \
     # ── Hermes Agent ─────────────────────────────────────────────────
     # Runs as root → FHS layout: code at /usr/local/lib/hermes-agent,
