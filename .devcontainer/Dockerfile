@@ -53,7 +53,6 @@ RUN apt-get update \
     find /usr/share/ollama/.ollama/models -type f | head -20 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list \
     \
-
     # ── Hermes Agent ─────────────────────────────────────────────────
     # Runs as root → FHS layout: code at /usr/local/lib/hermes-agent,
     # command at /usr/local/bin/hermes.  Node.js goes to $HERMES_HOME/node/
