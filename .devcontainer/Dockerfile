@@ -43,11 +43,13 @@ RUN omni_root="/build/omniroute/lib/node_modules/omniroute" \
     fi
 
 # ── Hermes Web UI ─────────────────────────────────────────────────────
+# Build output lands at hermes_cli/web_dist relative to the repo root,
+# NOT relative to the web/ directory.  So from web/ it's ../hermes_cli/web_dist
 RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /tmp/hermes \
     && cd /tmp/hermes/web \
     && npm install --silent \
     && npm run build \
-    && cp -r hermes_cli/web_dist /build/web_dist \
+    && cp -r ../hermes_cli/web_dist /build/web_dist \
     && rm -rf /tmp/hermes
 
 # ── Final stage ───────────────────────────────────────────────────────
