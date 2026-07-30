@@ -6,9 +6,9 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
 # ── Versions (single source of truth) ─────────────────────────────────
-ARG HERMES_VERSION=v2026.7.7.2
-ARG OMNIROUTE_VERSION=3.8.48
-ARG OLLAMA_VERSION=0.32.1
+ARG HERMES_VERSION=v2026.7.20
+ARG OMNIROUTE_VERSION=3.8.49
+ARG OLLAMA_VERSION=0.32.5
 ARG NODE_VERSION=24.18.0
 ARG MNEMON_VERSION=0.1.17
 
@@ -50,7 +50,7 @@ RUN apt-get update \
     && chmod a+rx /usr/share/ollama \
     && OLLAMA_HOST=0.0.0.0 OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama serve & \
     for i in 1 2 3 4 5; do sleep 5; curl -sf http://localhost:11434/api/tags && break; done; \
-    OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
+    OLLAMA_MODELS=/usr/share/ollama/.ollama/models /usr/local/bin/ollama pull nomic-embed-text && \
     ls -la /usr/share/ollama/.ollama/models/ && \
     find /usr/share/ollama/.ollama/models -type f | head -20 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list && \
