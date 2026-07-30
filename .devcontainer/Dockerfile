@@ -37,9 +37,17 @@ RUN apt-get update \
     && echo "${UID1000_USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
     && chmod 0440 /etc/sudoers.d/vscode \
     \
-
-    # ── Ollama ────────────────────────────────────────────────────────
-    && curl -fsSL https://ollama.com/install.sh | bash \
+    # ── Ollama (direct binary install – reliable in Docker) ───────────
+    && ARCH=$(uname -m) \
+    && case "$ARCH" in \
+         x86_64)  OLLAMA_ARCH=amd64 ;; \
+         aarch64|arm64) OLLAMA_ARCH=arm64 ;; \
+         *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
+       esac \
+    && curl -fsSL "https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-linux-${OLLAMA_ARCH}.tgz" \
+         | tar -xz -C /usr/local \
+    && ln -sf /usr/local/bin/ollama /usr/bin/ollama \
+    && ollama --version \
     \
     # ── Bake Ollama embedding model into image ───────────────────────
     # Pull nomic-embed-text at build time so it's available instantly
