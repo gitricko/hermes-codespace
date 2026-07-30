@@ -51,7 +51,8 @@ RUN apt-get update \
     && OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
     ls -la /usr/share/ollama/.ollama/models/ && \
     find /usr/share/ollama/.ollama/models -type f | head -20 && \
-    OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list \
+    OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list && \
+    true \
     \
     # ── Hermes Agent ─────────────────────────────────────────────────
     # Runs as root → FHS layout: code at /usr/local/lib/hermes-agent,
