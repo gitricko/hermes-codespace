@@ -3,8 +3,6 @@
 # Rebuild:  docker build -t hermes-codespace:latest -f .devcontainer/Dockerfile .
 # ────────────────────────────────────────────────────────────────────────
 
-FROM mcr.microsoft.com/devcontainers/base:ubuntu
-
 # ── Versions (single source of truth) ─────────────────────────────────
 ARG HERMES_VERSION=v2026.7.20
 ARG OMNIROUTE_VERSION=3.8.49
@@ -16,6 +14,14 @@ ARG MNEMON_VERSION=0.1.17
 ENV OLLAMA_VERSION=${OLLAMA_VERSION}
 ENV OLLAMA_NO_START=1
 ENV DEBIAN_FRONTEND=noninteractive
+
+# Use the official Ollama image to get the binary
+FROM ollama/ollama:${OLLAMA_VERSION} AS ollama-bin
+
+FROM mcr.microsoft.com/devcontainers/base:ubuntu
+
+# Copy the Ollama binary from the official image
+COPY --from=ollama-bin --chown=1000:1000 /usr/bin/ollama /usr/local/bin/ollama
 
 # ── System packages + ALL heavy installs in ONE layer ──────────────────
 RUN apt-get update \
@@ -38,15 +44,6 @@ RUN apt-get update \
     && chmod 0440 /etc/sudoers.d/vscode \
     \
     # ── Ollama (direct binary install – reliable in Docker) ───────────
-    && ARCH=$(uname -m) \
-    && case "$ARCH" in \
-         x86_64)  OLLAMA_ARCH=amd64 ;; \
-         aarch64|arm64) OLLAMA_ARCH=arm64 ;; \
-         *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
-       esac \
-    && curl -fsSL "https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-linux-${OLLAMA_ARCH}.tar.zst" \
-         | tar -xz -C /usr/local \
-    && ln -sf /usr/local/bin/ollama /usr/bin/ollama \
     && ollama --version \
     \
     # ── Bake Ollama embedding model into image ───────────────────────
