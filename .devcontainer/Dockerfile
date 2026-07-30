@@ -15,9 +15,11 @@ FROM node:24-slim AS node-builder
 ARG OMNIROUTE_VERSION
 ARG HERMES_VERSION
 
-# Install git for GitHub-based npm installs
+# Install git for GitHub-based npm installs and configure HTTPS
 RUN apt-get update && apt-get install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --global url."https://github.com/".insteadOf "ssh://git@github.com/" \
+    && git config --global url."https://github.com/".insteadOf "git@github.com:"
 
 # ── ModelRelay ────────────────────────────────────────────────────────
 RUN npm install github:gitricko/modelrelay -g --prefix /build/modelrelay
