@@ -44,7 +44,7 @@ RUN apt-get update \
          aarch64|arm64) OLLAMA_ARCH=arm64 ;; \
          *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
        esac \
-    && curl -fsSL "https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-linux-${OLLAMA_ARCH}.tgz" \
+    && curl -fsSL "https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-linux-${OLLAMA_ARCH}.tar.zst" \
          | tar -xz -C /usr/local \
     && ln -sf /usr/local/bin/ollama /usr/bin/ollama \
     && ollama --version \
