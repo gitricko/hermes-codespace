@@ -39,7 +39,7 @@ RUN apt-get update \
     \
 
     # ── Ollama ────────────────────────────────────────────────────────
-    && curl -fsSL https://ollama.com/install.sh | sh \
+    && curl -fsSL https://ollama.com/install.sh | bash \
     \
     # ── Bake Ollama embedding model into image ───────────────────────
     # Pull nomic-embed-text at build time so it's available instantly
@@ -109,7 +109,7 @@ RUN apt-get update \
 
     # ── TailScale ─────────────────────────────────────────────────────
     && mkdir -p /var/run/tailscale /var/lib/tailscale \
-    && (curl -fsSL https://tailscale.com/install.sh | sh || echo "WARN: tailscale install failed, continuing") \
+    && (curl -fsSL https://tailscale.com/install.sh | bash || echo "WARN: tailscale install failed, continuing") \
     && rm -rf /var/lib/apt/lists/* \
     \
 
