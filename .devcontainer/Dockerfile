@@ -10,15 +10,15 @@ ARG OLLAMA_VERSION=0.32.5
 ARG NODE_VERSION=24.18.0
 ARG MNEMON_VERSION=0.1.17
 
-# Export as env so install scripts can see them
-ENV OLLAMA_VERSION=${OLLAMA_VERSION}
-ENV OLLAMA_NO_START=1
-ENV DEBIAN_FRONTEND=noninteractive
-
 # Use the official Ollama image to get the binary
 FROM ollama/ollama:${OLLAMA_VERSION} AS ollama-bin
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
+
+# Export as env so install scripts can see them
+ENV OLLAMA_VERSION=${OLLAMA_VERSION}
+ENV OLLAMA_NO_START=1
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Copy the Ollama binary from the official image
 COPY --from=ollama-bin --chown=1000:1000 /usr/bin/ollama /usr/local/bin/ollama
