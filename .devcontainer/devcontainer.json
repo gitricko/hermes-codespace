@@ -1,6 +1,6 @@
 {
   "name": "Hermes-Coding-Agent",
-  "image": "ghcr.io/laouncle/hermes-codespace/devcontainer:pr-15",
+  "image": "ghcr.io/laouncle/hermes-codespace/devcontainer:pr-1",
   "overrideCommand": false,
   "runArgs": [
     "--name", "hermes-codespace"
