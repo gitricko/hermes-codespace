@@ -3,17 +3,19 @@
 # Rebuild:  docker build -t hermes-codespace:latest -f .devcontainer/Dockerfile .
 # ────────────────────────────────────────────────────────────────────────
 
-# ── Versions (single source of truth) ─────────────────────────────────
-ARG HERMES_VERSION=v2026.7.20
-ARG OMNIROUTE_VERSION=3.8.49
+# ── Ollama version (only needed for the FROM instruction) ───────────────
 ARG OLLAMA_VERSION=0.32.5
-ARG NODE_VERSION=24.18.0
-ARG MNEMON_VERSION=0.1.17
 
 # Use the official Ollama image to get the binary
 FROM ollama/ollama:${OLLAMA_VERSION} AS ollama-bin
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
+
+# Tool versions — passed from workflow via --build-arg (single source of truth)
+ARG HERMES_VERSION
+ARG OMNIROUTE_VERSION
+ARG NODE_VERSION
+ARG MNEMON_VERSION
 
 # Export as env so install scripts can see them
 ENV OLLAMA_VERSION=${OLLAMA_VERSION}
