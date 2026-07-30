@@ -159,7 +159,7 @@ RUN apt-get update \
 # ── Copy Node.js packages from builder stage ──────────────────────────
 COPY --from=node-builder /build/modelrelay/ /usr/local/lib/modelrelay/
 COPY --from=node-builder /build/omniroute/ /usr/local/lib/omniroute/
-COPY --from=node-builder /build/web_dist/ /usr/local/lib/hermes-agent/web/hermes_cli/web_dist/
+COPY --from=node-builder /build/web_dist/ /usr/local/lib/hermes-agent/hermes_cli/web_dist/
 
 # ── Create symlinks for Node.js packages ──────────────────────────────
 RUN ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay \
