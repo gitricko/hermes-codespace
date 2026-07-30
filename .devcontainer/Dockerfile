@@ -48,8 +48,7 @@ RUN apt-get update \
     && mkdir -p /usr/share/ollama/.ollama/models \
     && chmod -R a+rwX /usr/share/ollama/.ollama \
     && chmod a+rx /usr/share/ollama \
-    # Pull directly — no need for ollama serve in background
-    OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
+    && OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama pull nomic-embed-text && \
     # Verify model files were actually created
     ls -la /usr/share/ollama/.ollama/models/ && \
     # Verify manifests and blobs directories exist (critical for model discovery)
