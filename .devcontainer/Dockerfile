@@ -52,7 +52,26 @@ RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResear
     && cp -r ../hermes_cli/web_dist /build/web_dist \
     && rm -rf /tmp/hermes
 
-# ── Final stage ───────────────────────────────────────────────────────
+# ── Python builder: Hermes Agent venv ────────────────────────────────────
+# Using 3.10-slim to match Ubuntu 22.04's system Python for venv compatibility
+FROM python:3.10-slim AS python-builder
+
+ARG HERMES_VERSION
+
+# Install git for cloning hermes-agent repo
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build Hermes Agent Python venv
+# -e flag links to source code, so we keep the repo structure in /build/hermes-agent
+RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /build/hermes-agent \
+    && cd /build/hermes-agent \
+    && python -m venv /build/venv \
+    && /build/venv/bin/pip install --no-cache-dir -e . \
+    && /build/venv/bin/pip install --no-cache-dir "agent-client-protocol>=0.9.0,<1.0" \
+    && rm -rf /build/hermes-agent/.git
+
+# ── Final stage ────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
 # Tool versions — passed from workflow via --build-arg (single source of truth)
@@ -103,29 +122,7 @@ RUN apt-get update \
     find /usr/share/ollama/.ollama/models -type f | head -20 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list && \
     kill %1 && wait 2>/dev/null || true \
-    
-    # ── Hermes Agent ─────────────────────────────────────────────────
-    # Runs as root → FHS layout: code at /usr/local/lib/hermes-agent,
-    # command at /usr/local/bin/hermes.  Node.js goes to $HERMES_HOME/node/
-    # which is /root/.hermes/node/ during build (inaccessible to vscode user).
-    # We relocate Node.js to /usr/local/lib/nodejs in the next layer.
-    && curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh" \
-        | bash -s -- --skip-setup \
-    && npm cache clean --force \
-    
-
-    # ── agent-client-protocol (inside hermes venv) ────────────────────
-    # FHS root layout puts venv at /usr/local/lib/hermes-agent/venv/
-    # uv venvs don't include pip by default — ensurepip first, || true to
-    # never break the && chain (non-critical package).
-    && VENV_PYTHON="/usr/local/lib/hermes-agent/venv/bin/python" \
-    && if [ ! -x "$VENV_PYTHON" ]; then VENV_PYTHON="$HOME/.hermes/hermes-agent/venv/bin/python"; fi \
-    && if [ -x "$VENV_PYTHON" ]; then \
-        "$VENV_PYTHON" -m ensurepip --upgrade 2>/dev/null || true; \
-        "$VENV_PYTHON" -m pip install "agent-client-protocol>=0.9.0,<1.0" 2>/dev/null || true; \
-    fi \
-    
-
+    \
     # ── TailScale ─────────────────────────────────────────────────────
     && mkdir -p /var/run/tailscale /var/lib/tailscale \
     && (curl -fsSL https://tailscale.com/install.sh | bash || echo "WARN: tailscale install failed, continuing") \
@@ -161,9 +158,16 @@ COPY --from=node-builder /build/modelrelay/ /usr/local/lib/modelrelay/
 COPY --from=node-builder /build/omniroute/ /usr/local/lib/omniroute/
 COPY --from=node-builder /build/web_dist/ /usr/local/lib/hermes-agent/hermes_cli/web_dist/
 
+# ── Copy Hermes Agent venv from python-builder ────────────────────────
+COPY --from=python-builder /build/venv/ /usr/local/lib/hermes-agent/venv/
+COPY --from=python-builder /build/hermes-agent/ /usr/local/lib/hermes-agent/
+
 # ── Create symlinks for Node.js packages ──────────────────────────────
 RUN ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay \
     && ln -sf /usr/local/lib/omniroute/bin/omniroute /usr/local/bin/omniroute
+
+# ── Create hermes symlink from python-builder venv ────────────────────
+RUN ln -sf /usr/local/lib/hermes-agent/venv/bin/hermes /usr/local/bin/hermes
 
 # ── Ensure hermes venv is world-readable ───────────────────────────────
 # FHS root layout places the venv at /usr/local/lib/hermes-agent/venv/.
