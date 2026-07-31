@@ -35,6 +35,7 @@ fi
 if command -v ollama &>/dev/null; then
   if pgrep -f ollama > /dev/null; then
     echo "[$SCRIPT_NAME] ollama is already running, skipping"
+    ( sleep 60 && ollama pull nomic-embed-text >> /tmp/ollama-pull.log 2>&1 ) &
   else
     echo "[$SCRIPT_NAME] Starting ollama in the background..."
     setsid /usr/local/bin/ollama serve >> /tmp/ollama.log 2>&1 &
