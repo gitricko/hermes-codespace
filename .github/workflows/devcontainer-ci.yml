@@ -7,7 +7,7 @@ on:
       - '.devcontainer/**'
       - '!.devcontainer/screen-shot.png'
   pull_request:
-    branches: [main]
+    branches: [main, dockerizeation2]
     paths:
       - '.devcontainer/**'
       - '!.devcontainer/screen-shot.png'
@@ -111,6 +111,7 @@ jobs:
             check "zsh installed"             "command -v zsh"
             check "ripgrep installed"         "command -v rg"
             check "entrypoint.sh exists"      "[ -x /usr/local/bin/entrypoint.sh ]"
+            check "hermes ACP adapter works"   "hermes acp --check"
 
             echo ""
             echo "=== Results: $PASS passed, $FAIL failed ==="

@@ -91,7 +91,8 @@ RUN mkdir -p /usr/local/lib/hermes-agent \
     && cd /tmp/hermes \
     && python -m venv /usr/local/lib/hermes-agent/venv \
     && /usr/local/lib/hermes-agent/venv/bin/pip install --no-cache-dir . \
-    && /usr/local/lib/hermes-agent/venv/bin/pip install --no-cache-dir "agent-client-protocol>=0.9.0,<1.0" \
+    && /usr/local/lib/hermes-agent/venv/bin/pip install --no-cache-dir ".[acp]" \
+    && /usr/local/lib/hermes-agent/venv/bin/hermes acp --check \
     && rm -rf /tmp/hermes
 
 # ── Final stage ────────────────────────────────────────────────────────
@@ -210,8 +211,12 @@ RUN ln -sf /usr/local/lib/hermes-agent/venv/bin/hermes /usr/local/bin/hermes
 # ── Ensure hermes venv is world-readable ───────────────────────────────
 # FHS root layout places the venv at /usr/local/lib/hermes-agent/venv/.
 # Some sub-directories may be mode 700 (root-only).  Make them traversable
-# so the vscode user can exec hermes and its bundled Python.
+# so the vscode user can exec hermes and its bundled Python.  The venv is
+# also made group/other-WRITABLE so the VS Code extension's ACP dependency
+# repair flow (pip install into the venv as the vscode user) can succeed
+# without sudo — this is a devcontainer, not a hardened prod image.
 RUN chmod -R a+rX /usr/local/lib/hermes-agent 2>/dev/null || true \
+    && chmod -R a+rwX /usr/local/lib/hermes-agent/venv 2>/dev/null || true \
     && chmod -R a+rX /usr/local/lib/nodejs 2>/dev/null || true
 
 # ── Make claude CLI accessible if installed to /root ───────────────────
