@@ -69,6 +69,62 @@ USEREOF
     echo "[$SCRIPT_NAME] Created USER.md for Mnemon"
 fi
 
+# ── Service throttling helpers ───────────────────────────────────────
+
+# Wait for CPU load to drop below threshold before starting next service.
+# Prevents multiple CPU-heavy services from launching simultaneously.
+wait_for_cpu_ready() {
+    local threshold="${1:-60}"       # Max CPU % allowed (default 60%)
+    local max_wait="${2:-120}"       # Max seconds to wait (default 120s)
+    local poll_interval=3            # Check every 3 seconds
+
+    local elapsed=0
+    while [ "$elapsed" -lt "$max_wait" ]; do
+        # Read /proc/stat — two snapshots 1 second apart
+        local cpu1=$(awk '/^cpu / {print $2+$3+$4+$5+$6+$7+$8}' /proc/stat)
+        local idle1=$(awk '/^cpu / {print $5}' /proc/stat)
+        sleep 1
+        local cpu2=$(awk '/^cpu / {print $2+$3+$4+$5+$6+$7+$8}' /proc/stat)
+        local idle2=$(awk '/^cpu / {print $5}' /proc/stat)
+
+        local total_diff=$((cpu2 - cpu1))
+        local idle_diff=$((idle2 - idle1))
+
+        local used_pct=0
+        if [ "$total_diff" -gt 0 ]; then
+            used_pct=$(( (total_diff - idle_diff) * 100 / total_diff ))
+        fi
+
+        if [ "$used_pct" -lt "$threshold" ]; then
+            echo "[$SCRIPT_NAME]   CPU ${used_pct}% < ${threshold}% — ready for next service"
+            return 0
+        fi
+
+        echo "[$SCRIPT_NAME]   CPU ${used_pct}% >= ${threshold}% — waiting... (${elapsed}s/${max_wait}s)"
+        sleep "$poll_interval"
+        elapsed=$((elapsed + poll_interval + 1))  # +1 for the 1s sleep above
+    done
+
+    echo "[$SCRIPT_NAME]   WARNING: CPU still ${used_pct}% after ${max_wait}s — proceeding anyway"
+    return 0
+}
+
+# Wait for a service port to respond before starting the next service.
+wait_for_ready() {
+    local port="$1" name="$2" timeout="${3:-60}"
+    local elapsed=0
+    while [ "$elapsed" -lt "$timeout" ]; do
+        if curl -s -o /dev/null -w "" --max-time 2 "http://localhost:${port}" 2>/dev/null; then
+            echo "[$SCRIPT_NAME]   ${name} ready on :${port} (${elapsed}s)"
+            return 0
+        fi
+        sleep 2
+        elapsed=$((elapsed + 2))
+    done
+    echo "[$SCRIPT_NAME]   WARNING: ${name} not responding on :${port} after ${timeout}s"
+    return 0
+}
+
 # ── Start services (only if not already running) ─────────────────────
 start_service() {
     local name="$1" cmd="$2"
@@ -84,19 +140,30 @@ start_service() {
 # Set Ollama model path to baked location before starting
 export OLLAMA_MODELS=/usr/share/ollama/.ollama/models
 
-start_service "ollama serve"     "/usr/local/bin/ollama serve"
-start_service "modelrelay"       "/usr/local/bin/modelrelay"
-start_service "omniroute"        "/usr/local/bin/omniroute --no-open --log"
+# ── Sequential startup with CPU gating + readiness probes ──────────
+# Prevents CPU saturation from simultaneous service launches.
 
-# ── OmniRoute: wait for ready, disable login, create combo ────────────
-MAX_ATTEMPTS=10
-for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
-    if curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://localhost:20128/v1/models 2>/dev/null | grep -q "200"; then
-        break
-    fi
-    [ "$attempt" -eq "$MAX_ATTEMPTS" ] && echo "[$SCRIPT_NAME] WARNING: OmniRoute not ready"
-    sleep 1
-done
+echo "[$SCRIPT_NAME] Starting services (throttled)..."
+
+# 1. Ollama — heaviest (loads nomic-embed-text model)
+start_service "ollama serve"     "/usr/local/bin/ollama serve"
+echo "[$SCRIPT_NAME]   Waiting for ollama..."
+wait_for_cpu_ready 60 90
+wait_for_ready 11434 "Ollama" 90
+
+# 2. ModelRelay — moderate (Node.js, starts fast)
+start_service "modelrelay"       "/usr/local/bin/modelrelay"
+echo "[$SCRIPT_NAME]   Waiting for modelrelay..."
+wait_for_cpu_ready 60 90
+wait_for_ready 7352 "ModelRelay" 90
+
+# 3. OmniRoute — heavy (Node.js API gateway, SQLite init)
+start_service "omniroute"        "/usr/local/bin/omniroute --no-open --log"
+echo "[$SCRIPT_NAME]   Waiting for omniroute..."
+wait_for_cpu_ready 60 90
+wait_for_ready 20128 "OmniRoute" 90
+
+# ── OmniRoute: disable login, create combo ───────────────────────────
 
 # Disable login requirement
 if [ -f "$HOME/.omniroute/storage.sqlite" ]; then
@@ -150,7 +217,12 @@ if git clone https://github.com/gitricko/hermes-plugin-mnemon /tmp/mnemon_repo 2
 fi
 
 start_service "hermes gateway"   "hermes gateway run --no-supervise"
+echo "[$SCRIPT_NAME]   Waiting for hermes gateway..."
+wait_for_cpu_ready 60 90
+
 start_service "hermes dashboard" "hermes dashboard --port 9119 --no-open --skip-build"
+echo "[$SCRIPT_NAME]   Waiting for hermes dashboard..."
+wait_for_ready 9119 "Hermes Dashboard" 90
 
 # Telegram bot deps (use hermes venv Python if available)
 if [ -x "$HERMES_PYTHON" ]; then
