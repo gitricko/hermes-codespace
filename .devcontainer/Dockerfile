@@ -221,3 +221,4 @@ USER 1000
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]
+# Phase 2: python-builder stage added
