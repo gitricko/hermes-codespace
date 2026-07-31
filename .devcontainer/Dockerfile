@@ -64,11 +64,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 
 # Build Hermes Agent Python venv (non-editable so venv is self-contained)
-RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /tmp/hermes \
+# IMPORTANT: venv path must match COPY destination in final stage for shebangs to work
+RUN mkdir -p /usr/local/lib/hermes-agent \
+    && git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /tmp/hermes \
     && cd /tmp/hermes \
-    && python -m venv /build/venv \
-    && /build/venv/bin/pip install --no-cache-dir . \
-    && /build/venv/bin/pip install --no-cache-dir "agent-client-protocol>=0.9.0,<1.0" \
+    && python -m venv /usr/local/lib/hermes-agent/venv \
+    && /usr/local/lib/hermes-agent/venv/bin/pip install --no-cache-dir . \
+    && /usr/local/lib/hermes-agent/venv/bin/pip install --no-cache-dir "agent-client-protocol>=0.9.0,<1.0" \
     && rm -rf /tmp/hermes
 
 # ── Final stage ────────────────────────────────────────────────────────
@@ -160,15 +162,18 @@ COPY --from=node-builder /build/web_dist/ /usr/local/lib/hermes-agent/hermes_cli
 
 # ── Copy Hermes Agent venv from python-builder ────────────────────────
 # Non-editable install: venv is self-contained, no source tree needed.
-# We also need Python 3.11 runtime — installed via deadsnakes PPA below.
-COPY --from=python-builder /build/venv/ /usr/local/lib/hermes-agent/venv/
+# Venv was built at /usr/local/lib/hermes-agent/venv — same path in final image.
+COPY --from=python-builder /usr/local/lib/hermes-agent/venv/ /usr/local/lib/hermes-agent/venv/
 
 # ── Install Python 3.11 (required by hermes-agent and the venv) ──────
+# The venv was built in python:3.11-slim which puts python at /usr/local/bin/python3.11.
+# deadsnakes PPA installs to /usr/bin/python3.11, so symlink for compatibility.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends software-properties-common \
     && add-apt-repository -y ppa:deadsnakes/ppa \
     && apt-get update \
     && apt-get install -y --no-install-recommends python3.11 python3.11-venv \
+    && ln -sf /usr/bin/python3.11 /usr/local/bin/python3.11 \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Create symlinks for Node.js packages ──────────────────────────────
