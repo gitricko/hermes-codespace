@@ -148,9 +148,9 @@ RUN apt-get update \
     kill %1 && wait 2>/dev/null || true \
     \
     # ── TailScale ─────────────────────────────────────────────────────
-    && mkdir -p /var/run/tailscale /var/lib/tailscale \
-    && (curl -fsSL https://tailscale.com/install.sh | bash || echo "WARN: tailscale install failed, continuing") \
-    && rm -rf /var/lib/apt/lists/* \
+    #&& mkdir -p /var/run/tailscale /var/lib/tailscale \
+    #&& (curl -fsSL https://tailscale.com/install.sh | bash || echo "WARN: tailscale install failed, continuing") \
+    #&& rm -rf /var/lib/apt/lists/* \
     
 
     # ── Mnemon ────────────────────────────────────────────────────────
