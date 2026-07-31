@@ -158,7 +158,9 @@ RUN apt-get update \
 # ── Copy Node.js packages from builder stage ──────────────────────────
 COPY --from=node-builder /build/modelrelay/ /usr/local/lib/modelrelay/
 COPY --from=node-builder /build/omniroute/ /usr/local/lib/omniroute/
-COPY --from=node-builder /build/web_dist/ /usr/local/lib/hermes-agent/hermes_cli/web_dist/
+# The venv's non-editable install puts hermes_cli in site-packages, so
+# web_dist must go there for the dashboard --skip-build to find it.
+COPY --from=node-builder /build/web_dist/ /usr/local/lib/hermes-agent/venv/lib/python3.11/site-packages/hermes_cli/web_dist/
 
 # ── Copy Hermes Agent venv from python-builder ────────────────────────
 # Non-editable install: venv is self-contained, no source tree needed.
