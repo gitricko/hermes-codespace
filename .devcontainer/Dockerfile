@@ -160,10 +160,16 @@ COPY --from=node-builder /build/web_dist/ /usr/local/lib/hermes-agent/hermes_cli
 
 # ── Copy Hermes Agent venv from python-builder ────────────────────────
 # Non-editable install: venv is self-contained, no source tree needed.
-# Also copy Python 3.11 runtime so the venv's shebang resolves.
+# We also need Python 3.11 runtime — installed via deadsnakes PPA below.
 COPY --from=python-builder /build/venv/ /usr/local/lib/hermes-agent/venv/
-COPY --from=python-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
-COPY --from=python-builder /usr/local/lib/python3.11/ /usr/local/lib/python3.11/
+
+# ── Install Python 3.11 (required by hermes-agent and the venv) ──────
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends software-properties-common \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends python3.11 python3.11-venv \
+    && rm -rf /var/lib/apt/lists/*
 
 # ── Create symlinks for Node.js packages ──────────────────────────────
 RUN ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay \
