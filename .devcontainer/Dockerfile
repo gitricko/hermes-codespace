@@ -9,7 +9,7 @@ ARG OLLAMA_VERSION=0.32.5
 # Use the official Ollama image to get the binary
 FROM ollama/ollama:${OLLAMA_VERSION} AS ollama-bin
 
-# ── Node.js builder: ModelRelay + OmniRoute + Hermes Web UI ─────────────
+# ── Node.js builder: ModelRelay + OmniRoute + Hermes Web UI + TUI ───────
 FROM node:24-slim AS node-builder
 
 ARG OMNIROUTE_VERSION
@@ -52,6 +52,17 @@ RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResear
     && cp -r ../hermes_cli/web_dist /build/web_dist \
     && rm -rf /tmp/hermes
 
+# ── Hermes TUI ────────────────────────────────────────────────────────
+# Build the TUI bundle (dist/entry.js) and copy to hermes_cli/tui_dist
+# so the dashboard's embedded chat tab can spawn the TUI without a full workspace
+RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /tmp/hermes-tui \
+    && cd /tmp/hermes-tui/ui-tui \
+    && npm install --silent \
+    && npm run build \
+    && mkdir -p /build/tui_dist \
+    && cp dist/entry.js /build/tui_dist/ \
+    && rm -rf /tmp/hermes-tui
+
 # ── Python builder: Hermes Agent venv ────────────────────────────────────
 # Using 3.11-slim because hermes-agent requires Python >=3.11.
 # We copy the full Python 3.11 runtime into the final image so venv works.
@@ -63,10 +74,20 @@ ARG HERMES_VERSION
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 
+# Clone hermes-agent source (separate RUN so the prebuilt bundles can be
+# injected into the tree BEFORE pip install below)
+RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /tmp/hermes
+
+# Inject the prebuilt TUI bundle into the source tree before `pip install .`.
+# pyproject.toml declares tui_dist/**/* as package-data, so with the bundle
+# present the wheel is built WITH it and the venv becomes self-contained —
+# the dashboard's embedded chat PTY resolves hermes_cli/tui_dist/entry.js
+# at runtime, and no last-minute copy into site-packages is needed.
+COPY --from=node-builder /build/tui_dist/ /tmp/hermes/hermes_cli/tui_dist/
+
 # Build Hermes Agent Python venv (non-editable so venv is self-contained)
 # IMPORTANT: venv path must match COPY destination in final stage for shebangs to work
 RUN mkdir -p /usr/local/lib/hermes-agent \
-    && git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /tmp/hermes \
     && cd /tmp/hermes \
     && python -m venv /usr/local/lib/hermes-agent/venv \
     && /usr/local/lib/hermes-agent/venv/bin/pip install --no-cache-dir . \
@@ -90,7 +111,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Copy the Ollama binary from the official image
 COPY --from=ollama-bin --chown=1000:1000 /usr/bin/ollama /usr/local/bin/ollama
 
-# ── System packages + ALL heavy installs in ONE layer ──────────────────
+# ── System packages + ALL heavy installs in ONE layer ──────────────────.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         zsh ripgrep jq curl git ca-certificates gnupg zstd sudo \
