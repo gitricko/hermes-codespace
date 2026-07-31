@@ -144,6 +144,7 @@ export OLLAMA_MODELS=/usr/share/ollama/.ollama/models
 # Prevents CPU saturation from simultaneous service launches.
 
 echo "[$SCRIPT_NAME] Starting services (throttled)..."
+wait_for_cpu_ready 60 90
 
 # 1. Ollama — heaviest (loads nomic-embed-text model)
 start_service "ollama serve"     "/usr/local/bin/ollama serve"

@@ -4,9 +4,12 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Dev Container](https://img.shields.io/badge/devcontainer-ready-blue?logo=docker)](https://containers.dev/)
-[![Hermes Agent](https://img.shields.io/badge/Hermes%20Agent-v2026.7.7.2-purple?logo=github)](https://github.com/NousResearch/hermes-agent)
+[![Hermes Agent](https://img.shields.io/badge/Hermes%20Agent-v2026.7.20-purple?logo=github)](https://github.com/NousResearch/hermes-agent)
 [![ModelRelay](https://img.shields.io/badge/ModelRelay-1.18.0-green?logo=npm)](https://www.npmjs.com/package/modelrelay)
-[![OmniRoute](https://img.shields.io/badge/OmniRoute-3.8.48-orange?logo=npm)](https://www.npmjs.com/package/omniroute)
+[![OmniRoute](https://img.shields.io/badge/OmniRoute-3.8.49-orange?logo=npm)](https://www.npmjs.com/package/omniroute)
+[![Ollama](https://img.shields.io/badge/Ollama-0.32.5-yellow?logo=ollama)](https://github.com/ollama/ollama)
+[![Mnemon](https://img.shields.io/badge/Mnemon-0.1.17-pink?logo=ollama)](https://github.com/mnemon-dev/mnemon)
+
 
 Fork this repo before [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/gitricko/hermes-codespace)
 

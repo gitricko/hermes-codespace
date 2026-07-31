@@ -14,6 +14,4 @@
       ]
     }
   }
-  // "postCreateCommand": "bash ./.devcontainer/post-create-cmd.sh   >> /tmp/hermes-codespace.log 2>&1",
-  // "postStartCommand":  "bash ./.devcontainer/codespace-cleanup.sh >> /tmp/hermes-codespace.log 2>&1; bash ./.devcontainer/start-hermes.sh >> /tmp/hermes-codespace.log 2>&1"
 }
