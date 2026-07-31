@@ -53,8 +53,9 @@ RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResear
     && rm -rf /tmp/hermes
 
 # ── Python builder: Hermes Agent venv ────────────────────────────────────
-# Using 3.10-slim to match Ubuntu 22.04's system Python for venv compatibility
-FROM python:3.10-slim AS python-builder
+# Using 3.11-slim because hermes-agent requires Python >=3.11.
+# We copy the full Python 3.11 runtime into the final image so venv works.
+FROM python:3.11-slim AS python-builder
 
 ARG HERMES_VERSION
 
@@ -62,14 +63,13 @@ ARG HERMES_VERSION
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 
-# Build Hermes Agent Python venv
-# -e flag links to source code, so we keep the repo structure in /build/hermes-agent
-RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /build/hermes-agent \
-    && cd /build/hermes-agent \
+# Build Hermes Agent Python venv (non-editable so venv is self-contained)
+RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /tmp/hermes \
+    && cd /tmp/hermes \
     && python -m venv /build/venv \
-    && /build/venv/bin/pip install --no-cache-dir -e . \
+    && /build/venv/bin/pip install --no-cache-dir . \
     && /build/venv/bin/pip install --no-cache-dir "agent-client-protocol>=0.9.0,<1.0" \
-    && rm -rf /build/hermes-agent/.git
+    && rm -rf /tmp/hermes
 
 # ── Final stage ────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
@@ -159,8 +159,11 @@ COPY --from=node-builder /build/omniroute/ /usr/local/lib/omniroute/
 COPY --from=node-builder /build/web_dist/ /usr/local/lib/hermes-agent/hermes_cli/web_dist/
 
 # ── Copy Hermes Agent venv from python-builder ────────────────────────
+# Non-editable install: venv is self-contained, no source tree needed.
+# Also copy Python 3.11 runtime so the venv's shebang resolves.
 COPY --from=python-builder /build/venv/ /usr/local/lib/hermes-agent/venv/
-COPY --from=python-builder /build/hermes-agent/ /usr/local/lib/hermes-agent/
+COPY --from=python-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=python-builder /usr/local/lib/python3.11/ /usr/local/lib/python3.11/
 
 # ── Create symlinks for Node.js packages ──────────────────────────────
 RUN ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay \
