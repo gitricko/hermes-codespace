@@ -174,6 +174,7 @@ RUN apt-get update \
     && apt-get update \
     && apt-get install -y --no-install-recommends python3.11 python3.11-venv \
     && ln -sf /usr/bin/python3.11 /usr/local/bin/python3.11 \
+    && ln -sf /usr/bin/python3.11 /usr/local/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Create symlinks for Node.js packages ──────────────────────────────
