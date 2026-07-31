@@ -52,7 +52,25 @@ RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResear
     && cp -r ../hermes_cli/web_dist /build/web_dist \
     && rm -rf /tmp/hermes
 
-# ── Final stage ───────────────────────────────────────────────────────
+# ── Python builder: Hermes Agent venv ────────────────────────────────────
+FROM python:3.11-slim AS python-builder
+
+ARG HERMES_VERSION
+
+# Install git for cloning hermes-agent repo
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build Hermes Agent Python venv
+# -e flag links to source code, so we keep the repo structure in /build/hermes-agent
+RUN git clone --depth 1 --branch ${HERMES_VERSION} https://github.com/NousResearch/hermes-agent.git /build/hermes-agent \
+    && cd /build/hermes-agent \
+    && python -m venv /build/venv \
+    && /build/venv/bin/pip install --no-cache-dir -e . \
+    && /build/venv/bin/pip install --no-cache-dir "agent-client-protocol>=0.9.0,<1.0" \
+    && rm -rf /build/hermes-agent/.git
+
+# ── Final stage ────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
 # Tool versions — passed from workflow via --build-arg (single source of truth)
@@ -69,31 +87,27 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Copy the Ollama binary from the official image
 COPY --from=ollama-bin --chown=1000:1000 /usr/bin/ollama /usr/local/bin/ollama
 
-# ── System packages + ALL heavy installs in ONE layer ──────────────────
+# ── System packages in ONE layer ──────────────────────────────────────
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         zsh ripgrep jq curl git ca-certificates gnupg zstd sudo \
-        python3 python3-pip nodejs npm \
-    && rm -rf /var/lib/apt/lists/* \
-    
-    # ── Ensure a non-root user with UID 1000 exists ──────────────────────
-    && UID1000_USER=$(getent passwd 1000 | cut -d: -f1) \
+        python3 nodejs npm \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Ensure a non-root user with UID 1000 exists ──────────────────────
+RUN UID1000_USER=$(getent passwd 1000 | cut -d: -f1) \
     && if [ -z "$UID1000_USER" ]; then \
         (getent group 1000 >/dev/null || groupadd --gid 1000 vscode) \
         && useradd --uid 1000 --gid 1000 -m -s /bin/bash vscode \
         && UID1000_USER=vscode; \
     fi \
     && echo "${UID1000_USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode \
-    && chmod 0440 /etc/sudoers.d/vscode \
-    
-    # ── Ollama (direct binary install – reliable in Docker) ───────────
-    && ollama --version \
-    
-    # ── Bake Ollama embedding model into image ───────────────────────
-    # Pull nomic-embed-text at build time so it's available instantly
-    # at runtime with zero RAM spike or download delay. (~300MB)
-    # Ensure full directory tree exists with proper permissions for vscode user
-    && mkdir -p /usr/share/ollama/.ollama/models \
+    && chmod 0440 /etc/sudoers.d/vscode
+
+# ── Bake Ollama embedding model into image ────────────────────────────
+# Pull nomic-embed-text at build time so it's available instantly
+# at runtime with zero RAM spike or download delay. (~300MB)
+RUN mkdir -p /usr/share/ollama/.ollama/models \
     && chmod -R a+rwX /usr/share/ollama/.ollama \
     && chmod a+rx /usr/share/ollama \
     && OLLAMA_HOST=0.0.0.0 OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama serve & \
@@ -102,51 +116,30 @@ RUN apt-get update \
     ls -la /usr/share/ollama/.ollama/models/ && \
     find /usr/share/ollama/.ollama/models -type f | head -20 && \
     OLLAMA_MODELS=/usr/share/ollama/.ollama/models ollama list && \
-    kill %1 && wait 2>/dev/null || true \
-    
-    # ── Hermes Agent ─────────────────────────────────────────────────
-    # Runs as root → FHS layout: code at /usr/local/lib/hermes-agent,
-    # command at /usr/local/bin/hermes.  Node.js goes to $HERMES_HOME/node/
-    # which is /root/.hermes/node/ during build (inaccessible to vscode user).
-    # We relocate Node.js to /usr/local/lib/nodejs in the next layer.
-    && curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh" \
-        | bash -s -- --skip-setup \
-    && npm cache clean --force \
-    
+    kill %1 && wait 2>/dev/null || true
 
-    # ── agent-client-protocol (inside hermes venv) ────────────────────
-    # FHS root layout puts venv at /usr/local/lib/hermes-agent/venv/
-    # uv venvs don't include pip by default — ensurepip first, || true to
-    # never break the && chain (non-critical package).
-    && VENV_PYTHON="/usr/local/lib/hermes-agent/venv/bin/python" \
-    && if [ ! -x "$VENV_PYTHON" ]; then VENV_PYTHON="$HOME/.hermes/hermes-agent/venv/bin/python"; fi \
-    && if [ -x "$VENV_PYTHON" ]; then \
-        "$VENV_PYTHON" -m ensurepip --upgrade 2>/dev/null || true; \
-        "$VENV_PYTHON" -m pip install "agent-client-protocol>=0.9.0,<1.0" 2>/dev/null || true; \
-    fi \
-    
+# ── Copy Hermes Agent venv from python-builder ────────────────────────
+COPY --from=python-builder /build/venv/ /usr/local/lib/hermes-agent/venv/
+COPY --from=python-builder /build/hermes-agent/ /usr/local/lib/hermes-agent/
 
-    # ── TailScale ─────────────────────────────────────────────────────
-    && mkdir -p /var/run/tailscale /var/lib/tailscale \
+# ── TailScale ────────────────────────────────────────────────────────
+RUN mkdir -p /var/run/tailscale /var/lib/tailscale \
     && (curl -fsSL https://tailscale.com/install.sh | bash || echo "WARN: tailscale install failed, continuing") \
-    && rm -rf /var/lib/apt/lists/* \
-    
+    && rm -rf /var/lib/apt/lists/*
 
-    # ── Mnemon ────────────────────────────────────────────────────────
-    && ARCH=amd64 \
+# ── Mnemon ───────────────────────────────────────────────────────────
+RUN ARCH=amd64 \
     && curl -sL "https://github.com/mnemon-dev/mnemon/releases/download/v${MNEMON_VERSION}/mnemon_${MNEMON_VERSION}_linux_${ARCH}.tar.gz" \
         -o /tmp/mnemon.tar.gz \
     && tar xzf /tmp/mnemon.tar.gz -C /tmp \
     && cp /tmp/mnemon /usr/local/bin/mnemon \
     && chmod +x /usr/local/bin/mnemon \
-    && rm -rf /tmp/mnemon.tar.gz /tmp/mnemon \
-    
+    && rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
 
-    && curl -fsSL https://claude.ai/install.sh | bash \
-    
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
-    # ── Final cleanup ─────────────────────────────────────────────────
-    && apt-get autoremove -y \
+# ── Final cleanup ─────────────────────────────────────────────────────
+RUN apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /root/.npm /tmp/* /var/tmp/* \
     && rm -rf /root/.cache/pip 2>/dev/null || true \
@@ -164,6 +157,9 @@ COPY --from=node-builder /build/web_dist/ /usr/local/lib/hermes-agent/hermes_cli
 # ── Create symlinks for Node.js packages ──────────────────────────────
 RUN ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay \
     && ln -sf /usr/local/lib/omniroute/bin/omniroute /usr/local/bin/omniroute
+
+# ── Create hermes symlink from python-builder venv ────────────────────
+RUN ln -sf /usr/local/lib/hermes-agent/venv/bin/hermes /usr/local/bin/hermes
 
 # ── Ensure hermes venv is world-readable ───────────────────────────────
 # FHS root layout places the venv at /usr/local/lib/hermes-agent/venv/.
