@@ -2,7 +2,7 @@ name: Dev Container CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dockerizeation2]
     paths:
       - '.devcontainer/**'
       - '!.devcontainer/screen-shot.png'
