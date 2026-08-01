@@ -115,6 +115,7 @@ RUN apt-get update \
     # ── TailScale ─────────────────────────────────────────────────────
     && mkdir -p /var/run/tailscale /var/lib/tailscale \
     && (curl -fsSL https://tailscale.com/install.sh | bash || echo "WARN: tailscale install failed, continuing") \
+    && dpkg --configure -a \
     && rm -rf /var/lib/apt/lists/* \
     \
 
