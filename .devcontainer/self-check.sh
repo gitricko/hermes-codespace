@@ -237,6 +237,17 @@ if ! should_skip "hermes"; then
     _fail "Config" "no config at ${HERMES_CONFIG}"
     json_add "hermes:config" "fail" "hermes config file not found" "{}"
   fi
+
+  # ACP adapter — the VS Code extension's chat backend. A broken adapter
+  # (e.g. agent-client-protocol version drift) shows up as "ACP connection
+  # closed" in the extension and is otherwise silent.
+  if hermes acp --check >/dev/null 2>&1; then
+    _ok "ACP Adapter" "hermes acp --check OK"
+    json_add "hermes:acp" "ok" "ACP adapter imports and protocol deps OK" "{}"
+  else
+    _fail "ACP Adapter" "hermes acp --check failed (VS Code extension won't connect)"
+    json_add "hermes:acp" "fail" "hermes acp --check failed" "{}"
+  fi
 else
   echo "   (skipped)"
 fi

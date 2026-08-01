@@ -7,7 +7,7 @@ on:
       - '.devcontainer/**'
       - '!.devcontainer/screen-shot.png'
   pull_request:
-    branches: [main]
+    branches: [main, dockerizeation2]
     paths:
       - '.devcontainer/**'
       - '!.devcontainer/screen-shot.png'
@@ -15,6 +15,12 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/devcontainer
+  # ── Tool versions (single source of truth — passed to Dockerfile via --build-arg)
+  HERMES_VERSION: v2026.7.20
+  OMNIROUTE_VERSION: "3.8.49"
+  OLLAMA_VERSION: "0.32.5"
+  NODE_VERSION: "24.18.0"
+  MNEMON_VERSION: "0.1.17"
 
 permissions:
   contents: read
@@ -63,8 +69,14 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=vscode-user-v2
-          cache-to: type=gha,mode=max,scope=vscode-user-v2
+          cache-from: type=gha,scope=devcontainer-${{ hashFiles('.devcontainer/Dockerfile') }}
+          cache-to: type=gha,mode=max,scope=devcontainer-${{ hashFiles('.devcontainer/Dockerfile') }}
+          build-args: |
+            HERMES_VERSION=${{ env.HERMES_VERSION }}
+            OMNIROUTE_VERSION=${{ env.OMNIROUTE_VERSION }}
+            OLLAMA_VERSION=${{ env.OLLAMA_VERSION }}
+            NODE_VERSION=${{ env.NODE_VERSION }}
+            MNEMON_VERSION=${{ env.MNEMON_VERSION }}
 
   # ── Job 2: Smoke test the built image ───────────────────────────────
   smoke-test:
@@ -99,6 +111,7 @@ jobs:
             check "zsh installed"             "command -v zsh"
             check "ripgrep installed"         "command -v rg"
             check "entrypoint.sh exists"      "[ -x /usr/local/bin/entrypoint.sh ]"
+            check "hermes ACP adapter works"   "hermes acp --check"
 
             echo ""
             echo "=== Results: $PASS passed, $FAIL failed ==="
