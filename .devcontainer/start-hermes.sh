@@ -3,6 +3,11 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_NAME="$(basename -- "$SCRIPT_PATH")"
 
+# Derive workspace root from script location (works in both Codespace and CI)
+# In Codespace: $WORKSPACE is set by devcontainer.json
+# In CI: derive from SCRIPT_DIR (which is .devcontainer/)
+WORKSPACE_ROOT="${WORKSPACE:-$(dirname "$SCRIPT_DIR")}"
+
 echo
 echo "*****   Starting Hermes Agent Services ....    *****"
 echo 
@@ -116,7 +121,7 @@ done
 
 # 5. Create symlink for codebase-specific skills
 SKILLS_SYMLINK="$HOME/.hermes/skills/codespace"
-SKILLS_TARGET="$WORKSPACE/.devcontainer/skills"
+SKILLS_TARGET="$WORKSPACE_ROOT/.devcontainer/skills"
 
 if [ -d "$SKILLS_TARGET" ] && [ ! -L "$SKILLS_SYMLINK" ]; then
     mkdir -p "$HOME/.hermes/skills"
@@ -129,7 +134,7 @@ else
 fi
 
 # 6. Import Mnemon seed data (wiki summaries, key decisions, architecture facts)
-SEED_FILE="$WORKSPACE/.devcontainer/mnemon/seed.json"
+SEED_FILE="$WORKSPACE_ROOT/.devcontainer/mnemon/seed.json"
 if [ -f "$SEED_FILE" ] && command -v mnemon &>/dev/null; then
   echo "[$SCRIPT_NAME] Importing Mnemon seed data..."
   if mnemon import --dry-run "$SEED_FILE" 2>&1 | grep -q "validation passed"; then
