@@ -8,30 +8,33 @@ SCRIPT_NAME="$(basename -- "$SCRIPT_PATH")"
 # In CI: derive from SCRIPT_DIR (which is .devcontainer/)
 WORKSPACE_ROOT="${WORKSPACE:-$(dirname "$SCRIPT_DIR")}"
 
-# ── Critical dependency checks ─────────────────────────────────────
-# These MUST exist — if missing, the Persistent Knowledge System is broken.
-# Fail immediately with clear error messages before starting any services.
+# ── Validate ALL critical dependencies ──────────────────────────────
+# Every service binary, the skills directory, and the Mnemon seed file
+# MUST exist. If any is missing, the system is incomplete — fail
+# immediately with a clear error message before starting any services.
+MISSING=()
 
-# 1. Skills directory — without it, agent has no codespace-specific skills
+# Check service binaries
+for bin in modelrelay omniroute ollama hermes mnemon; do
+  if ! command -v "$bin" &>/dev/null; then
+    MISSING+=("binary: $bin")
+  fi
+done
+
+# Check Persistent Knowledge System
 if [ ! -d "$WORKSPACE_ROOT/.devcontainer/skills" ]; then
-  echo "[$SCRIPT_NAME] FATAL: .devcontainer/skills/ not found"
-  echo "[$SCRIPT_NAME] Path: $WORKSPACE_ROOT/.devcontainer/skills/"
-  echo "[$SCRIPT_NAME] The Persistent Knowledge System requires this directory."
-  exit 1
+  MISSING+=("directory: .devcontainer/skills/")
 fi
-
-# 2. Mnemon CLI — without it, Hermes memory system (recall/remember) is broken
-if ! command -v mnemon &>/dev/null; then
-  echo "[$SCRIPT_NAME] FATAL: mnemon CLI not found"
-  echo "[$SCRIPT_NAME] Hermes memory system (recall/remember) requires mnemon."
-  exit 1
-fi
-
-# 3. Mnemon seed file — without it, agent starts with no pre-loaded knowledge
 if [ ! -f "$WORKSPACE_ROOT/.devcontainer/mnemon/seed.json" ]; then
-  echo "[$SCRIPT_NAME] FATAL: Mnemon seed file not found"
-  echo "[$SCRIPT_NAME] Path: $WORKSPACE_ROOT/.devcontainer/mnemon/seed.json"
-  echo "[$SCRIPT_NAME] The knowledge base requires a default seed file."
+  MISSING+=("file: .devcontainer/mnemon/seed.json")
+fi
+
+if [ ${#MISSING[@]} -gt 0 ]; then
+  echo "[$SCRIPT_NAME] FATAL: Missing critical dependencies:"
+  for item in "${MISSING[@]}"; do
+    echo "  - $item"
+  done
+  echo "[$SCRIPT_NAME] All dependencies are required for Hermes to function."
   exit 1
 fi
 
@@ -39,42 +42,31 @@ echo
 echo "*****   Starting Hermes Agent Services ....    *****"
 echo
 echo "    $(date)"
+
 # 1. Starting modelrelay...
-if command -v modelrelay &>/dev/null; then
-  if pgrep -f modelrelay > /dev/null; then
-    echo "[$SCRIPT_NAME] modelrelay is already running, skipping"
-  else
-    echo "[$SCRIPT_NAME] Starting modelrelay in the background..."
-    setsid /usr/local/bin/modelrelay >> /tmp/modelrelay.log 2>&1 &
-  fi
+if pgrep -f modelrelay > /dev/null; then
+  echo "[$SCRIPT_NAME] modelrelay is already running, skipping"
 else
-  echo "[$SCRIPT_NAME] modelrelay not found, skipping start"
+  echo "[$SCRIPT_NAME] Starting modelrelay in the background..."
+  setsid /usr/local/bin/modelrelay >> /tmp/modelrelay.log 2>&1 &
 fi
 
 # 2. Starting omniroute...
-if command -v omniroute &>/dev/null; then
-  if pgrep -f omniroute > /dev/null; then
-    echo "[$SCRIPT_NAME] omniroute is already running, skipping"
-  else
-    echo "[$SCRIPT_NAME] Starting omniroute in the background..."
-    setsid /usr/local/bin/omniroute --no-open  --log >> /tmp/omniroute.log 2>&1 &
-  fi
+if pgrep -f omniroute > /dev/null; then
+  echo "[$SCRIPT_NAME] omniroute is already running, skipping"
 else
-  echo "[$SCRIPT_NAME] omniroute not found, skipping start"
+  echo "[$SCRIPT_NAME] Starting omniroute in the background..."
+  setsid /usr/local/bin/omniroute --no-open --log >> /tmp/omniroute.log 2>&1 &
 fi
 
 # 3. Starting ollama...
-if command -v ollama &>/dev/null; then
-  if pgrep -f ollama > /dev/null; then
-    echo "[$SCRIPT_NAME] ollama is already running, skipping"
-    ( sleep 60 && ollama pull nomic-embed-text >> /tmp/ollama-pull.log 2>&1 ) &
-  else
-    echo "[$SCRIPT_NAME] Starting ollama in the background..."
-    setsid /usr/local/bin/ollama serve >> /tmp/ollama.log 2>&1 &
-    ( sleep 60 && ollama pull nomic-embed-text >> /tmp/ollama-pull.log 2>&1 ) &
-  fi
+if pgrep -f ollama > /dev/null; then
+  echo "[$SCRIPT_NAME] ollama is already running, skipping"
+  ( sleep 60 && ollama pull nomic-embed-text >> /tmp/ollama-pull.log 2>&1 ) &
 else
-  echo "[$SCRIPT_NAME] ollama not found, skipping start"
+  echo "[$SCRIPT_NAME] Starting ollama in the background..."
+  setsid /usr/local/bin/ollama serve >> /tmp/ollama.log 2>&1 &
+  ( sleep 60 && ollama pull nomic-embed-text >> /tmp/ollama-pull.log 2>&1 ) &
 fi
 
 # 4. Starting Hermes Gateway and Dashboard
@@ -84,7 +76,7 @@ $HOME/.hermes/hermes-agent/venv/bin/python -m ensurepip --upgrade || true
 ln -s $HOME/.hermes/hermes-agent/venv/bin/pip3 $HOME/.hermes/hermes-agent/venv/bin/pip || true
 $HOME/.hermes/hermes-agent/venv/bin/pip install python-telegram-bot 2>/dev/null || true
 
-# update mnemon provider if version changes (synced BEFORE gateway starts)
+# Update mnemon provider if version changes (synced BEFORE gateway starts)
 echo "[$SCRIPT_NAME] Checking mnemon provider..."
 rm -rf /tmp/mnemon_repo
 if git clone https://github.com/gitricko/hermes-plugin-mnemon /tmp/mnemon_repo; then
@@ -103,28 +95,19 @@ else
 fi
 
 # Start Hermes Gateway in background (mnemon is ready before this fires)
-# 4. Starting Hermes Gateway..."
-if command -v hermes &>/dev/null; then
-  if pgrep -f 'hermes gateway' > /dev/null; then
-    echo "[$SCRIPT_NAME] hermes-gateway is already running, skipping"
-  else
-    echo "[$SCRIPT_NAME] Starting hermes-gateway in the background..."
-    setsid hermes gateway run --no-supervise > ~/.hermes/logs/gateway.log 2>&1 &
-  fi
+if pgrep -f 'hermes gateway' > /dev/null; then
+  echo "[$SCRIPT_NAME] hermes-gateway is already running, skipping"
 else
-  echo "[$SCRIPT_NAME] hermes not found, skipping start"
+  echo "[$SCRIPT_NAME] Starting hermes-gateway in the background..."
+  setsid hermes gateway run --no-supervise > ~/.hermes/logs/gateway.log 2>&1 &
 fi
 
-echo "[$SCRIPT_NAME] Starting Hermes Dashboard..."
-if command -v hermes &>/dev/null; then
-  if pgrep -f 'hermes dashboard' > /dev/null; then
-    echo "[$SCRIPT_NAME] hermes-dashboard is already running, skipping"
-  else
-    echo "[$SCRIPT_NAME] Starting hermes-dashboard in the background..."
-    setsid hermes dashboard --port 9119 --no-open > ~/.hermes/logs/dashboard.log 2>&1 &
-  fi
+# Start Hermes Dashboard
+if pgrep -f 'hermes dashboard' > /dev/null; then
+  echo "[$SCRIPT_NAME] hermes-dashboard is already running, skipping"
 else
-  echo "[$SCRIPT_NAME] hermes not found, skipping start"
+  echo "[$SCRIPT_NAME] Starting hermes-dashboard in the background..."
+  setsid hermes dashboard --port 9119 --no-open > ~/.hermes/logs/dashboard.log 2>&1 &
 fi
 
 # Remind Hermes on Mnemon setup if needed
@@ -171,7 +154,7 @@ else
   echo "[$SCRIPT_NAME] WARNING: Mnemon seed validation failed — skipping import"
 fi
 
-# All services started and ready  
+# All services started and ready
 echo "[$SCRIPT_NAME] All hermes-agent services started and ready."
 
 # Run boot-time health self-check after all services are ready
