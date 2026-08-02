@@ -317,3 +317,22 @@ curl -s -X PUT "http://localhost:20128/api/combos/$COMBO_ID" \
 }'
 
 echo "[$SCRIPT_NAME] OmniRoute initialization complete!"
+
+# ── Pre-build Hermes Dashboard web UI ──────────────────────────────────────
+# The dashboard auto-builds its web UI (npm ci + vite build) on first boot,
+# but npm ci can fail silently in CI environments, leaving port 9119
+# unreachable and the smoke test failing with exit code 2. Build it here so
+# the dashboard finds a ready dist/ and skips the fragile runtime build.
+HERMES_AGENT_DIR="$HOME/.hermes/hermes-agent"
+if [ -d "$HERMES_AGENT_DIR/web" ] && command -v node &>/dev/null; then
+  echo "[$SCRIPT_NAME] Pre-building Hermes Dashboard web UI..."
+  cd "$HERMES_AGENT_DIR"
+  CI=1 npm ci --include=dev --workspace web --silent 2>&1 || {
+    echo "[$SCRIPT_NAME] npm ci failed, trying npm install fallback..."
+    CI=1 npm install --no-save --include=dev --workspace web --silent 2>&1
+  }
+  cd "$HERMES_AGENT_DIR/web" && CI=1 npm run build 2>&1
+  echo "[$SCRIPT_NAME] Hermes Dashboard web UI built successfully."
+else
+  echo "[$SCRIPT_NAME] Skipping web UI build (no web workspace or node not found)"
+fi
