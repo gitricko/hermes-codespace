@@ -114,6 +114,20 @@ for i in $(seq 1 20); do
   sleep 3
 done
 
+# 5. Create symlink for codebase-specific skills
+SKILLS_SYMLINK="$HOME/.hermes/skills/codespace"
+SKILLS_TARGET="$WORKSPACE/.devcontainer/skills"
+
+if [ -d "$SKILLS_TARGET" ] && [ ! -L "$SKILLS_SYMLINK" ]; then
+    mkdir -p "$HOME/.hermes/skills"
+    ln -s "$SKILLS_TARGET" "$SKILLS_SYMLINK"
+    echo "[$SCRIPT_NAME] Created skills symlink: $SKILLS_SYMLINK -> $SKILLS_TARGET"
+elif [ -L "$SKILLS_SYMLINK" ]; then
+    echo "[$SCRIPT_NAME] Skills symlink already exists"
+else
+    echo "[$SCRIPT_NAME] No .devcontainer/skills/ found — skipping symlink"
+fi
+
 # All services started and ready  
 echo "[$SCRIPT_NAME] All hermes-agent services started and ready."
 
