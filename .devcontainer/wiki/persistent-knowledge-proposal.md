@@ -1,10 +1,11 @@
 # Proposal: Persistent Knowledge System for Hermes-CodeSpace
 
-> **Status**: Draft v3 — finalized decisions, ready for Phase 1 implementation
+> **Status**: COMPLETE — All 3 phases implemented and CI passing
 > **Date**: 2026-08-01 (revised 2026-08-02)
 > **Goal**: Make Hermes Agent knowledge persist across Codespace sessions via Git
 > **Key change from v1→v2**: Replaced rsync/cp with symlinks
 > **Key change from v2→v3**: Renamed "knowledge" to "wiki"; resolved all open questions
+> **Key change from v3→final**: Added Mnemon seeding (Phase 3), unified dependency validation
 
 ---
 
@@ -55,13 +56,19 @@ hermes-codespace/
 │   │   ├── INDEX.md                  # Table of contents
 │   │   ├── codespace-playbook.md     # Migrated from CODESPACE_PLAYBOOK.md
 │   │   ├── repository-analysis.md    # Migrated from REPOSITORY_ANALYSIS.md
-│   │   ├── codespace-auth.md
-│   │   ├── omniroute-setup.md
+│   │   ├── github-actions-testing-plan.md
+│   │   ├── persistent-knowledge-proposal.md  # This document
 │   │   └── ...future articles...
-│   ├── start-hermes.sh               # Modified: creates skills symlink on every start
-│   ├── post-create-cmd.sh            # Unchanged for this phase
+│   ├── mnemon/                       # Mnemon seed data (git-tracked)
+│   │   ├── seed.json                 # Curated knowledge catalog (wiki pointers,
+│   │   │                             #   key decisions, architecture facts)
+│   │   └── validate-seed.py          # CI validation script
+│   ├── start-hermes.sh               # Boot script: dependency validation,
+│   │                                 #   service startup, symlink, Mnemon import
+│   ├── post-create-cmd.sh            # First-create setup (npm, hermes install)
 │   └── ...existing files...
-├── PERSISTENT_KNOWLEDGE_PROPOSAL.md  # This file
+├── README.md
+└── .github/workflows/devcontainer-ci.yml  # Path-filtered multi-job CI
 ```
 
 **Why `.devcontainer/` not `.hermes/` in the repo root:**
@@ -149,11 +156,24 @@ Extract via /proc/PID/environ...
 - Wiki article = reference knowledge ("how system Y works") → `.devcontainer/wiki/`
 - Insight/fact = single line → Mnemon (not committed to git)
 
-### Layer 3: Mnemon Pre-seeding (Future Enhancement)
+### Layer 3: Mnemon Pre-seeding ✅ COMPLETE
 
-During startup, seed wiki article summaries into Mnemon so that
-`mnemon_recall()` can surface relevant articles without the agent having
-to know about them in advance.
+On every Codespace boot, `start-hermes.sh` imports curated wiki article
+summaries and key decisions into Mnemon so that `mnemon_recall()` can
+surface relevant articles without the agent knowing about them in advance.
+
+**Seed file**: `.devcontainer/mnemon/seed.json` (git-tracked)
+- 14 curated insights: wiki pointers, key decisions, architecture facts
+- All entries importance >= 4 (high-signal, low-noise)
+- Maintained via agent proposals → user review → git commit
+
+**Boot flow**:
+1. Dry-run validation (ensures JSON is well-formed)
+2. Real import (Mnemon handles deduplication automatically)
+3. Parse output (imported/skipped/errors counts logged)
+
+**CI validation**: `validate-seed.py` checks schema, fields, categories,
+importance range, and enforces < 50 entry size guard.
 
 **Key insight**: Mnemon stores POINTERS/summaries, wiki dir stores
 FULL content. This way:
@@ -165,21 +185,54 @@ FULL content. This way:
 
 ## Changes to Existing Files
 
-### `start-hermes.sh` additions (symlink creation):
+### `start-hermes.sh` — complete refactoring:
+
+The boot script was refactored to add unified dependency validation,
+Mnemon seed import, and simplified service startup:
 
 ```bash
-# Create symlink for codebase-specific skills
-SKILLS_SYMLINK="$HOME/.hermes/skills/codespace"
-SKILLS_TARGET="$WORKSPACE/.devcontainer/skills"
+#!/bin/bash
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="${WORKSPACE:-$(dirname "$SCRIPT_DIR")}"
 
-if [ -d "$SKILLS_TARGET" ] && [ ! -L "$SKILLS_SYMLINK" ]; then
-    mkdir -p "$HOME/.hermes/skills"
-    ln -s "$SKILLS_TARGET" "$SKILLS_SYMLINK"
-    echo "[$SCRIPT_NAME] Created skills symlink: $SKILLS_SYMLINK -> $SKILLS_TARGET"
-elif [ -L "$SKILLS_SYMLINK" ]; then
-    echo "[$SCRIPT_NAME] Skills symlink already exists"
+# ── Validate ALL critical dependencies ──────────────────────────────
+MISSING=()
+for bin in modelrelay omniroute ollama hermes mnemon; do
+  if ! command -v "$bin" &>/dev/null; then
+    MISSING+=("binary: $bin")
+  fi
+done
+if [ ! -d "$WORKSPACE_ROOT/.devcontainer/skills" ]; then
+  MISSING+=("directory: .devcontainer/skills/")
+fi
+if [ ! -f "$WORKSPACE_ROOT/.devcontainer/mnemon/seed.json" ]; then
+  MISSING+=("file: .devcontainer/mnemon/seed.json")
+fi
+if [ ${#MISSING[@]} -gt 0 ]; then
+  echo "FATAL: Missing critical dependencies:"
+  for item in "${MISSING[@]}"; do echo "  - $item"; done
+  exit 1
+fi
+
+# ── Start services (pgrep only — binaries guaranteed by validation) ──
+if pgrep -f modelrelay > /dev/null; then
+  echo "modelrelay already running, skipping"
 else
-    echo "[$SCRIPT_NAME] No .devcontainer/skills/ found — skipping symlink"
+  setsid /usr/local/bin/modelrelay >> /tmp/modelrelay.log 2>&1 &
+fi
+# ... (same pattern for omniroute, ollama, hermes-gateway, hermes-dashboard)
+
+# ── Create skills symlink ───────────────────────────────────────────
+SKILLS_SYMLINK="$HOME/.hermes/skills/codespace"
+SKILLS_TARGET="$WORKSPACE_ROOT/.devcontainer/skills"
+if [ ! -L "$SKILLS_SYMLINK" ]; then
+    ln -s "$SKILLS_TARGET" "$SKILLS_SYMLINK"
+fi
+
+# ── Import Mnemon seed data ─────────────────────────────────────────
+SEED_FILE="$WORKSPACE_ROOT/.devcontainer/mnemon/seed.json"
+if mnemon import --dry-run "$SEED_FILE" 2>&1 | grep -q "validation passed"; then
+  mnemon import "$SEED_FILE"
 fi
 ```
 
@@ -285,7 +338,7 @@ They are reference knowledge ("how system Y works"), not procedures.
 
 ## Implementation Plan
 
-### Phase 1: Skills Layer (Immediate)
+### Phase 1: Skills Layer ✅ COMPLETE
 1. Create `.devcontainer/skills/` directory in repo
 2. Migrate `skill-memory-automation.md` → `.devcontainer/skills/memory-automation/SKILL.md`
 3. Remove old `skill-memory-automation.md` from `.devcontainer/`
@@ -293,18 +346,37 @@ They are reference knowledge ("how system Y works"), not procedures.
 5. Update `.hermes.md` with knowledge persistence instructions
 6. Test: verify symlink created, existing memory-automation skill accessible
 
-### Phase 2: Wiki Base (Follow-up)
-1. Create `.devcontainer/wiki/` directory
-2. Migrate CODESPACE_PLAYBOOK.md content into `wiki/codespace-playbook.md`
-3. Migrate REPOSITORY_ANALYSIS.md content into `wiki/repository-analysis.md`
-4. Add INDEX.md
-5. Remove old root-level files
-6. Update agent instructions to read from wiki directory
+### Phase 2: Wiki Base ✅ COMPLETE
+1. Create `.devcontainer/wiki/` directory with INDEX.md
+2. Migrate CODESPACE_PLAYBOOK.md → `wiki/codespace-playbook.md`
+3. Migrate REPOSITORY_ANALYSIS.md → `wiki/repository-analysis.md`
+4. Migrate GITHUB_ACTIONS_TESTING_PLAN.md → `wiki/github-actions-testing-plan.md`
+5. Migrate PERSISTENT_KNOWLEDGE_PROPOSAL.md → `wiki/persistent-knowledge-proposal.md`
+6. Remove old root-level .md files (only README.md remains)
+7. Add path-filtered CI with dorny/paths-filter@v3 (3 jobs: detect, build, lint)
+8. CI validates: markdownlint, SKILL.md structure, wiki INDEX consistency, seed.json
 
-### Phase 3: Mnemon Seeding (Future)
-1. Add startup script to seed wiki summaries into Mnemon
-2. Verify `mnemon_recall()` surfaces relevant articles
-3. Keep Mnemon lightweight (pointers only, not full articles)
+### Phase 3: Mnemon Seeding ✅ COMPLETE
+1. Create `.devcontainer/mnemon/seed.json` — curated knowledge catalog (14 entries)
+   - 4 wiki pointers (importance 4)
+   - 4 key decisions (importance 5)
+   - 4 architecture facts (importance 4)
+   - 2 CI debugging insights (importance 4)
+2. Create `.devcontainer/mnemon/validate-seed.py` — CI validation script
+3. Add boot import to `start-hermes.sh`:
+   - Dry-run validation → real import → parse output
+   - Mnemon deduplication handles duplicates automatically
+4. Add unified dependency validation:
+   - Checks 5 binaries (modelrelay, omniroute, ollama, hermes, mnemon)
+   - Checks skills directory and seed.json
+   - Fails fast with clear FATAL message if any dependency missing
+5. Simplified service sections (pgrep only, no command-v fallbacks)
+6. CI validates seed.json structure (schema, fields, categories, size guard)
+
+### Ongoing: Knowledge Capture Workflow
+- Agent proposes new entries for seed.json when creating skills/wiki articles
+- User reviews via `git diff`, approves/rejects, commits when ready
+- Seed file stays lean (< 50 entries) — consolidate or move to session memory
 
 ---
 
@@ -326,6 +398,6 @@ work exactly the same. We can add categories later if we want.
 
 ---
 
-*This proposal was originally created 2026-08-01, revised through three sessions
-on 2026-08-02 with symlink-based architecture and finalized decisions. Ready for
-Phase 1 implementation.*
+*This proposal was created 2026-08-01, revised through multiple sessions
+on 2026-08-02. All three phases implemented and CI passing. PR #22 ready
+to merge.*
