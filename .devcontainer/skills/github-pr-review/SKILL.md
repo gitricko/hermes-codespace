@@ -96,6 +96,30 @@ After user approval:
 3. Push and verify CI passes
 4. Optionally reply to the review comment with the fix
 
+### Step 6: Seed Export Check (Pre-Merge)
+
+Before merging, check if new high-value Mnemon entries should be added to seed.json:
+
+```bash
+.devcontainer/scripts/check-seed-export.sh
+```
+
+This script:
+1. Queries Mnemon for entries with importance >= 4
+2. Compares against existing seed.json content
+3. Reports any new entries that should be exported
+
+**If new entries found:**
+1. Review each entry for relevance
+2. Add to `.devcontainer/mnemon/seed.json` with proper format
+3. Validate: `mnemon import --dry-run .devcontainer/mnemon/seed.json`
+4. Commit updated seed.json with the PR
+
+**Why this matters:**
+- Seed file is the persistent knowledge catalog across sessions
+- New wiki articles, key decisions, and architecture facts should be seeded
+- Ensures future Codespaces start with all important knowledge
+
 ## API Endpoints
 
 | Endpoint | Purpose |
