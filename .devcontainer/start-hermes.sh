@@ -8,10 +8,37 @@ SCRIPT_NAME="$(basename -- "$SCRIPT_PATH")"
 # In CI: derive from SCRIPT_DIR (which is .devcontainer/)
 WORKSPACE_ROOT="${WORKSPACE:-$(dirname "$SCRIPT_DIR")}"
 
+# ── Critical dependency checks ─────────────────────────────────────
+# These MUST exist — if missing, the Persistent Knowledge System is broken.
+# Fail immediately with clear error messages before starting any services.
+
+# 1. Skills directory — without it, agent has no codespace-specific skills
+if [ ! -d "$WORKSPACE_ROOT/.devcontainer/skills" ]; then
+  echo "[$SCRIPT_NAME] FATAL: .devcontainer/skills/ not found"
+  echo "[$SCRIPT_NAME] Path: $WORKSPACE_ROOT/.devcontainer/skills/"
+  echo "[$SCRIPT_NAME] The Persistent Knowledge System requires this directory."
+  exit 1
+fi
+
+# 2. Mnemon CLI — without it, Hermes memory system (recall/remember) is broken
+if ! command -v mnemon &>/dev/null; then
+  echo "[$SCRIPT_NAME] FATAL: mnemon CLI not found"
+  echo "[$SCRIPT_NAME] Hermes memory system (recall/remember) requires mnemon."
+  exit 1
+fi
+
+# 3. Mnemon seed file — without it, agent starts with no pre-loaded knowledge
+if [ ! -f "$WORKSPACE_ROOT/.devcontainer/mnemon/seed.json" ]; then
+  echo "[$SCRIPT_NAME] FATAL: Mnemon seed file not found"
+  echo "[$SCRIPT_NAME] Path: $WORKSPACE_ROOT/.devcontainer/mnemon/seed.json"
+  echo "[$SCRIPT_NAME] The knowledge base requires a default seed file."
+  exit 1
+fi
+
 echo
 echo "*****   Starting Hermes Agent Services ....    *****"
-echo 
-
+echo
+echo "    $(date)"
 # 1. Starting modelrelay...
 if command -v modelrelay &>/dev/null; then
   if pgrep -f modelrelay > /dev/null; then
@@ -123,33 +150,25 @@ done
 SKILLS_SYMLINK="$HOME/.hermes/skills/codespace"
 SKILLS_TARGET="$WORKSPACE_ROOT/.devcontainer/skills"
 
-if [ -d "$SKILLS_TARGET" ] && [ ! -L "$SKILLS_SYMLINK" ]; then
+if [ ! -L "$SKILLS_SYMLINK" ]; then
     mkdir -p "$HOME/.hermes/skills"
     ln -s "$SKILLS_TARGET" "$SKILLS_SYMLINK"
     echo "[$SCRIPT_NAME] Created skills symlink: $SKILLS_SYMLINK -> $SKILLS_TARGET"
-elif [ -L "$SKILLS_SYMLINK" ]; then
-    echo "[$SCRIPT_NAME] Skills symlink already exists"
 else
-    echo "[$SCRIPT_NAME] No .devcontainer/skills/ found — skipping symlink"
+    echo "[$SCRIPT_NAME] Skills symlink already exists"
 fi
 
 # 6. Import Mnemon seed data (wiki summaries, key decisions, architecture facts)
 SEED_FILE="$WORKSPACE_ROOT/.devcontainer/mnemon/seed.json"
-if [ -f "$SEED_FILE" ] && command -v mnemon &>/dev/null; then
-  echo "[$SCRIPT_NAME] Importing Mnemon seed data..."
-  if mnemon import --dry-run "$SEED_FILE" 2>&1 | grep -q "validation passed"; then
-    IMPORT_RESULT=$(mnemon import "$SEED_FILE" 2>&1)
-    ADDED=$(echo "$IMPORT_RESULT" | grep -o '"imported": *[0-9]*' | grep -o '[0-9]*')
-    SKIPPED=$(echo "$IMPORT_RESULT" | grep -o '"skipped": *[0-9]*' | grep -o '[0-9]*')
-    ERRORS=$(echo "$IMPORT_RESULT" | grep -o '"errors": *[0-9]*' | grep -o '[0-9]*')
-    echo "[$SCRIPT_NAME] Mnemon seed imported: ${ADDED:-0} added, ${SKIPPED:-0} skipped, ${ERRORS:-0} errors"
-  else
-    echo "[$SCRIPT_NAME] WARNING: Mnemon seed validation failed — skipping import"
-  fi
-elif [ ! -f "$SEED_FILE" ]; then
-  echo "[$SCRIPT_NAME] No Mnemon seed file found — skipping import"
+echo "[$SCRIPT_NAME] Importing Mnemon seed data..."
+if mnemon import --dry-run "$SEED_FILE" 2>&1 | grep -q "validation passed"; then
+  IMPORT_RESULT=$(mnemon import "$SEED_FILE" 2>&1)
+  ADDED=$(echo "$IMPORT_RESULT" | grep -o '"imported": *[0-9]*' | grep -o '[0-9]*')
+  SKIPPED=$(echo "$IMPORT_RESULT" | grep -o '"skipped": *[0-9]*' | grep -o '[0-9]*')
+  ERRORS=$(echo "$IMPORT_RESULT" | grep -o '"errors": *[0-9]*' | grep -o '[0-9]*')
+  echo "[$SCRIPT_NAME] Mnemon seed imported: ${ADDED:-0} added, ${SKIPPED:-0} skipped, ${ERRORS:-0} errors"
 else
-  echo "[$SCRIPT_NAME] mnemon CLI not found — skipping seed import"
+  echo "[$SCRIPT_NAME] WARNING: Mnemon seed validation failed — skipping import"
 fi
 
 # All services started and ready  
