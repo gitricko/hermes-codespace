@@ -6,9 +6,53 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel in-progress runs for the same branch/PR
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test-devcontainer:
+  # ─────────────────────────────────────────────────────────────────
+  # Job 1: Detect what changed (runs in <5 seconds)
+  # ─────────────────────────────────────────────────────────────────
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      infrastructure: ${{ steps.filter.outputs.infrastructure }}
+      runtime: ${{ steps.filter.outputs.runtime }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            infrastructure:
+              - '.devcontainer/post-create-cmd.sh'
+              - '.devcontainer/start-hermes.sh'
+              - '.devcontainer/self-check.sh'
+              - '.devcontainer/devcontainer.json'
+              - '.github/workflows/**'
+            runtime:
+              - '.devcontainer/skills/**'
+              - '.devcontainer/wiki/**'
+              - '.devcontainer/.hermes.md'
+              - '.devcontainer/codespace-cleanup.sh'
+            docs:
+              - 'README.md'
+              - '*.md'
+
+  # ─────────────────────────────────────────────────────────────────
+  # Job 2: Full build + smoke test (only if infrastructure changed)
+  # ─────────────────────────────────────────────────────────────────
+  full-build:
     name: Build & Smoke Test
+    needs: detect-changes
+    if: needs.detect-changes.outputs.infrastructure == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -56,3 +100,130 @@ jobs:
           name: failure-logs-${{ github.run_id }}
           path: /tmp/failure-logs/
           if-no-files-found: warn
+
+  # ─────────────────────────────────────────────────────────────────
+  # Job 3: Lint & validation (for docs + runtime changes)
+  # ─────────────────────────────────────────────────────────────────
+  lint-check:
+    name: Lint & Validate
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.docs == 'true' ||
+      needs.detect-changes.outputs.runtime == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdownlint-cli
+        run: npm install -g markdownlint-cli
+
+      - name: Create lint config
+        run: |
+          cat > /tmp/.markdownlint.json << 'LINTCONF'
+          {
+            "default": true,
+            "MD001": false,
+            "MD012": false,
+            "MD013": false,
+            "MD022": false,
+            "MD024": { "siblings_only": true },
+            "MD026": false,
+            "MD031": false,
+            "MD032": false,
+            "MD033": false,
+            "MD036": false,
+            "MD040": false,
+            "MD041": false,
+            "MD047": false,
+            "MD058": false,
+            "MD060": false
+          }
+          LINTCONF
+
+      - name: Lint markdown files
+        run: |
+          echo "=== Linting markdown files ==="
+          # Lint wiki articles, skills, and root README
+          markdownlint \
+            .devcontainer/wiki/*.md \
+            .devcontainer/skills/*/SKILL.md \
+            .devcontainer/.hermes.md \
+            README.md \
+            --config /tmp/.markdownlint.json \
+            || { echo "Markdown lint failed!"; exit 1; }
+          echo "✅ Markdown lint passed"
+
+      - name: Validate SKILL.md files
+        run: |
+          echo "=== Validating SKILL.md structure ==="
+          errors=0
+          for skill in .devcontainer/skills/*/SKILL.md; do
+            [ -f "$skill" ] || continue
+            name=$(basename $(dirname "$skill"))
+            # Check YAML frontmatter exists
+            if ! head -1 "$skill" | grep -q "^---"; then
+              echo "❌ $skill: missing YAML frontmatter (must start with ---)"
+              errors=$((errors + 1))
+              continue
+            fi
+            # Check frontmatter closes (look in first 20 lines)
+            if ! sed -n '2,20p' "$skill" | grep -q "^---"; then
+              echo "❌ $skill: unclosed YAML frontmatter"
+              errors=$((errors + 1))
+              continue
+            fi
+            # Check has name field
+            if ! sed -n '2,/^---$/p' "$skill" | grep -q "^name:"; then
+              echo "❌ $skill: missing 'name' field in frontmatter"
+              errors=$((errors + 1))
+              continue
+            fi
+            echo "  ✅ $name"
+          done
+          if [ $errors -gt 0 ]; then
+            echo "❌ $errors skill(s) failed validation"
+            exit 1
+          fi
+          echo "✅ All skills valid"
+
+      - name: Validate wiki INDEX.md
+        run: |
+          echo "=== Checking wiki INDEX.md ==="
+          # Verify every .md file in wiki/ (except INDEX.md) has an entry in INDEX.md
+          errors=0
+          for article in .devcontainer/wiki/*.md; do
+            basename=$(basename "$article")
+            [ "$basename" = "INDEX.md" ] && continue
+            if ! grep -q "$basename" .devcontainer/wiki/INDEX.md; then
+              echo "❌ $basename not listed in INDEX.md"
+              errors=$((errors + 1))
+            else
+              echo "  ✅ $basename referenced in INDEX.md"
+            fi
+          done
+          if [ $errors -gt 0 ]; then
+            echo "❌ $errors article(s) missing from INDEX.md"
+            exit 1
+          fi
+          echo "✅ Wiki INDEX.md is consistent"
+
+      - name: Shell script syntax check
+        run: |
+          echo "=== Checking shell script syntax ==="
+          for script in .devcontainer/*.sh; do
+            [ -f "$script" ] || continue
+            if bash -n "$script" 2>&1; then
+              echo "  ✅ $(basename $script)"
+            else
+              echo "  ❌ $(basename $script): syntax error"
+              exit 1
+            fi
+          done
+          echo "✅ All shell scripts valid"
