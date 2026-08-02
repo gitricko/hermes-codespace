@@ -128,6 +128,24 @@ else
     echo "[$SCRIPT_NAME] No .devcontainer/skills/ found — skipping symlink"
 fi
 
+# 6. Import Mnemon seed data (wiki summaries, key decisions, architecture facts)
+SEED_FILE="$WORKSPACE/.devcontainer/mnemon/seed.json"
+if [ -f "$SEED_FILE" ] && command -v mnemon &>/dev/null; then
+  echo "[$SCRIPT_NAME] Importing Mnemon seed data..."
+  if mnemon import --dry-run "$SEED_FILE" 2>&1 | grep -q "validation passed"; then
+    IMPORT_RESULT=$(mnemon import "$SEED_FILE" 2>&1)
+    ADDED=$(echo "$IMPORT_RESULT" | grep -o '"added": *[0-9]*' | grep -o '[0-9]*')
+    SKIPPED=$(echo "$IMPORT_RESULT" | grep -o '"skipped": *[0-9]*' | grep -o '[0-9]*')
+    echo "[$SCRIPT_NAME] Mnemon seed imported: ${ADDED:-0} added, ${SKIPPED:-0} skipped (duplicates)"
+  else
+    echo "[$SCRIPT_NAME] WARNING: Mnemon seed validation failed — skipping import"
+  fi
+elif [ ! -f "$SEED_FILE" ]; then
+  echo "[$SCRIPT_NAME] No Mnemon seed file found — skipping import"
+else
+  echo "[$SCRIPT_NAME] mnemon CLI not found — skipping seed import"
+fi
+
 # All services started and ready  
 echo "[$SCRIPT_NAME] All hermes-agent services started and ready."
 

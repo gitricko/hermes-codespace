@@ -40,6 +40,7 @@ jobs:
             runtime:
               - '.devcontainer/skills/**'
               - '.devcontainer/wiki/**'
+              - '.devcontainer/mnemon/**'
               - '.devcontainer/.hermes.md'
               - '.devcontainer/codespace-cleanup.sh'
             docs:
@@ -213,6 +214,17 @@ jobs:
             exit 1
           fi
           echo "✅ Wiki INDEX.md is consistent"
+
+      - name: Validate Mnemon seed.json
+        run: |
+          echo "=== Validating Mnemon seed.json ==="
+          SEED=".devcontainer/mnemon/seed.json"
+          if [ ! -f "$SEED" ]; then
+            echo "No seed.json found — skipping"
+            exit 0
+          fi
+          python3 .devcontainer/mnemon/validate-seed.py "$SEED"
+          echo "✅ Mnemon seed.json valid"
 
       - name: Shell script syntax check
         run: |

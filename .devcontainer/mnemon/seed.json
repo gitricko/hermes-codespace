@@ -1,0 +1,117 @@
+{
+  "schema_version": "1",
+  "insights": [
+    {
+      "content": "Wiki: codespace-playbook.md — Comprehensive guide for GitHub operations in Codespaces. Covers token extraction from VS Code server (/proc/PID/environ), gh CLI setup, PR monitoring, git push, common pitfalls. Read .devcontainer/wiki/codespace-playbook.md for full details.",
+      "category": "context",
+      "importance": 4,
+      "tags": ["wiki", "github", "codespace", "auth", "playbook"],
+      "entities": ["codespace-playbook", ".devcontainer/wiki", "GITHUB_TOKEN", "VS Code server"],
+      "source": "agent"
+    },
+    {
+      "content": "Wiki: repository-analysis.md — Deep dive of hermes-codespace architecture. Covers startup flow (post-create-cmd.sh → start-hermes.sh → Hermes Agent), what's used vs unused, self-check.sh validation, CI verification. Read .devcontainer/wiki/repository-analysis.md for full details.",
+      "category": "context",
+      "importance": 4,
+      "tags": ["wiki", "architecture", "repository", "startup", "analysis"],
+      "entities": ["repository-analysis", ".devcontainer/wiki", "post-create-cmd.sh", "start-hermes.sh"],
+      "source": "agent"
+    },
+    {
+      "content": "Wiki: github-actions-testing-plan.md — Phased CI/CD testing plan for hermes-codespace. Covers path-filtered CI with dorny/paths-filter@v3, lint checks (markdownlint, SKILL.md validation, shell syntax), full build with pre-build and smoke test. Read .devcontainer/wiki/github-actions-testing-plan.md for full details.",
+      "category": "context",
+      "importance": 4,
+      "tags": ["wiki", "ci", "github-actions", "testing", "cd"],
+      "entities": ["github-actions-testing-plan", ".devcontainer/wiki", "dorny/paths-filter", "CI"],
+      "source": "agent"
+    },
+    {
+      "content": "Wiki: persistent-knowledge-proposal.md — Architecture decision document for the Persistent Knowledge System. Covers symlink-based skills persistence, wiki base, Mnemon seeding, directory structure, boot workflow. Read .devcontainer/wiki/persistent-knowledge-proposal.md for full details.",
+      "category": "context",
+      "importance": 4,
+      "tags": ["wiki", "architecture", "persistent-knowledge", "proposal"],
+      "entities": ["persistent-knowledge-proposal", ".devcontainer/wiki", "skills", "wiki", "Mnemon"],
+      "source": "agent"
+    },
+    {
+      "content": "GITHUB_TOKEN extraction: The real GITHUB_TOKEN is in the VS Code server's process environment at /proc/<PID>/environ, NOT in the shell env. GITHUB_CODESPACE_TOKEN in shell is useless for API calls. GH_TOKEN is set to an invalid value. See .devcontainer/wiki/codespace-playbook.md section 2 for details.",
+      "category": "fact",
+      "importance": 5,
+      "tags": ["github", "auth", "token", "codespace", "pitfall"],
+      "entities": ["GITHUB_TOKEN", "VS Code server", "/proc/PID/environ", "GITHUB_CODESPACE_TOKEN"],
+      "source": "agent"
+    },
+    {
+      "content": "Persistent Knowledge System uses symlinks (not rsync/cp). ~/.hermes/skills/codespace → .devcontainer/skills/. Writes to the symlinked path land directly in the workspace. Git sees everything. Boot script: start-hermes.sh creates symlink on every start (idempotent, checks first).",
+      "category": "decision",
+      "importance": 5,
+      "tags": ["persistent-knowledge", "skills", "symlink", "architecture"],
+      "entities": ["skills", "symlink", "start-hermes.sh", ".devcontainer/skills"],
+      "source": "agent"
+    },
+    {
+      "content": "Boot script location: start-hermes.sh (NOT post-create-cmd.sh). start-hermes.sh runs on every Codespace start/rebuild, making it the reliable place for idempotent setup like symlink creation and Mnemon seeding. post-create-cmd.sh only runs on first create.",
+      "category": "decision",
+      "importance": 5,
+      "tags": ["architecture", "boot", "start-hermes", "decision"],
+      "entities": ["start-hermes.sh", "post-create-cmd.sh", "boot"],
+      "source": "agent"
+    },
+    {
+      "content": "Path-filtered CI: devcontainer-ci.yml uses dorny/paths-filter@v3 with three jobs. detect-changes classifies files into infrastructure/runtime/docs. full-build runs only for infrastructure changes (~15min). lint-check runs for docs/runtime changes (~30s). Concurrency group cancels in-progress runs.",
+      "category": "fact",
+      "importance": 4,
+      "tags": ["ci", "github-actions", "path-filter", "architecture"],
+      "entities": ["devcontainer-ci.yml", "dorny/paths-filter", "CI", "lint-check"],
+      "source": "agent"
+    },
+    {
+      "content": "Hermes discovers skills via os.walk(followlinks=True) with ~30s cache TTL. New skills written to ~/.hermes/skills/codespace/ (symlinked to .devcontainer/skills/) are auto-discovered within ~30 seconds. No restart needed. Skill format: SKILL.md with YAML frontmatter (name, description, version).",
+      "category": "fact",
+      "importance": 4,
+      "tags": ["skills", "discovery", "hermes", "runtime"],
+      "entities": ["os.walk", "followlinks", "skills", "SKILL.md"],
+      "source": "agent"
+    },
+    {
+      "content": "Mnemon is the persistent memory system for Hermes. CLI: mnemon remember/recall/search/import. Database at ~/.mnemon/data/default/mnemon.db. Import format: JSON with schema_version '1' and insights array. Deduplication built-in. Categories: preference, decision, insight, fact, context. Importance: 1-5.",
+      "category": "fact",
+      "importance": 4,
+      "tags": ["mnemon", "memory", "hermes", "architecture"],
+      "entities": ["Mnemon", "mnemon.db", "memory", "recall"],
+      "source": "agent"
+    },
+    {
+      "content": "CI Fix: Silent failures from npm ci. When npm ci fails, it kills the process before writing error output. Fix: pre-build web UI in post-create-cmd.sh using 'npm ci CI=1 --include=dev --workspace web' with explicit error handling and fallback to 'npm install'. See .devcontainer/post-create-cmd.sh for the pattern.",
+      "category": "insight",
+      "importance": 4,
+      "tags": ["ci", "debugging", "npm", "pitfall", "fix"],
+      "entities": ["npm ci", "post-create-cmd.sh", "CI", "web UI"],
+      "source": "agent"
+    },
+    {
+      "content": "CI Debugging lesson: Fix root cause, never weaken the test. Silent failures are hardest — when a process is killed before writing output, you get zero error info. Always compare passing vs failing commits to find the real cause. Self-check.sh CRITICAL_SERVICES variable is defined but unused — all services are always critical.",
+      "category": "insight",
+      "importance": 4,
+      "tags": ["ci", "debugging", "lessons", "workflow"],
+      "entities": ["CI", "self-check.sh", "debugging", "lessons"],
+      "source": "agent"
+    },
+    {
+      "content": "Wiki naming convention: Use 'wiki' (not 'knowledge' or 'KNOWLEDGE.md'). Follows LM Wiki / Karpathy concept of interlinked markdown articles. .hermes.md instructs agent to read from .devcontainer/wiki/. INDEX.md serves as table of contents.",
+      "category": "decision",
+      "importance": 4,
+      "tags": ["wiki", "naming", "convention", "architecture"],
+      "entities": ["wiki", ".devcontainer/wiki", "INDEX.md", "LM Wiki"],
+      "source": "agent"
+    },
+    {
+      "content": "Knowledge capture workflow: Both proactive AND user-triggered. Agent proposes entries for seed.json (importance >= 4 or new wiki/skill). User reviews via git diff, approves/rejects, commits when ready. Same pattern as skills: agent proposes, user reviews, git persists.",
+      "category": "decision",
+      "importance": 4,
+      "tags": ["workflow", "knowledge", "capture", "process"],
+      "entities": ["seed.json", "knowledge capture", "workflow"],
+      "source": "agent"
+    }
+  ]
+}
