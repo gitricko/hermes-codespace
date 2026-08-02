@@ -1,0 +1,11 @@
+# Hermes local symlink (created at runtime, not in CI)
+.hermes
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
