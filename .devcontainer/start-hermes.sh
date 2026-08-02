@@ -139,9 +139,10 @@ if [ -f "$SEED_FILE" ] && command -v mnemon &>/dev/null; then
   echo "[$SCRIPT_NAME] Importing Mnemon seed data..."
   if mnemon import --dry-run "$SEED_FILE" 2>&1 | grep -q "validation passed"; then
     IMPORT_RESULT=$(mnemon import "$SEED_FILE" 2>&1)
-    ADDED=$(echo "$IMPORT_RESULT" | grep -o '"added": *[0-9]*' | grep -o '[0-9]*')
+    ADDED=$(echo "$IMPORT_RESULT" | grep -o '"imported": *[0-9]*' | grep -o '[0-9]*')
     SKIPPED=$(echo "$IMPORT_RESULT" | grep -o '"skipped": *[0-9]*' | grep -o '[0-9]*')
-    echo "[$SCRIPT_NAME] Mnemon seed imported: ${ADDED:-0} added, ${SKIPPED:-0} skipped (duplicates)"
+    ERRORS=$(echo "$IMPORT_RESULT" | grep -o '"errors": *[0-9]*' | grep -o '[0-9]*')
+    echo "[$SCRIPT_NAME] Mnemon seed imported: ${ADDED:-0} added, ${SKIPPED:-0} skipped, ${ERRORS:-0} errors"
   else
     echo "[$SCRIPT_NAME] WARNING: Mnemon seed validation failed — skipping import"
   fi
