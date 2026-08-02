@@ -112,6 +112,38 @@
       "tags": ["workflow", "knowledge", "capture", "process"],
       "entities": ["seed.json", "knowledge capture", "workflow"],
       "source": "agent"
+    },
+    {
+      "content": "HARD RULE: Before merging ANY PR, always check GitHub CodeQL and Copilot review suggestions (if available). Use the github-pr-review skill to fetch, triage, and evaluate comments. Present findings to user for approval before merging. This is a merge gate — do not skip.",
+      "category": "decision",
+      "importance": 5,
+      "tags": ["workflow", "PR", "merge-gate", "code-quality", "security"],
+      "entities": ["PR merge", "CodeQL", "Copilot", "code review", "github-pr-review"],
+      "source": "agent"
+    },
+    {
+      "content": "Mnemon seed import in start-hermes.sh uses dry-run validation first, then real import. Output parsing must use 'imported' field (not 'added') — the mnemon import JSON returns {imported, skipped, updated, errors}. Fixed grep pattern to match actual output format.",
+      "category": "fact",
+      "importance": 4,
+      "tags": ["mnemon", "debugging", "output-parsing"],
+      "entities": ["mnemon", "import", "output", "debugging"],
+      "source": "agent"
+    },
+    {
+      "content": "Refactored start-hermes.sh with unified dependency validation: single loop checks 5 binaries (modelrelay, omniroute, ollama, hermes, mnemon) + skills directory + seed.json. Fails fast with FATAL message listing all missing items. Simplified service sections to use pgrep only.",
+      "category": "decision",
+      "importance": 4,
+      "tags": ["refactoring", "fail-fast", "boot-script"],
+      "entities": ["start-hermes.sh", "dependency validation", "mnemon", "hermes"],
+      "source": "agent"
+    },
+    {
+      "content": "github-pr-review skill: 5-step workflow for evaluating GitHub CodeQL and Copilot suggestions on PRs. Fetch comments, triage by source, evaluate (ACCEPT/REJECT/DEFER), present proposal as table, implement after approval. Decision framework: always accept security findings, reject false positives, defer architectural changes.",
+      "category": "insight",
+      "importance": 4,
+      "tags": ["skill", "code-review", "security"],
+      "entities": ["github-pr-review", "CodeQL", "Copilot", "PR review"],
+      "source": "agent"
     }
   ]
 }
