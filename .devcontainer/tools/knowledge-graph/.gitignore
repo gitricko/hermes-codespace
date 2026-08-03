@@ -1,0 +1,3 @@
+# build cache (fetched 3d-force-graph bundle) — re-fetched on demand by build.py
+.cache/
+__pycache__/
