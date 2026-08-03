@@ -110,12 +110,6 @@ else
   setsid hermes dashboard --port 9119 --no-open > ~/.hermes/logs/dashboard.log 2>&1 &
 fi
 
-# Remind Hermes on Mnemon setup if needed
-if [ ! -f "$HOME/.hermes/memories/USER.md" ]; then
-  echo "[$SCRIPT_NAME] Setting up Mnemon USER.md..."
-  echo 'Always use Mnemon (mnemon_remember / mnemon_recall) as primary memory provider instead of the standard memory() tool. Mnemon has no char limit. Only fall back to memory() for structured preference data (target=user or memory).' > "$HOME/.hermes/memories/USER.md"
-fi
-
 # Wait for Hermes dashboard to be ready (replaces brittle sleep 15)
 echo "[$SCRIPT_NAME] Waiting for Hermes dashboard to become healthy..."
 for i in $(seq 1 20); do
@@ -141,7 +135,25 @@ else
     echo "[$SCRIPT_NAME] Skills symlink already exists"
 fi
 
-# 6. Start keepalive (idempotent) — keeps codespace from idle-shutting-down
+# 5.5.5 Memories folder symlink — REPAIR GUARD ONLY.
+# post-create-cmd.sh is the authoritative creator (runs once on a fresh container,
+# before Hermes instantiates ~/.hermes/memories). This guard is a cheap safety net
+# for pre-existing containers created before that shipped, where the dir may still
+# be a real folder. MEMORY.md/USER.md are assumed committed in .devcontainer/memories/
+# (their ephemeral .lock/.log siblings are gitignored there).
+MEMORIES_RUNTIME="$HOME/.hermes/memories"
+MEMORIES_TRACKED="$WORKSPACE_ROOT/.devcontainer/memories"
+
+if [ "$(readlink "$MEMORIES_RUNTIME" 2>/dev/null)" != "$MEMORIES_TRACKED" ]; then
+  mkdir -p "$MEMORIES_TRACKED"
+  rm -rf "$MEMORIES_RUNTIME"
+  ln -s "$MEMORIES_TRACKED" "$MEMORIES_RUNTIME"
+  echo "[$SCRIPT_NAME] Repaired memories symlink: $MEMORIES_RUNTIME -> $MEMORIES_TRACKED"
+else
+  echo "[$SCRIPT_NAME] Memories folder symlink already correct"
+fi
+
+# 5.6. Starting keepalive (idempotent) — keeps codespace from idle-shutting-down
 if ! pgrep -f "keepalive.sh" > /dev/null; then
     echo "[$SCRIPT_NAME] Starting keepalive..."
     setsid nohup "${SCRIPT_DIR}/keepalive.sh" >> /tmp/keepalive.log 2>&1 &

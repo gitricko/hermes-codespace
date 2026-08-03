@@ -52,6 +52,23 @@ if ! command -v hermes &>/dev/null; then
   sudo rm -rf /var/lib/apt/lists/* 
 fi
 
+# Symlink the Hermes memories dir into the repo (skills-style folder symlink).
+# postCreateCommand runs exactly once on a FRESH container, so this is the
+# authoritative, cleanest place to set it up — before Hermes first instantiates
+# ~/.hermes/memories. MEMORY.md/USER.md are guaranteed present in git at this
+# point, so we never need to migrate/seed content here. Ephemeral .lock/.log files
+# Hermes writes inside are gitignored (see .devcontainer/memories/.gitignore).
+HERMES_MEMORIES="$HOME/.hermes/memories"
+TRACKED_MEMORIES="${SCRIPT_DIR}/memories"
+mkdir -p "$TRACKED_MEMORIES"
+if [ "$(readlink "$HERMES_MEMORIES" 2>/dev/null)" != "$TRACKED_MEMORIES" ]; then
+  rm -rf "$HERMES_MEMORIES"
+  ln -s "$TRACKED_MEMORIES" "$HERMES_MEMORIES"
+  echo "[$SCRIPT_NAME] Created memories folder symlink: $HERMES_MEMORIES -> $TRACKED_MEMORIES"
+else
+  echo "[$SCRIPT_NAME] Memories folder symlink already correct"
+fi
+
 # Ensure agent-client-protocol (ACP) is installed
 echo "[$SCRIPT_NAME] Checking agent-client-protocol (ACP)..."
 if command -v hermes &>/dev/null; then

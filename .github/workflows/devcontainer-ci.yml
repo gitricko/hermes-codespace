@@ -44,6 +44,7 @@ jobs:
               - '.devcontainer/skills/**'
               - '.devcontainer/wiki/**'
               - '.devcontainer/mnemon/**'
+              - '.devcontainer/memories/**'
               - '.devcontainer/.hermes.md'
               - '.devcontainer/codespace-cleanup.sh'
             docs:
@@ -242,3 +243,53 @@ jobs:
             fi
           done
           echo "✅ All shell scripts valid"
+
+      - name: Validate symlink persistence (memories + skills)
+        run: |
+          echo "=== Validating symlink persistence contract ==="
+          # Static validation that runs on a bare runner (no devcontainer):
+          # 1. Tracked targets exist in the repo
+          # 2. Boot scripts reference the correct target paths
+          REPO_ROOT="$(pwd)"
+          MEM_TRACKED="$REPO_ROOT/.devcontainer/memories"
+          SKILLS_TRACKED="$REPO_ROOT/.devcontainer/skills"
+          FAIL=0
+
+          if [ -d "$MEM_TRACKED" ]; then
+            echo "  ✅ Tracked memories dir exists -> $MEM_TRACKED"
+          else
+            echo "  ❌ Tracked memories dir missing: $MEM_TRACKED"
+            FAIL=1
+          fi
+          if [ -d "$SKILLS_TRACKED" ]; then
+            echo "  ✅ Tracked skills dir exists -> $SKILLS_TRACKED"
+          else
+            echo "  ❌ Tracked skills dir missing: $SKILLS_TRACKED"
+            FAIL=1
+          fi
+
+          # Boot scripts must symlink the runtime path to the tracked target
+          if grep -q "TRACKED_MEMORIES.*HERMES_MEMORIES\|ln -s.*memories" .devcontainer/post-create-cmd.sh; then
+            echo "  ✅ post-create-cmd.sh creates memories symlink"
+          else
+            echo "  ❌ post-create-cmd.sh missing memories symlink"
+            FAIL=1
+          fi
+          if grep -q "SKILLS_TARGET.*SKILLS_SYMLINK\|ln -s.*skills" .devcontainer/start-hermes.sh; then
+            echo "  ✅ start-hermes.sh creates skills symlink"
+          else
+            echo "  ❌ start-hermes.sh missing skills symlink"
+            FAIL=1
+          fi
+          if grep -q "MEMORIES_TRACKED.*MEMORIES_RUNTIME\|ln -s.*memories" .devcontainer/start-hermes.sh; then
+            echo "  ✅ start-hermes.sh repair guard covers memories"
+          else
+            echo "  ❌ start-hermes.sh missing memories repair guard"
+            FAIL=1
+          fi
+
+          if [ "$FAIL" -eq 0 ]; then
+            echo "✅ Symlink persistence contract valid"
+          else
+            exit 1
+          fi

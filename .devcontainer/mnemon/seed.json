@@ -152,6 +152,46 @@
       "tags": ["keepalive", "idle-timeout", "platform-idle", "layer-1", "layer-2", "terminal-activity"],
       "entities": ["keepalive.sh", "start-hermes.sh", "layer-1", "layer-2", "terminal-activity", "delay-shutdown", "platform"],
       "source": "agent"
+    },
+    {
+      "content": "Persistent Memory Option A (validated 2026-08): post-create-cmd.sh is authoritative for symlink creation (runs once on fresh container, right after Hermes install, before Hermes instantiates ~/.hermes/memories). start-hermes.sh keeps only a slim repair guard (~12 lines) for pre-existing containers where postCreateCommand doesn't re-run. Symlink: ~/.hermes/memories → .devcontainer/memories/ (whole folder, skills pattern). .gitignore in tracked dir ignores *.lock *.log. Mnemon primary rule preserved in tracked USER.md.",
+      "category": "decision",
+      "importance": 5,
+      "tags": ["persistent-memory", "option-a", "symlink", "post-create", "start-hermes", "architecture"],
+      "entities": ["post-create-cmd.sh", "start-hermes.sh", "memories", "symlink", "mnemon"],
+      "source": "agent"
+    },
+    {
+      "content": "Self-check.sh Persistence section (section 9) validates both memories and skills symlinks: 9a) ~/.hermes/memories → .devcontainer/memories, 9b) ~/.hermes/skills/codespace → .devcontainer/skills. Each handles 3 cases: correct symlink (ok), real dir (fail), missing (fail). 9c (tracked content existence) removed as redundant with git checkout. CI lint-check also validates symlinks via standalone step for runtime changes.",
+      "category": "decision",
+      "importance": 4,
+      "tags": ["self-check", "persistence", "symlink-validation", "ci", "lint-check"],
+      "entities": ["self-check.sh", "persistence", "memories", "skills", "lint-check"],
+      "source": "agent"
+    },
+    {
+      "content": "CI path-filter for persistence: .devcontainer/memories/** and .devcontainer/skills/** are in runtime (not infrastructure) so content changes trigger 30s lint-check, not 15min full-build. lint-check now includes 'Validate symlink persistence' step asserting both symlinks. infrastructure remains boot scripts only (post-create-cmd.sh, start-hermes.sh, self-check.sh, devcontainer.json, workflows). This keeps CI fast for content edits while still gating symlink correctness.",
+      "category": "decision",
+      "importance": 5,
+      "tags": ["ci", "path-filter", "runtime", "infrastructure", "lint-check", "full-build"],
+      "entities": ["devcontainer-ci.yml", "dorny/paths-filter", "memories", "skills", "full-build"],
+      "source": "agent"
+    },
+    {
+      "content": "Wiki: persistent-memory-proposal.md — Architecture decision document for Hermes persistent memory (MEMORY.md/USER.md) versioning via whole-folder symlink. Covers Option A split (post-create authoritative + start-hermes guard), self-check validation, CI wiring, .gitignore for lock/log files, Mnemon primary rule in USER.md. Read .devcontainer/wiki/persistent-memory-proposal.md for full details.",
+      "category": "context",
+      "importance": 4,
+      "tags": ["wiki", "architecture", "persistent-memory", "proposal", "symlink"],
+      "entities": ["persistent-memory-proposal", ".devcontainer/wiki", "memories", "symlink", "mnemon"],
+      "source": "agent"
+    },
+    {
+      "content": "Skill: codespace-persistent-symlinks — Procedural skill for persisting Hermes state (memories + skills) across Codespace rebuilds via whole-folder symlinks. Documents Option A placement, self-check verification, 3-case guard logic, pitfalls (seed block removal, head truncation bug, verification cases). Symlink pattern mirrors skills: ~/.hermes/memories → .devcontainer/memories/, ~/.hermes/skills/codespace → .devcontainer/skills/. Read .devcontainer/skills/codespace-persistent-symlinks/SKILL.md for full procedure.",
+      "category": "context",
+      "importance": 4,
+      "tags": ["skill", "persistent-memory", "symlink", "codespace", "procedure"],
+      "entities": ["codespace-persistent-symlinks", "skills", "memories", "symlink", "start-hermes.sh"],
+      "source": "agent"
     }
   ]
 }
