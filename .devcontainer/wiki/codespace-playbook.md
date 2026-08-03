@@ -219,6 +219,25 @@ done
 gh run watch <RUN_ID>
 ```
 
+**Agent session approach** (non-blocking, for background CI watch):
+
+When an agent turn cannot block (e.g. the ~5–15 min full-build), run
+`gh run watch` as a **background terminal** with `notify_on_complete=true`.
+This avoids sleep-loop timing and delivers one notification on completion.
+See skill `github-codespace` § "Non-blocking watch from an agent turn"
+for the full pattern and rationale.
+
+```bash
+VSCODE_PID=$(pgrep -f "server-main.js" | head -1)
+tok=$(cat /proc/$VSCODE_PID/environ 2>/dev/null | tr '\0' '\n' | grep '^GITHUB_TOKEN=' | cut -d= -f2-)
+export GH_TOKEN="$tok"
+gh run watch "$RUN_ID" --repo OWNER/REPO --exit-status > /tmp/ci-watch.log 2>&1
+echo "WATCH_EXIT=$?" >> /tmp/ci-watch.log
+```
+
+Launch that command with `terminal(background=true, notify_on_complete=true)`.
+Read `/tmp/ci-watch.log` after the notification for the run's step-level checklist.
+
 ### Step 4: If Build Fails, Get Logs
 
 ```bash

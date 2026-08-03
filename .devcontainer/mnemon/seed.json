@@ -144,6 +144,14 @@
       "tags": ["skill", "code-review", "security"],
       "entities": ["github-pr-review", "CodeQL", "Copilot", "PR review"],
       "source": "agent"
+    },
+    {
+      "content": "Keepalive implementation: keepalive.sh service started by start-hermes.sh to prevent idle shutdown. Contains A+B approach: (A) periodic terminal heartbeat on hermes's pty to mimic user activity (GitHub platform idle detection), (B) internal pinger hitting VS Code server /delay-shutdown endpoint to reset server-side shutdown timer (5-min grace). Testable with --test flag. Wires into container lifecycle, idempotent, survives start/rebuild.",
+      "category": "decision",
+      "importance": 5,
+      "tags": ["keepalive", "idle-timeout", "platform-idle", "layer-1", "layer-2", "terminal-activity"],
+      "entities": ["keepalive.sh", "start-hermes.sh", "layer-1", "layer-2", "terminal-activity", "delay-shutdown", "platform"],
+      "source": "agent"
     }
   ]
 }

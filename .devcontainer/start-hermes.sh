@@ -141,7 +141,15 @@ else
     echo "[$SCRIPT_NAME] Skills symlink already exists"
 fi
 
-# 6. Import Mnemon seed data (wiki summaries, key decisions, architecture facts)
+# 6. Start keepalive (idempotent) — keeps codespace from idle-shutting-down
+if ! pgrep -f "keepalive.sh" > /dev/null; then
+    echo "[$SCRIPT_NAME] Starting keepalive..."
+    setsid nohup "${SCRIPT_DIR}/keepalive.sh" >> /tmp/keepalive.log 2>&1 &
+else
+    echo "[$SCRIPT_NAME] keepalive already running"
+fi
+
+# 7. Import Mnemon seed data (wiki summaries, key decisions, architecture facts)
 SEED_FILE="$WORKSPACE_ROOT/.devcontainer/mnemon/seed.json"
 echo "[$SCRIPT_NAME] Importing Mnemon seed data..."
 if mnemon import --dry-run "$SEED_FILE" 2>&1 | grep -q "validation passed"; then

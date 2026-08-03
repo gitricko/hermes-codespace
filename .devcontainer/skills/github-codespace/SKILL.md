@@ -152,6 +152,28 @@ gh run watch $RUN_ID --log
 gh run watch $RUN_ID --failed
 ```
 
+### Non-blocking watch from an agent turn (background + notify_on_complete)
+
+When a build takes longer than an agent turn can block (e.g. the ~5-15 min
+`full-build`), do NOT poll with `sleep` loops — they burn the turn and time out
+(execute_code caps at ~5 min). Instead run `gh run watch` as a **background
+terminal process with notify_on_complete**:
+
+```bash
+tok=$(cat /proc/<VSCODE_PID>/environ 2>/dev/null | tr '\0' '\n' | grep '^GITHUB_TOKEN=' | cut -d= -f2-)
+export GH_TOKEN="$tok"
+gh run watch <RUN_ID> --repo OWNER/REPO --exit-status > /tmp/ci-watch.log 2>&1
+echo "WATCH_EXIT=$?" >> /tmp/ci-watch.log
+```
+
+Launch that with terminal `background=true, notify_on_complete=true`. It streams
+jobs/steps live to `/tmp/ci-watch.log`, and the agent is notified **once** when
+the run finishes instead of sleep-polling. `gh run watch --exit-status` makes the
+watch command's own exit code reflect the run's success/failure (`WATCH_EXIT`).
+This is the canonical pattern for a long CI watch from an agent loop: no sleep
+loops, no mid-turn blocking, one notification on completion. Then read the log
+or query the run/jobs via the API for the final triage.
+
 ### Fallback: REST API Polling (No gh Auth)
 
 For public repos, you can poll CI status without authentication:
