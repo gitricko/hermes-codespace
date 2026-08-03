@@ -1,0 +1,5 @@
+# Hermes memory files are versioned (MEMORY.md, USER.md).
+
+# Ephemeral artifacts Hermes writes into the memories dir — never version these.
+*.lock
+*.log

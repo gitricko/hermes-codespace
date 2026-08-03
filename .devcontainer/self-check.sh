@@ -378,6 +378,69 @@ else
   echo "   (skipped)"
 fi
 
+# ── 9. Persistence (symlinks) ──────────────────────────────────────────────────
+section "Persistence"
+
+if ! should_skip "persistence"; then
+  # Resolve repo root from script location (works in CI and local)
+  REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+  PERSIST_FAIL=0
+
+  # 9a. Memories folder symlink
+  MEM_RUNTIME="$HOME/.hermes/memories"
+  MEM_TRACKED="$REPO_ROOT/.devcontainer/memories"
+  if [ -L "$MEM_RUNTIME" ]; then
+    target="$(readlink "$MEM_RUNTIME")"
+    if [ "$target" = "$MEM_TRACKED" ]; then
+      _ok "Memories" "symlink correct -> $MEM_TRACKED"
+      json_add "memories_symlink" "ok" "symlink correct" "{\"runtime\":\"$MEM_RUNTIME\",\"target\":\"$target\"}"
+    else
+      _fail "Memories" "symlink points to '$target' (expected '$MEM_TRACKED')"
+      json_add "memories_symlink" "fail" "symlink points to $target" "{\"runtime\":\"$MEM_RUNTIME\",\"target\":\"$target\",\"expected\":\"$MEM_TRACKED\"}"
+      PERSIST_FAIL=1
+    fi
+  elif [ -d "$MEM_RUNTIME" ]; then
+    _fail "Memories" "runtime is a real directory, not a symlink"
+    json_add "memories_symlink" "fail" "runtime is real directory" "{\"runtime\":\"$MEM_RUNTIME\"}"
+    PERSIST_FAIL=1
+  else
+    _fail "Memories" "runtime missing entirely"
+    json_add "memories_symlink" "fail" "runtime missing" "{\"runtime\":\"$MEM_RUNTIME\"}"
+    PERSIST_FAIL=1
+  fi
+
+  # 9b. Skills folder symlink
+  SKILLS_RUNTIME="$HOME/.hermes/skills/codespace"
+  SKILLS_TRACKED="$REPO_ROOT/.devcontainer/skills"
+  if [ -L "$SKILLS_RUNTIME" ]; then
+    target="$(readlink "$SKILLS_RUNTIME")"
+    if [ "$target" = "$SKILLS_TRACKED" ]; then
+      _ok "Skills" "symlink correct -> $SKILLS_TRACKED"
+      json_add "skills_symlink" "ok" "symlink correct" "{\"runtime\":\"$SKILLS_RUNTIME\",\"target\":\"$target\"}"
+    else
+      _fail "Skills" "symlink points to '$target' (expected '$SKILLS_TRACKED')"
+      json_add "skills_symlink" "fail" "symlink points to $target" "{\"runtime\":\"$SKILLS_RUNTIME\",\"target\":\"$target\",\"expected\":\"$SKILLS_TRACKED\"}"
+      PERSIST_FAIL=1
+    fi
+  elif [ -d "$SKILLS_RUNTIME" ]; then
+    _fail "Skills" "runtime is a real directory, not a symlink"
+    json_add "skills_symlink" "fail" "runtime is real directory" "{\"runtime\":\"$SKILLS_RUNTIME\"}"
+    PERSIST_FAIL=1
+  else
+    _fail "Skills" "runtime missing entirely"
+    json_add "skills_symlink" "fail" "runtime missing" "{\"runtime\":\"$SKILLS_RUNTIME\"}"
+    PERSIST_FAIL=1
+  fi
+
+  if [ "$PERSIST_FAIL" -eq 0 ]; then
+    json_add "persistence" "ok" "all symlinks valid" "{}"
+  else
+    json_add "persistence" "fail" "one or more persistence checks failed" "{}"
+  fi
+else
+  echo "   (skipped)"
+fi
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 section "Summary"
 echo ""
