@@ -3103,9 +3103,12 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
     if(!Graph) return;
     Graph.nodeVisibility(nodeVisible)
          .linkVisibility(function(l){
-           var s=Graph.graphData().nodes.find(function(x){return x.id===l.source;});
-           var t=Graph.graphData().nodes.find(function(x){return x.id===l.target;});
-           return s&&t&&nodeVisible(s)&&nodeVisible(t);
+           // After the engine settles, l.source/l.target are node OBJECTS;
+           // during early ticks they may still be string ids. Accept both.
+           var nodes=Graph.graphData().nodes;
+           var s=(l.source&&typeof l.source==='object')?l.source:nodes.find(function(x){return x.id===l.source;});
+           var t=(l.target&&typeof l.target==='object')?l.target:nodes.find(function(x){return x.id===l.target;});
+           return !!(s&&t&&nodeVisible(s)&&nodeVisible(t));
          });
   }
 
