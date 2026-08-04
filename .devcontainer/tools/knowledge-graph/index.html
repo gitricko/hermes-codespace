@@ -115,11 +115,13 @@
   <div id="tooltip"></div>
 
   <script>
-  /* ====== DATA: fetched at runtime from graph.json (portable design) ======
-     The viewer is a fixed asset. Point it at any export:
-       - default:      graph.json beside this file
-       - explicit:     ?data=path/to/graph.json
-     Refresh = replace the JSON; never rebuild the HTML. */
+  /* ====== DATA: loaded at runtime (portable design) ======
+     The viewer is a fixed asset. Data sources, in order:
+       1. window.GRAPH_DATA — set by graph-data.js (script tag; works from
+          file:// double-click, where fetch() is blocked by browsers)
+       2. ?data=path.json — explicit fetch override (http serving)
+       3. graph.json beside this file (http serving)
+     Refresh = replace the JSON (+ graph-data.js); never rebuild the HTML. */
   var DATA = null;
 
   var CAT_COLOR = { decision:'#58a6ff', context:'#3fb950', fact:'#d29922',
@@ -328,6 +330,7 @@
   /* ---------- init ---------- */
   window.addEventListener('load',function(){
     var sub=document.getElementById('subtitle');
+    if(window.GRAPH_DATA){ DATA=window.GRAPH_DATA; build(); return; }  // file://
     var dataUrl=new URLSearchParams(location.search).get('data')||'graph.json';
     fetch(dataUrl).then(function(r){
       if(!r.ok) throw new Error('HTTP '+r.status);
@@ -336,9 +339,10 @@
       DATA=d;
       build();
     }).catch(function(e){
-      sub.textContent='Cannot load '+dataUrl+' ('+e.message+')';
+      sub.textContent='Cannot load '+dataUrl+' ('+e.message+') — put graph-data.js or graph.json next to this file, or serve over http.';
     });
   });
   </script>
+  <script src="graph-data.js"></script>
 </body>
 </html>

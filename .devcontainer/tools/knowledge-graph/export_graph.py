@@ -104,7 +104,12 @@ def main():
     }
     with open(out, "w") as f:
         json.dump(data, f, indent=1)
-    print(f"Exported {len(nodes)} nodes, {len(edges)} edges -> {out}")
+    # file://-safe sibling: a <script src="graph-data.js"> tag is allowed from
+    # file:// where fetch() is blocked. Viewer prefers GRAPH_DATA when present.
+    out_js = os.path.splitext(out)[0] + "-data.js"
+    with open(out_js, "w") as f:
+        f.write("window.GRAPH_DATA = " + json.dumps(data) + ";\n")
+    print(f"Exported {len(nodes)} nodes, {len(edges)} edges -> {out} (+{os.path.basename(out_js)})")
 
 
 if __name__ == "__main__":
