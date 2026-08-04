@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-"""build.py — Inline ForceGraph3D (3D) + graph.json into a single self-contained HTML.
+"""build.py — Vendor the ForceGraph3D library into a static viewer HTML.
 
-Produces mnemon-graph.html next to this script. The 3d-force-graph bundle is
-fetched once into a local cache dir and reused; graph.json is read from the same
-dir as this script (produced by export_graph.py).
+Produces mnemon-graph.html next to this script: the template (index.html)
+plus the 3d-force-graph bundle, fetched once into a local cache dir and
+reused. Data is NOT inlined — the viewer fetches graph.json at load time
+(portable design), so refreshing the graph never requires a rebuild.
+
+Run once (or when index.html changes); graph refreshes only need
+export_graph.py to replace graph.json next to the viewer.
 """
-import json
 import os
-import sys
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "index.html")
 OUT = os.path.join(HERE, "mnemon-graph.html")
-DATA = os.path.join(HERE, "graph.json")
 
 # Where the 3d-force-graph bundle is cached. Defaults to a sibling cache dir so
 # a fresh clone can fetch it on first build; override with KG_CACHE env var.
@@ -40,8 +41,6 @@ def load_fg() -> str:
 
 
 def main():
-    if not os.path.exists(DATA):
-        raise SystemExit(f"Missing {DATA} — run export_graph.py first.")
     if not os.path.exists(TEMPLATE):
         raise SystemExit(f"Missing {TEMPLATE}.")
 
@@ -53,17 +52,16 @@ def main():
     #    renderer + graph2ScreenCoords() for the HTML label overlay. (The
     #    <!-- __THREE__ --> marker stays as a harmless HTML comment.)
 
-    # 2) force-graph-3d
+    # 2) force-graph-3d (vendored once; the viewer is a FIXED asset — data is
+    #    fetched at runtime from graph.json, so data changes never need a rebuild)
     if "__FORCE_GRAPH__" in html:
         fg = load_fg()
         html = html.replace(
             "<!-- __FORCE_GRAPH__ -->",
             "<script>/* 3d-force-graph v1.80.0 (MIT) */\n" + fg + "\n</script>")
 
-    # 3) data
-    if "__DATA__" in html:
-        data = open(DATA, encoding="utf-8").read()
-        html = html.replace("/* __DATA__ */", "DATA = " + data + ";\n")
+    # 3) data — deliberately NOT inlined (portable design): the viewer fetches
+    #    graph.json at load time. Refresh = replace the JSON, no rebuild.
 
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(html)

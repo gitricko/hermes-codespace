@@ -115,9 +115,12 @@
   <div id="tooltip"></div>
 
   <script>
-  /* ====== INJECTED DATA ====== */
+  /* ====== DATA: fetched at runtime from graph.json (portable design) ======
+     The viewer is a fixed asset. Point it at any export:
+       - default:      graph.json beside this file
+       - explicit:     ?data=path/to/graph.json
+     Refresh = replace the JSON; never rebuild the HTML. */
   var DATA = null;
-  /* __DATA__ */
 
   var CAT_COLOR = { decision:'#58a6ff', context:'#3fb950', fact:'#d29922',
     insight:'#a371f7', general:'#8b949e', other:'#8b949e' };
@@ -324,8 +327,17 @@
 
   /* ---------- init ---------- */
   window.addEventListener('load',function(){
-    if(!DATA){ document.getElementById('subtitle').textContent='graph.json missing'; return; }
-    build();
+    var sub=document.getElementById('subtitle');
+    var dataUrl=new URLSearchParams(location.search).get('data')||'graph.json';
+    fetch(dataUrl).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    }).then(function(d){
+      DATA=d;
+      build();
+    }).catch(function(e){
+      sub.textContent='Cannot load '+dataUrl+' ('+e.message+')';
+    });
   });
   </script>
 </body>
