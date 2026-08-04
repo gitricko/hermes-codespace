@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """build.py — Vendor the ForceGraph3D library into a static viewer HTML.
 
-Produces mnemon-graph.html next to this script: the template (index.html)
+Produces mnemon-graph.html next to this script: the template (template.html)
 plus the 3d-force-graph bundle, fetched once into a local cache dir and
 reused. Data is NOT inlined — the viewer fetches graph.json at load time
 (portable design), so refreshing the graph never requires a rebuild.
 
-Run once (or when index.html changes); graph refreshes only need
+Run once (or when template.html changes); graph refreshes only need
 export_graph.py to replace graph.json next to the viewer.
 """
 import os
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TEMPLATE = os.path.join(HERE, "index.html")
+TEMPLATE = os.path.join(HERE, "template.html")
 OUT = os.path.join(HERE, "mnemon-graph.html")
 
 # Where the 3d-force-graph bundle is cached. Defaults to a sibling cache dir so

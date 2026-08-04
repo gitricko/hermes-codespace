@@ -34,10 +34,12 @@ graph-data.js ──────────►   file://  (script tag, GRAPH_DA
 ```
 
 Load priority in the viewer: `GRAPH_DATA` (script tag) → `?data=` → `graph.json`.
-`index.html` is the editable **template** (marker `__FORCE_GRAPH__`);
+`template.html` is the editable **template** (marker `__FORCE_GRAPH__`);
 `build.py` vendors the fg2 library into `mnemon-graph.html` — run it once (or
-when the template changes), **never for data refresh**. The fg2 bundle is
-fetched once into `.cache/` (gitignored; override with `KG_CACHE`).
+when the template changes), **never for data refresh**. `index.html` is a tiny
+meta-refresh forwarder to `mnemon-graph.html`, so the server root URL works
+without knowing the artifact filename. The fg2 bundle is fetched once into
+`.cache/` (gitignored; override with `KG_CACHE`).
 
 ## Data model
 
@@ -71,16 +73,16 @@ python3 -m http.server 8123  # optional: serve; or just double-click mnemon-grap
 mnemon viz --format html -o mnemon-viz.html   # optional vis.js fallback
 ```
 
-`python3 build.py` only when `index.html` (the template) changes.
+`python3 build.py` only when `template.html` (the template) changes.
 Full steps + pitfalls: skill `mnemon-graph-export`, or DESIGN.md §6.
 
-## Serving trap
+## Serving
 
-`http.server` rooted at the tools dir serves `index.html` = the TEMPLATE →
-blank page (unsubstituted markers). Serve a dir containing the BUILT viewer and
-open `/mnemon-graph.html`. For file:// double-click, keep `graph-data.js` next
-to the viewer (browsers block `fetch()` from file://, so the script tag is the
-data path there).
+`index.html` meta-refreshes to `mnemon-graph.html` — so `http://host:8123/`
+just works, no need to know the artifact filename. Never serve `template.html`
+as the root (unsubstituted markers → blank page). For file:// double-click,
+keep `graph-data.js` next to the viewer (browsers block `fetch()` from
+file://, so the script tag is the data path there).
 
 ## Related
 
