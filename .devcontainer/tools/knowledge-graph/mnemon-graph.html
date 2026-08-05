@@ -99,6 +99,24 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
         <span class="val" id="impval">1</span>
       </div>
 
+      <div class="grp-label">Force layout</div>
+      <div class="row">
+        <span style="width:110px; font-size:11px; color:var(--muted);">Link distance</span>
+        <input type="range" id="linkDist" min="10" max="300" step="1" value="30">
+        <span class="val" id="linkDistVal">30</span>
+      </div>
+      <div class="row">
+        <span style="width:110px; font-size:11px; color:var(--muted);">Repulsion</span>
+        <input type="range" id="repelStr" min="-1000" max="-10" step="10" value="-30">
+        <span class="val" id="repelStrVal">-30</span>
+      </div>
+      <div class="row">
+        <span style="width:110px; font-size:11px; color:var(--muted);">Min distance</span>
+        <input type="range" id="repelMin" min="1" max="100" step="1" value="1">
+        <span class="val" id="repelMinVal">1</span>
+      </div>
+      <button class="btn" id="reheatSim">🔥 Reheat simulation</button>
+
       <div class="sep"></div>
       <button class="btn" id="toggleSpin">&#9208; Pause auto-rotate</button>
       <button class="btn" id="resetView">&#8635; Reset view</button>
@@ -144,6 +162,9 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
   var container = document.getElementById('graph-container');
   var labelsBox = document.getElementById('labels');
   var impSlider = document.getElementById('imp');
+  var linkDistSlider = document.getElementById('linkDist');
+  var repelStrSlider = document.getElementById('repelStr');
+  var repelMinSlider = document.getElementById('repelMin');
   var Graph = null;
   var hidden = {};         /* category -> true when hidden */
   var spin = true;
@@ -329,6 +350,31 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
   document.getElementById('resetView').addEventListener('click',function(){
     if(!Graph) return;
     Graph.cameraPosition({x:0,y:0,z:300},null,800);
+  });
+  linkDistSlider.addEventListener('input',function(e){
+    if(!Graph) return;
+    var v=parseInt(e.target.value,10);
+    document.getElementById('linkDistVal').textContent=v;
+    Graph.d3Force('link').distance(v);
+    Graph.d3ReheatSimulation();
+  });
+  repelStrSlider.addEventListener('input',function(e){
+    if(!Graph) return;
+    var v=parseInt(e.target.value,10);
+    document.getElementById('repelStrVal').textContent=v;
+    Graph.d3Force('charge').strength(v);
+    Graph.d3ReheatSimulation();
+  });
+  repelMinSlider.addEventListener('input',function(e){
+    if(!Graph) return;
+    var v=parseInt(e.target.value,10);
+    document.getElementById('repelMinVal').textContent=v;
+    Graph.d3Force('charge').distanceMin(v);
+    Graph.d3ReheatSimulation();
+  });
+  document.getElementById('reheatSim').addEventListener('click',function(){
+    if(!Graph) return;
+    Graph.d3ReheatSimulation();
   });
   document.getElementById('panel-head').addEventListener('click',function(){
     document.getElementById('panel').classList.toggle('shrunk');

@@ -126,7 +126,18 @@ Three small pieces, each with one job (KISS/DRY):
   Serve the dir, open `http://host:8123/`, done. `?data=` still available on
   `mnemon-graph.html` directly.
 
-### 3.8 Verification standard (the user's requirement)
+### 3.8 Force layout controls (tune node separation live)
+- **Problem:** dense graphs (25 nodes, 372 edges) collapse into a tight ball
+  because the link force (attracting connected nodes) overpowers the default
+  charge repulsion (strength -30, distanceMin 1).
+- **Solution:** expose the three key d3-force parameters as UI sliders:
+  - *Link distance* (10–300, default 30) — spring length between connected nodes
+  - *Repulsion strength* (-1000 to -10, default -30) — how hard nodes push apart
+  - *Min distance* (1–100, default 1) — repulsion kicks in at this radius
+- **Reheat button** calls `d3ReheatSimulation()` so changes apply instantly.
+- No hardcoded values — optimal spread depends on density; you tune it per session.
+
+### 3.9 Verification standard (the user's requirement)
 - Static greps / `node --check` are **not** verification — they proved file
   contents, not rendering.
 - Actual verification: headless browser load → assert subtitle text, slider
@@ -156,6 +167,7 @@ The committed `graph.json` still holds the earlier 25/372 snapshot — see §6.
 - Node size ← `eff`, color ← category (legend pills, click to hide)
 - Category pills overlaid on bubbles, updated per frame
 - Min-importance slider (integer 1–5)
+- **Force layout controls**: link distance, repulsion strength, min distance sliders + "Reheat simulation" button (live tune the physics)
 - Auto-rotate on by default, pause/resume button, reset-view button
 - Subtitle: "N memories, M connections" (live)
 - Single self-contained HTML; double-click to open, or serve

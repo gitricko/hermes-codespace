@@ -1,6 +1,6 @@
 ---
 name: mnemon-graph-export
-description: "Use when the user asks to export/regenerate/show the Mnemon knowledge graph. Runs export_graph.py -> build.py -> mnemon viz, serves, and commits."
+description: "Use when exporting/regenerating the Mnemon knowledge graph."
 ---
 
 # Mnemon Knowledge-Graph Export (3D viewer regeneration)
@@ -101,5 +101,15 @@ If any check fails, debug the viewer (see pitfalls), never ship unverified.
 8. **Repo is PUBLIC** — graph.json embeds memory content. Review the export for
    secrets/PII before committing (content mirrors committed wiki + seed.json,
    but re-scan anyway).
-9. Browser caching: after rebuild + copy, hard-reload or cache-bust
-   (`?v=N`); the page may otherwise serve a stale artifact.
+9. **Generated data files should be gitignored**: `graph.json` and `graph-data.js`
+   are refreshed by `export_graph.py` on every regeneration. Add them to
+   `.gitignore` to avoid commit noise and conflicts — users run the export once
+   after clone to get a local graph.
+10. **Dense graphs squish together**: with many edges (e.g. 25 nodes / 372 edges),
+    the default d3 force parameters pull everything into a tight ball. The fix
+    is exposing force controls in the UI: link distance, charge strength,
+    charge distanceMin, plus a "Reheat simulation" button calling
+    `d3ReheatSimulation()`. This lets you tune spread per dataset without
+    rebuilds. See `references/force-controls.md` for the implementation.
+11. Browser caching: after rebuild + copy, hard-reload or cache-bust
+    (`?v=N`); the page may otherwise serve a stale artifact.

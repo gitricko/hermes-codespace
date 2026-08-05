@@ -62,6 +62,7 @@ without knowing the artifact filename. The fg2 bundle is fetched once into
 | Manual auto-rotate in rAF loop | The vendored fg2 fork exposes no `.autoRotate()` API (internal OrbitControls only); calling it throws and kills `build()` |
 | Integer slider 1–5 | Data importance is integer (2–5); `step="0.1"` showed floats |
 | linkVisibility accepts object endpoints | Engine resolves link endpoints to node objects; id-only lookup hid all edges on first filter change (user-reported bug, fixed) |
+| **Force layout controls exposed in UI** | Dense graphs squish into a ball; sliders for link distance, repulsion strength, min distance + Reheat button let you tune spread live per dataset — no rebuild, no hardcoded values |
 | Verification = real browser render + pixels | Static greps proved file contents but missed blank-page bugs; PIL pixel measurement is the ground truth |
 
 ## Regeneration (quick)
