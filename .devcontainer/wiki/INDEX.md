@@ -13,6 +13,7 @@
 | [persistent-memory-proposal.md](persistent-memory-proposal.md) | Proposal for versioning Hermes MEMORY.md / USER.md via a symlink architecture (runtime vs tracked). | architecture, memory, persistence, symlink |
 | [keepalive-proposal.md](keepalive-proposal.md) | Proposal: Codespace keepalive to mimic client activity and avoid idle shutdown (A: terminal heartbeat, B: /delay-shutdown pinger) | codespace, keepalive, idle-timeout, lifecycle, proposal |
 | [codespace-lifecycle.md](codespace-lifecycle.md) | Reference: how Codespaces detects idle & shuts down, diagnosing container death, keeping a codespace alive | codespace, lifecycle, idle, keep-alive, shutdown, reference |
+| [mnemon-graph-viewer.md](mnemon-graph-viewer.md) | Reference: 3D Mnemon knowledge-graph viewer — pipeline, data model, key design decisions, regeneration | mnemon, knowledge-graph, visualization, 3d-force-graph, tool |
 
 ## How to Use
 
