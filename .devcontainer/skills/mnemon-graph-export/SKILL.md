@@ -113,3 +113,22 @@ If any check fails, debug the viewer (see pitfalls), never ship unverified.
     rebuilds. See `references/force-controls.md` for the implementation.
 11. Browser caching: after rebuild + copy, hard-reload or cache-bust
     (`?v=N`); the page may otherwise serve a stale artifact.
+12. **Leading-dot chain after `;` = silent total failure**: applying forces
+    with `...cameraPosition(...);\n.d3Force('link').distance(x)` is a JS
+    SyntaxError (`.d3Force` has no receiver) — the ENTIRE app `<script>`
+    dies: no auto-layout, no labels, no visible error. User just sees
+    "no change". Force application MUST be separate statements:
+    `Graph.d3Force('link').distance(x);`. Always `node --check` the
+    extracted app script after editing the template.
+13. **Duplicate function declarations shadow each other**: two
+    `computeAutoForces()` definitions (one added in a new section, one left
+    in the old build section) — JS hoisting makes the LAST one win. After
+    editing, `grep -c "function computeAutoForces"` must be 1.
+14. **Bubble size**: fg2 sphere radius = `Math.cbrt(nodeVal) * nodeRelSize`
+    (verified in bundle). nodeRelSize 12 with val up to 19 → radius ~21
+    units = giant bubbles that read as "zoom too big". Use nodeRelSize(3)
+    and keep effToVal small (3..19): radius ~8 units max.
+15. **Auto-rotate orbit center**: spinCam must orbit the graph CLUSTER
+    center (`Graph.getGraphBbox()` midpoint), NOT the origin — otherwise
+    auto-rotate swings the framed view off-center and the graph appears to
+    drift/cluster. Camera must lookAt(tx,ty,tz).

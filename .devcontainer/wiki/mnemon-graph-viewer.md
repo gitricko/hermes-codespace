@@ -64,6 +64,9 @@ without knowing the artifact filename. The fg2 bundle is fetched once into
 | linkVisibility accepts object endpoints | Engine resolves link endpoints to node objects; id-only lookup hid all edges on first filter change (user-reported bug, fixed) |
 | **Force layout controls exposed in UI** | Dense graphs squish into a ball; sliders for link distance, repulsion strength, min distance + Reheat button let you tune spread live per dataset — no rebuild, no hardcoded values |
 | Verification = real browser render + pixels | Static greps proved file contents but missed blank-page bugs; PIL pixel measurement is the ground truth |
+| **Auto force-layout on load** | `computeAutoForces()` derives link distance / charge strength / charge min from canvas size + node/edge counts so the graph spreads instead of blob — but see pitfalls 12-13 below: a leading-dot chain after `;` is a JS SyntaxError that kills the whole script, and duplicate function declarations shadow each other |
+| **Bubble size** | fg2 radius = `cbrt(nodeVal) * nodeRelSize`; nodeRelSize(3) keeps bubbles small so the graph reads as spread out, not zoomed-in on a giant sphere |
+| **Auto-rotate orbits cluster center** | spinCam rotates around `getGraphBbox()` midpoint with `lookAt(tx,ty,tz)`, not the origin — otherwise the framed view drifts during rotation |
 
 ## Regeneration (quick)
 

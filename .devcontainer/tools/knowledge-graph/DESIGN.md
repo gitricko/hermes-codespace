@@ -137,7 +137,27 @@ Three small pieces, each with one job (KISS/DRY):
 - **Reheat button** calls `d3ReheatSimulation()` so changes apply instantly.
 - No hardcoded values — optimal spread depends on density; you tune it per session.
 
-### 3.9 Verification standard (the user's requirement)
+### 3.9 Auto force-layout on load (spread instead of blob)
+- **Problem:** even with controls, the graph loads as a dense blob until the
+  user manually tunes sliders — bad first impression on every refresh.
+- **Solution:** `computeAutoForces()` derives the three force parameters from
+  canvas size + graph topology (node count, edge count, avg degree):
+  `linkDist = max(150, targetSpan / N^0.7 * (1 + avgDeg*0.2))`,
+  `chargeStr = -max(800, targetSpan * N * 0.015 * (1 + avgDeg))`,
+  `chargeMin = max(20, targetSpan * 0.06)`. Applied in `build()` via
+  `Graph.d3Force(...)`; sliders initialize to the computed values.
+- **Bubble sizing:** fg2 sphere radius = `cbrt(nodeVal) * nodeRelSize` —
+  nodeRelSize(3) keeps max radius ~8 units so bubbles don't dominate.
+- **Orbit framing:** `spinCam` rotates around the graph bbox center
+  (`lookAt(tx,ty,tz)`), not the origin, so auto-rotate never swings the
+  framed view off-center.
+- **Debugging scars (do not repeat):** (a) force application must be
+  `Graph.d3Force(...)` statements — a leading-dot chain after `;` is a JS
+  SyntaxError that kills the whole script silently; (b) only ONE
+  `computeAutoForces()` may exist — JS hoisting makes the last declaration
+  win. Both were shipped once and produced "no visible change".
+
+### 3.10 Verification standard (the user's requirement)
 - Static greps / `node --check` are **not** verification — they proved file
   contents, not rendering.
 - Actual verification: headless browser load → assert subtitle text, slider
