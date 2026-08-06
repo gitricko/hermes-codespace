@@ -34,12 +34,8 @@ python3 export_graph.py
 #    Double-click mnemon-graph.html (file://, uses graph-data.js) or serve:
 python3 -m http.server 8123 --bind 0.0.0.0   # then http://localhost:8123/ (index.html forwards)
 
-# 3) Regenerate the vis.js fallback (optional but keep in sync)
-mnemon viz --format html -o mnemon-viz.html
-#    -> "written to mnemon-viz.html"
-
-# 4) Commit the refreshed data (viewer only changes when template.html does)
-git add graph.json graph-data.js mnemon-viz.html
+# 3) Commit the refreshed data (viewer only changes when template.html does)
+git add graph.json graph-data.js
 git -c commit.gpgsign=false commit -m "chore(knowledge-graph): refresh graph from latest mnemon export"
 ```
 
@@ -50,9 +46,8 @@ the fg2 library into `mnemon-graph.html`; does not touch data:
 python3 build.py   # first run fetches 3d-force-graph into .cache/
 ```
 
-Non-default DB/store: `python3 export_graph.py <path-to-db> -o out.json`;
-`mnemon viz` honors `--store` / `MNEMON_DATA_DIR` env. Point the viewer at any
-JSON with `mnemon-graph.html?data=other.json`.
+Non-default DB/store: `python3 export_graph.py <path-to-db> -o out.json`.
+Point the viewer at any JSON with `mnemon-graph.html?data=other.json`.
 
 ## Verification (MANDATORY — the user's standard)
 
