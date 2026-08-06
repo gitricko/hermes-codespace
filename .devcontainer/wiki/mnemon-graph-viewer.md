@@ -70,7 +70,7 @@ without knowing the artifact filename. The fg2 bundle is fetched once into
 ```bash
 cd .devcontainer/tools/knowledge-graph
 python3 export_graph.py      # fresh graph.json + graph-data.js (the ONLY refresh step)
-python3 -m http.server 8123  # optional: serve; or just double-click mnemon-graph.html
+python3 -m http.server 8130  # optional: serve; or just double-click mnemon-graph.html
 ```
 
 `python3 build.py` only when `template.html` (the template) changes.
@@ -78,7 +78,7 @@ Full steps + pitfalls: skill `mnemon-graph-export`, or DESIGN.md §6.
 
 ## Serving
 
-`index.html` meta-refreshes to `mnemon-graph.html` — so `http://host:8123/`
+`index.html` meta-refreshes to `mnemon-graph.html` — so `http://host:8130/`
 just works, no need to know the artifact filename. Never serve `template.html`
 as the root (unsubstituted markers → blank page). For file:// double-click,
 keep `graph-data.js` next to the viewer (browsers block `fetch()` from

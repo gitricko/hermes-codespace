@@ -32,7 +32,7 @@ python3 export_graph.py
 
 # 2) DONE — the viewer is a fixed asset; it loads the data on open.
 #    Double-click mnemon-graph.html (file://, uses graph-data.js) or serve:
-python3 -m http.server 8123 --bind 0.0.0.0   # then http://localhost:8123/ (index.html forwards)
+python3 -m http.server 8130 --bind 0.0.0.0   # then http://localhost:8130/ (index.html forwards)
 
 # 3) Commit the refreshed data (viewer only changes when template.html does)
 git add graph.json graph-data.js
@@ -74,7 +74,7 @@ If any check fails, debug the viewer (see pitfalls), never ship unverified.
    fetch. ALWAYS regenerate `graph-data.js` together with `graph.json`
    (`export_graph.py` writes both).
 2. **Serving**: `index.html` is a meta-refresh forwarder to
-   `mnemon-graph.html`, so `http://host:8123/` just works — no need to know
+   `mnemon-graph.html`, so `http://host:8130/` just works — no need to know
    the artifact filename. Never serve the TEMPLATE (`template.html`) as the
    root: it still has unsubstituted markers and renders blank.
 3. **Never inline a separate three.js copy** next to the fg2 bundle: fatal
