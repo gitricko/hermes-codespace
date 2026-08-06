@@ -151,24 +151,43 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
 
   var CAT_COLOR = { decision:'#58a6ff', context:'#3fb950', fact:'#d29922',
     insight:'#a371f7', general:'#8b949e', other:'#8b949e' };
-  var CAT_ORDER = ['decision','context','fact','insight','general'];
+    var CAT_ORDER = ['decision','context','fact','insight','general'];
 
-  /* ---------- helpers ---------- */
-  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-  function effToVal(eff){ var t=Math.max(0,Math.min(1,(eff||0.5)/3)); return 3 + t*16; }
+     /* ---------- helpers ---------- */
+     function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+         .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+     function effToVal(eff){ var t=Math.max(0,Math.min(1,(eff||0.5)/3)); return 3 + t*16; }
 
-  /* ---------- state ---------- */
-  var container = document.getElementById('graph-container');
-  var labelsBox = document.getElementById('labels');
-  var impSlider = document.getElementById('imp');
-  var linkDistSlider = document.getElementById('linkDist');
-  var repelStrSlider = document.getElementById('repelStr');
-  var repelMinSlider = document.getElementById('repelMin');
-  var Graph = null;
-  var hidden = {};         /* category -> true when hidden */
-  var spin = true;
-  var impMin = parseInt(impSlider.value, 10) || 1;
+     /* ---------- auto-layout helpers ---------- */
+     function computeAutoForces() {
+       const canvasW = window.innerWidth;
+       const canvasH = window.innerHeight;
+       const targetSpan = Math.min(canvasW, canvasH) * 0.6;
+
+       const N = DATA.nodes.length;
+       const E = DATA.edges.length;
+       const avgDeg = N > 0 ? 2 * E / N : 1;
+
+       // ENHANCED: much stronger forces to prevent clustering
+       const linkDist = Math.max(150, targetSpan / Math.pow(N, 0.7) * (1 + avgDeg * 0.2));
+       const chargeStr = -Math.max(800, targetSpan * N * 0.015 * (1 + avgDeg * 1.0));
+       const chargeMin = Math.max(20, targetSpan * 0.06);
+
+       console.log("[Auto-Layout] linkDist=" + Math.round(linkDist) + ", chargeStr=" + Math.round(chargeStr) + ", chargeMin=" + Math.round(chargeMin) + " (nodes=" + N + ", edges=" + E + ")");
+
+       return { linkDist: Math.round(linkDist), chargeStr: Math.round(chargeStr), chargeMin: Math.round(chargeMin) };
+     }
+     /* ---------- state ---------- */
+     var container = document.getElementById('graph-container');
+     var labelsBox = document.getElementById('labels');
+     var impSlider = document.getElementById('imp');
+     var linkDistSlider = document.getElementById('linkDist');
+     var repelStrSlider = document.getElementById('repelStr');
+     var repelMinSlider = document.getElementById('repelMin');
+     var Graph = null;
+     var hidden = {};         /* category -> true when hidden */
+     var spin = true;
+     var impMin = parseInt(impSlider.value, 10) || 1;
 
   /* ---------- tooltip ---------- */
   var lastMouse = {x:24, y:24};
@@ -241,11 +260,20 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
     spinAngle += 0.0035;                 // gentle: ~2 deg/frame at 60fps ≈ 12s per lap
     var cam = Graph.camera();
     if(!cam) return;
+    // Orbit target = cluster center (bbox), so the view stays framed while spinning
+    var tx=0, ty=0, tz=0;
+    try {
+      var bb = Graph.getGraphBbox();
+      if(bb && bb.x){
+        tx=(bb.x[0]+bb.x[1])/2; ty=(bb.y[0]+bb.y[1])/2; tz=(bb.z[0]+bb.z[1])/2;
+      }
+    } catch(e){}
     var p = cam.position;
-    var dist = Math.sqrt(p.x*p.x + p.z*p.z) || 180;  // keep current radius
-    var y = p.y;                                       // keep current height
-    cam.position.set(Math.sin(spinAngle)*dist, y, Math.cos(spinAngle)*dist);
-    cam.lookAt(0, 0, 0);
+    var dx = p.x-tx, dz = p.z-tz;
+    var dist = Math.sqrt(dx*dx + dz*dz) || 180;   // keep current radius around cluster
+    var yOff = p.y - ty;                           // keep current height above cluster
+    cam.position.set(tx + Math.sin(spinAngle)*dist, ty + yOff, tz + Math.cos(spinAngle)*dist);
+    cam.lookAt(tx, ty, tz);
   }
 
   /* ---------- node/link filtering ---------- */
@@ -276,16 +304,18 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
     });
     var links = DATA.edges.map(function(e){ return {source:e.source,target:e.target,type:e.type,weight:e.weight||1}; });
 
+    // Apply auto-computed forces for initial spread
+    var auto = computeAutoForces();
     Graph = ForceGraph3D();
     Graph(container)
           .graphData({nodes:nodes,links:links})
-          .nodeRelSize(12).nodeVal('val').nodeLabel(function(n){return n.label;})
+          .nodeRelSize(3).nodeVal('val').nodeLabel(function(n){return n.label;})
           .nodeColor('color').nodeOpacity(0.95).nodeResolution(20)
           .linkColor(function(){ return 'rgba(120,132,146,0.85)'; })
           .linkWidth(function(l){ var w=l.weight||1; return Math.max(0.6,Math.min(4,w*0.9)); })
           .linkOpacity(0.55)
           .backgroundColor('#0d1117')
-          .cooldownTicks(600).cooldownTime(12000)
+          .cooldownTicks(800).cooldownTime(15000)
           .onEngineTick(function(){ /* nudge runs during cooldown */ })
           .onEngineStop(function(){ frameGraph(); fillStats(); })
           .onNodeHover(function(h){ h?showTooltip(h):hideTooltip(); })
@@ -294,16 +324,25 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
             showTooltip(n);
           })
           .onNodeDragEnd(function(n){ n.fx=n.x; n.fy=n.y; n.fz=n.z; })
-          // Start with a tighter initial camera than the default so it's never
-          // impossibly far from the nodes before the simulation settles.
-          // (Auto-spin is handled manually in the rAF loop below — this bundle
-          //  does not expose .autoRotate().)
-          .cameraPosition({x:-120, y:-60, z:180}, {x:0,y:0,z:0}, 0);
+          // Set initial camera zoom based on auto-computed forces and graph extent
+          // This prevents the graph from starting too tightly zoomed in
+          .cameraPosition({x:0, y:0, z:400}, {x:0,y:0,z:0}, 0);
 
-    applyVisibility();
-    fillStats();
-    buildCatList();
-    labelLoop();   // overlay category pills, updates every frame
+    // AUTO forces for initial spread (replaces hardcoded manual defaults)
+    // NOTE: separate statements -- chaining .d3Force after a `;` is a SyntaxError
+    Graph.d3Force('link').distance(auto.linkDist);
+    Graph.d3Force('charge').strength(auto.chargeStr).distanceMin(auto.chargeMin);
+
+  // UI: init sliders to auto values (overrides hardcoded defaults)
+  impSlider.value = impMin; document.getElementById('impval').textContent = impMin;
+  linkDistSlider.value = auto.linkDist; document.getElementById('linkDistVal').textContent = auto.linkDist;
+  repelStrSlider.value = auto.chargeStr; document.getElementById('repelStrVal').textContent = auto.chargeStr;
+  repelMinSlider.value = auto.chargeMin; document.getElementById('repelMinVal').textContent = auto.chargeMin;
+
+  applyVisibility();
+  fillStats();
+  buildCatList();
+  labelLoop();   // overlay category pills, updates every frame
   }
 
   /* ---------- category toggles ---------- */
