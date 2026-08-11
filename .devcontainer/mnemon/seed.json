@@ -192,6 +192,22 @@
       "tags": ["skill", "persistent-memory", "symlink", "codespace", "procedure"],
       "entities": ["codespace-persistent-symlinks", "skills", "memories", "symlink", "start-hermes.sh"],
       "source": "agent"
+    },
+    {
+      "content": "HARD RULE: Never commit or push directly to main. All changes to main must go through a pull request (branch -> push -> PR -> review -> merge). User explicitly mandated this.",
+      "category": "decision",
+      "importance": 5,
+      "tags": ["git", "workflow", "hard-rule", "pr"],
+      "entities": ["main", "pull-request", "git", "merge"],
+      "source": "agent"
+    },
+    {
+      "content": "HARD RULE: For ANY coding task (writing, editing, reviewing, refactoring, debugging code), always load the karpathy-coding-guidelines skill first (skill_view) and follow its discipline. User explicitly mandated this. The skill itself exempts trivial one-liners from full rigor.",
+      "category": "decision",
+      "importance": 5,
+      "tags": ["skill", "coding", "hard-rule", "karpathy-coding-guidelines"],
+      "entities": ["karpathy-coding-guidelines", "skill-loading", "coding"],
+      "source": "agent"
     }
   ]
 }
