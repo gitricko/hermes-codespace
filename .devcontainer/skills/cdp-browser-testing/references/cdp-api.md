@@ -62,10 +62,21 @@ Then wait for `Page.loadEventFired` event.
 4. `Input.dispatchMouseEvent` with `mousePressed` at (x,y)
 5. `Input.dispatchMouseEvent` with `mouseReleased` at (x,y)
 
-### Type text
-1. `DOM.querySelector` → `nodeId`
-2. `DOM.focus` with `nodeId`
-3. `Input.insertText` with `{"text": "your text"}`
+> NOTE: `DOM.querySelector` is unreliable against React apps (returns no nodeId for
+> elements that clearly exist). The `cdp_client.py` helpers `type_text()` and
+> `click()` drive the page via `Runtime.evaluate` instead — prefer those.
+
+### Type text (React-safe — preferred)
+```js
+(() => {
+  const el = document.querySelector("#chatInput");
+  const setter = Object.getOwnPropertyDescriptor(
+    window.HTMLTextAreaElement.prototype, "value").set;
+  setter.call(el, "your text");
+  el.dispatchEvent(new Event("input", {bubbles: true}));
+  el.dispatchEvent(new Event("change", {bubbles: true}));
+})()
+```
 
 ### Get element HTML
 1. `DOM.getDocument` → `root.nodeId`
