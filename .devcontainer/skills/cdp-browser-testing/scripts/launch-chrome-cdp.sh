@@ -19,12 +19,27 @@ fi
 
 # Check if already running on port 9222
 if curl -sf http://127.0.0.1:9222/json/version >/dev/null 2>&1; then
-    # Extract WS URL from existing instance
+    # Before reusing, close any orphaned page targets from prior runs so the
+    # browser doesn't accumulate targets and make Page.navigate hang.
     CDP_WS_URL=$(curl -s http://127.0.0.1:9222/json/version | python3 -c "
 import sys, json
-data = json.load(sys.stdin)
-print(data['webSocketDebuggerUrl'])
+print(json.load(sys.stdin)['webSocketDebuggerUrl'])
 ")
+    python3 - "$CDP_WS_URL" <<'PY' 2>/dev/null || true
+import asyncio, json, sys, websockets
+async def cleanup(ws_url):
+    ws = await websockets.connect(ws_url, ping_interval=None)
+    await ws.send(json.dumps({"id":1,"method":"Target.getTargets"}))
+    msg = await asyncio.wait_for(ws.recv(), timeout=5)
+    targets = json.loads(msg).get("result",{}).get("targets",[])
+    rid = 2
+    for t in targets:
+        if t.get("type") in ("page","tab") and t.get("url") not in ("about:blank",):
+            await ws.send(json.dumps({"id":rid,"method":"Target.closeTarget","params":{"targetId":t["targetId"]}}))
+            rid += 1
+    await ws.close()
+asyncio.run(cleanup(sys.argv[1]))
+PY
     export CDP_WS_URL
     echo "CDP Chrome already running: $CDP_WS_URL"
     exit 0
