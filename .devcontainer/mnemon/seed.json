@@ -225,5 +225,41 @@
       "entities": ["lavish-axi", "127.0.0.1:4387", "agent-reply", "DNS-rebinding", "poll"],
       "source": "agent"
       }
+      ,
+      {
+      "content": "Skill: codespace-port-visibility — Automates GitHub Codespace port visibility (public/private/org) via CLI. Key insight: GITHUB_TOKEN must be extracted from vscode-server process environment (/proc/<PID>/environ), NOT shell env (which has GITHUB_CODESPACE_TOKEN, useless for API). Uses gh codespace ports visibility CLI. Scripts: get_codespace_token.py (reusable module), set_port_visibility.py (main CLI), export_codespace_token.sh (shell source). Verified working for lavish-axi automation: make 4387 private, 8080 public.",
+      "category": "insight",
+      "importance": 4,
+      "tags": ["skill", "codespace", "port-visibility", "automation", "github", "cli", "lavish-axi"],
+      "entities": ["codespace-port-visibility", "GITHUB_TOKEN", "vscode-server", "gh CLI", "lavish-axi", "nginx"],
+      "source": "agent"
+      }
+      ,
+      {
+      "content": "codespace-port-visibility skill scripts location: ~/.hermes/skills/codespace/codespace-port-visibility/scripts/ (get_codespace_token.py, set_port_visibility.py, export_codespace_token.sh). Symlinked to .devcontainer/skills/codespace-port-visibility/scripts/ for persistence.",
+      "category": "fact",
+      "importance": 4,
+      "tags": ["skill", "codespace", "port-visibility", "automation", "github", "cli"],
+      "entities": ["codespace-port-visibility", "GITHUB_TOKEN", "vscode-server", "gh CLI"],
+      "source": "agent"
+      }
+      ,
+      {
+      "content": "Wiki: lavish-axi-codespace-setup.md — Complete setup & troubleshooting for lavish-axi in GitHub Codespaces. Covers architecture (Browser → nginx:8080 → lavish-axi:4387 → CDP:9222), why nginx is required (same-origin guard + DNS-rebinding + Codespace proxy conflict), nginx config with Origin rewrite, port visibility conflict table, step-by-step setup, feedback loop contract, verified round-trip test, known limitations (mermaid iframe warning on public URLs), troubleshooting checklist, env vars, quick reference commands. Read .devcontainer/wiki/lavish-axi-codespace-setup.md.",
+      "category": "context",
+      "importance": 4,
+      "tags": ["wiki", "lavish-axi", "codespace", "setup", "nginx", "mermaid", "automation"],
+      "entities": ["lavish-axi", "nginx", "codespace", "port-visibility", "mermaid", "wiki"],
+      "source": "agent"
+      }
+      ,
+      {
+      "content": "lavish-axi working config in Codespaces (final): Public port 8080 via nginx proxy → lavish-axi on loopback 4387. Nginx rewrites Origin/Host/Referer to 127.0.0.1 so same-origin check passes. Send-to-agent, annotation, mermaid SVG all work. Mermaid whiteboard iframe shows GitHub warning on public URLs (platform limitation, not bug). Private 4387 requires LAVISH_AXI_ALLOWED_HOSTS=* (code change reverted per user). Use URL: https://<codespace>-8080.app.github.dev/session/<key>",
+      "category": "fact",
+      "importance": 5,
+      "tags": ["lavish-axi", "codespace", "nginx", "port-visibility", "working-config"],
+      "entities": ["lavish-axi", "nginx", "codespace", "port-visibility", "8080", "4387"],
+      "source": "agent"
+      }
       ]
       }
