@@ -117,6 +117,16 @@ The launcher prints the browser WebSocket URL. `CDPClient` auto-discovers it via
 - **Navigation hangs (no response to `Page.navigate`)**: Almost always orphaned CDP targets from a previous run piling up. Close them: `for p in $(pgrep -f remote-debugging-port=9222); do kill -9 $p; done`, then relaunch. The `CDPClient` now auto-attaches to page targets, so `navigate()` works without manual attach.
 - **Element not found / empty bubbles**: CDP `DOM.querySelector` is unreliable against React. Use `wait_for()` + `type_text()` / `click()` (Runtime.evaluate based) instead. Read the chat via `get_chat_bubbles()` or `get_text()` rather than `div.bubble` CSS selectors.
 - **`ModuleNotFoundError: cdp_client`**: ensure you import `cdp_client` (underscore), not `cdp-client`, and that the script dir is on `PYTHONPATH`.
+- **Mermaid diagrams don't render**: The artifact must include the Mermaid CDN script. Add to your HTML:
+  ```html
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "strict" });
+    await mermaid.run({ nodes: [...document.querySelectorAll(".mermaid")] });
+  </script>
+  ```
+  Without this, `<pre class="mermaid">` stays as raw text — the SDK's `mermaid-node.js` helpers only detect *rendered* SVGs.
+- **Whiteboard editor cookie error**: The Excalidraw iframe is sandboxed without `allow-same-origin` (opaque origin). Clicking "Fullscreen" or interacting with the editor triggers `SecurityError: Failed to set 'cookie' property`. This is **by-design** — the whiteboard frame runs in an opaque origin matching the artifact iframe's trust posture. The diagram renders fine as a static, clickable flowchart; only the fullscreen editor is affected.
 
 ## Related Skills
 - `codespace/github-codespace` — GitHub Codespace auth and workflow
