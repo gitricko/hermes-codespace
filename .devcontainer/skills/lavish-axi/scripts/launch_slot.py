@@ -26,7 +26,40 @@ HERE = os.path.dirname(SCRIPT_DIR)
 EXPOSE_PORT = os.path.join(HERE, "..", "codespace-port-visibility", "scripts", "expose_port.py")
 TEMPLATE = os.path.join(SCRIPT_DIR, "nginx_slot.template")
 NGINX_ENABLED = "/etc/nginx/sites-enabled"
-CODESPACE_NAME = os.environ.get("CODESPACE_NAME", "probable-waddle-q757j5pp649f9wvx")
+CODESPACE_NAME = os.environ.get("CODESPACE_NAME")
+if not CODESPACE_NAME:
+    print("[launch_slot] ERROR: CODESPACE_NAME not set in environment", file=sys.stderr)
+    sys.exit(1)
+
+
+def _resolve_lavish_dir(argv, explicit_dir):
+    """Resolve the lavish-axi dist directory from npm cache.
+
+    Priority:
+    1. Explicit argv[3] if provided (user passed a custom path)
+    2. npm cache auto-discovery via npx (primary: ~/.npm/_npx/<hash>/node_modules/lavish-axi/dist/)
+    3. FAIL with clear guidance
+    """
+    if explicit_dir:
+        return explicit_dir
+
+    # Auto-discover npx cache path
+    # Look for ~/.npm/_npx/<hash>/node_modules/lavish-axi/dist/
+    home = os.path.expanduser("~")
+    npm_cache_dir = os.path.join(home, ".npm", "_npx")
+    if os.path.isdir(npm_cache_dir):
+        for entry in os.listdir(npm_cache_dir):
+            candidate = os.path.join(npm_cache_dir, entry, "node_modules", "lavish-axi", "dist")
+            if os.path.isdir(candidate):
+                print(f"[launch_slot] Auto-detected lavish-axi from npx cache: {candidate}")
+                return candidate
+
+    # Last resort - fail with clear guidance
+    print(f"[launch_slot] ERROR: Could not auto-detect lavish-axi dist directory.", file=sys.stderr)
+    print(f"[launch_slot]   Expected: npx cache under {npm_cache_dir}", file=sys.stderr)
+    print(f"[launch_slot]   Run: npx -y lavish-axi --version  (to populate cache)", file=sys.stderr)
+    print(f"[launch_slot]   Or pass lavish_axi_dir argument explicitly.", file=sys.stderr)
+    sys.exit(1)
 
 
 def run(cmd, check=True):
@@ -45,7 +78,7 @@ def main():
 
     hermes_session_id = sys.argv[1]
     artifact_path = sys.argv[2]
-    lavish_dir = sys.argv[3] if len(sys.argv) > 3 else "/workspaces/lavish-axi"
+    lavish_dir = _resolve_lavish_dir(sys.argv, sys.argv[3] if len(sys.argv) > 3 else None)
 
     # 1. Allocate slot
     rec = json.loads(subprocess.check_output(
@@ -96,7 +129,14 @@ def main():
         # then flips visibility. We wait for the tunnel to register, then ensure public.
         run(f"timeout 30 python3 {expose} {public_port}", check=False)
         # ensure visibility is public even if the script's final step was cut off
-        run(f"gh codespace ports visibility {public_port}:public -c {CODESPACE_NAME}", check=False)
+        vis = run(f"gh codespace ports visibility {public_port}:public -c {CODESPACE_NAME}", check=False)
+        if vis.returncode != 0:
+            print(f"[launch_slot] Port visibility set (attempted).", file=sys.stderr)
+            print(f"[launch_slot] If port 99{public_port} is not public, run manually:", file=sys.stderr)
+            print(f"  gh codespace ports visibility {public_port}:public -c {CODESPACE_NAME}", file=sys.stderr)
+            print(f"  OR use VS Code Ports panel → 99{public_port} → Port Visibility → Public", file=sys.stderr)
+    else:
+        print(f"[launch_slot] expose_port.py not found at {expose}", file=sys.stderr)
 
     public_url = f"https://{CODESPACE_NAME}-{public_port}.app.github.dev/session/{session_key}"
     print(json.dumps({"slot": rec["slot"], "engine_port": engine_port, "public_port": public_port,

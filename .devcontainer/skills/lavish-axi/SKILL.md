@@ -6,8 +6,7 @@ description: Launch a dedicated lavish-axi planning session per Hermes conversat
 # lavish-axi skill
 
 Run lavish-axi planning sessions inside a GitHub Codespace without fixed-port collisions.
-Each Hermes conversation gets its own **slot**: a loopback lavish-axi engine, a public nginx
-proxy, and a poll listener — all keyed by the Hermes session ID and persisted in a slot registry.
+Each Hermes conversation gets its own **slot**: a loopback lavish-axi engine, a public nginx proxy, and a poll listener — all keyed by the Hermes session ID and persisted in a slot registry.
 
 ## When to use
 
@@ -17,17 +16,20 @@ proxy, and a poll listener — all keyed by the Hermes session ID and persisted 
 
 ## Architecture
 
-```
-Hermes session ──reads session ID──> slot_allocator.py
-                                      │  slots.json: {slot, engine_port, public_port, state_dir, hermes_session_id}
-                                      ▼
-                            launch_slot.py
-                              ├─ start lavish-axi engine  (127.0.0.1:43XX, loopback)
-                              ├─ nginx proxy              (0.0.0.0:99XX → 127.0.0.1:43XX, Origin rewrite)
-                              ├─ expose_port.py           (gh forward + visibility, public)
-                              └─ print public URL
-                                      ▼
-                            poll_supervisor.py  (harness background, restarts poll per cycle)
+```mermaid
+flowchart LR
+    H[Hermes Session] -->|reads session ID| S[slot_allocator.py]
+    S -->|allocates slot| Sl[slots.json]
+    Sl -->|{slot, engine_port, public_port, state_dir, session_key}| L[launch_slot.py]
+    L -->|start engine| E[lavish-axi engine<br/>127.0.0.1:43XX]
+    L -->|nginx proxy| N[nginx<br/>0.0.0.0:99XX → 127.0.0.1:43XX]
+    N -->|Origin rewrite + WS upgrade| E
+    L -->|expose + visibility| X[expose_port.py<br/>gh forward + public]
+    L -->|print public URL| U[User chat]
+    L -->|poll supervisor| P[poll_supervisor.py<br/>harness background]
+    U -->|feedback annotations| A[User Browser<br/>lavish-axi UI]
+    A -->|queued prompts| P
+    P -->|agent-reply| H
 ```
 
 Port scheme (matching suffixes for readability):
@@ -38,12 +40,20 @@ Port scheme (matching suffixes for readability):
 
 ```bash
 # 1. Allocate slot for THIS Hermes session, launch engine + nginx + expose
-python3 scripts/launch_slot.py "$HERMES_SESSION_ID" /path/to/artifact.html
+python3 scripts/launch_slot.py "$HERMES_SESSION_ID" /path/to/artifact.html [lavish_axi_dir]
 
-# 2. Start poll supervisor as harness-background (notify_on_complete=true)
+# Optional: 4th argument overrides the lavish-axi dist directory path.
+# If omitted, launch_slot auto-resolves from ~/.npm/_npx/<hash>/node_modules/lavish-axi/dist/
+# (populated by running `npx -y lavish-axi --version` once).
+
+# 2. The script attempts to make port public automatically.
+#    If GH_TOKEN is not configured, you'll see a notice with manual alternatives.
+#    In VS Code: Ports panel → 99XX → Port Visibility → Public
+
+# 3. Start poll supervisor as harness-background (notify_on_complete=true)
 python3 scripts/poll_supervisor.py <state_dir> <artifact_path> <engine_port>
 
-# 3. Drop the public URL from launch_slot output into chat
+# 4. Drop the public URL from launch_slot output into chat
 ```
 
 ## Scripts
@@ -65,9 +75,7 @@ python3 scripts/poll_supervisor.py <state_dir> <artifact_path> <engine_port>
 
 ## Slot registry persistence
 
-`~/.lavish-axi/slots.json` survives restarts. On "iterate this in lavish", the agent calls
-`slot_allocator.py get <session_id>` first — if a slot exists, reuse it; otherwise `alloc`.
-This is how multiple Hermes sessions each own a stable slot.
+`~/.lavish-axi/slots.json` survives restarts. On "iterate this in lavish", the agent calls `slot_allocator.py get <session_id>` first — if a slot exists, reuse it; otherwise `alloc`. This is how multiple Hermes sessions each own a stable slot.
 
 ## Files
 
