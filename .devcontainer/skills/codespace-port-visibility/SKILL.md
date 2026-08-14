@@ -37,7 +37,7 @@ gh codespace ports visibility 8080:public -c $CODESPACE_NAME
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/set_port_visibility.py` | Main CLI: `python3 set_port_visibility.py <port> <public|private|org> [codespace]` |
+| `scripts/set_port_visibility.py` | Main CLI: `python3 set_port_visibility.py <port> <visibility> [codespace]` |
 | `scripts/export_codespace_token.sh` | Exports GITHUB_TOKEN for direct `gh` usage |
 | `scripts/get_codespace_token.py` | Reusable token extraction module |
 
