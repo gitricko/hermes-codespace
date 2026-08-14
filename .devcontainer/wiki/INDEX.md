@@ -14,6 +14,7 @@
 | [keepalive-proposal.md](keepalive-proposal.md) | Proposal: Codespace keepalive to mimic client activity and avoid idle shutdown (A: terminal heartbeat, B: /delay-shutdown pinger) | codespace, keepalive, idle-timeout, lifecycle, proposal |
 | [codespace-lifecycle.md](codespace-lifecycle.md) | Reference: how Codespaces detects idle & shuts down, diagnosing container death, keeping a codespace alive | codespace, lifecycle, idle, keep-alive, shutdown, reference |
 | [karpathy-coding-guidelines.md](karpathy-coding-guidelines.md) | Reference: Karpathy's LLM coding-pitfall guidelines — four principles, origin, how they map to Hermes skills | coding, discipline, guidelines, karpathy, reference |
+| [lavish-axi-codespace-setup.md](lavish-axi-codespace-setup.md) | Complete setup & troubleshooting for lavish-axi in Codespaces: nginx proxy, port visibility, mermaid, feedback loop | lavish-axi, codespace, nginx, port-visibility, setup, mermaid |
 
 ## How to Use
 
