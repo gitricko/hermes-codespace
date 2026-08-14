@@ -1,0 +1,14 @@
+server {{
+    listen {public_port};
+    location / {{
+        proxy_pass http://127.0.0.1:{engine_port};
+        proxy_set_header Host 127.0.0.1:{engine_port};
+        proxy_set_header Origin http://127.0.0.1:{engine_port};
+        proxy_set_header Referer http://127.0.0.1:{engine_port};
+        proxy_set_header X-Forwarded-Host 127.0.0.1:{engine_port};
+        proxy_set_header X-Forwarded-Proto http;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }}
+}}

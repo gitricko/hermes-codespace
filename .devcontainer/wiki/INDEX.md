@@ -10,11 +10,12 @@
 | [repository-analysis.md](repository-analysis.md) | Repository deep dive — architecture, startup flow, verification, what's used vs unused | architecture, startup, verification, ci |
 | [github-actions-testing-plan.md](github-actions-testing-plan.md) | CI/CD testing plan — phased approach, workflow design, service smoke tests, integration tests | ci, testing, github-actions, workflow |
 | [persistent-knowledge-proposal.md](persistent-knowledge-proposal.md) | Architecture decision: persistent knowledge system via Git — symlinks, skills, wiki, Mnemon seeding | architecture, knowledge-persistence, symlink, devcontainer |
-| [persistent-memory-proposal.md](persistent-memory-proposal.md) | Proposal for versioning Hermes MEMORY.md / USER.md via a symlink architecture (runtime vs tracked). | architecture, memory, persistence, symlink |
+| [persistent-memory-proposal.md](persistent-memory-proposal.md) | Proposal for versioning Hermes MEMORY.md / USER.md via a symlink architecture (runtime vs tracked) | architecture, memory, persistence, symlink |
 | [keepalive-proposal.md](keepalive-proposal.md) | Proposal: Codespace keepalive to mimic client activity and avoid idle shutdown (A: terminal heartbeat, B: /delay-shutdown pinger) | codespace, keepalive, idle-timeout, lifecycle, proposal |
 | [codespace-lifecycle.md](codespace-lifecycle.md) | Reference: how Codespaces detects idle & shuts down, diagnosing container death, keeping a codespace alive | codespace, lifecycle, idle, keep-alive, shutdown, reference |
 | [karpathy-coding-guidelines.md](karpathy-coding-guidelines.md) | Reference: Karpathy's LLM coding-pitfall guidelines — four principles, origin, how they map to Hermes skills | coding, discipline, guidelines, karpathy, reference |
 | [lavish-axi-codespace-setup.md](lavish-axi-codespace-setup.md) | Complete setup & troubleshooting for lavish-axi in Codespaces: nginx proxy, port visibility, mermaid, feedback loop | lavish-axi, codespace, nginx, port-visibility, setup, mermaid |
+| [lavish-axi-skill-design.md](lavish-axi-skill-design.md) | Design spec for lavish-axi as a Hermes skill: per-session slots, dynamic ports, poll supervisor, trigger phrase | lavish-axi, skill, slot, dynamic-port, design, proposal |
 
 ## How to Use
 
