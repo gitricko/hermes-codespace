@@ -71,7 +71,7 @@ This is how multiple Hermes sessions each own a stable slot.
 
 ## Files
 
-- Skill: `.devcontainer/skills/codespace/lavish-axi/`
+- Skill: `.devcontainer/skills/lavish-axi/`
 - Wiki design: `.devcontainer/wiki/lavish-axi-skill-design.md`
 - Setup/troubleshooting: `.devcontainer/wiki/lavish-axi-codespace-setup.md`
 - Depends on: `codespace-port-visibility` skill (`expose_port.py`)

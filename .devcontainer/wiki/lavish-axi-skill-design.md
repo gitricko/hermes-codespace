@@ -1,6 +1,6 @@
 # Lavish-AXI Skill Design
 
-Design spec for the `codespace/lavish-axi` skill — launching a dedicated, annotated
+Design spec for the `lavish-axi` skill — launching a dedicated, annotated
 lavish-axi planning session per Hermes conversation, with zero fixed-port collisions.
 
 ## Problem
@@ -82,7 +82,7 @@ User annotates in lavish → POST /api/:key/prompts → poll captures (status: f
 
 ## Files
 
-- Skill: `.devcontainer/skills/codespace/lavish-axi/`
+- Skill: `.devcontainer/skills/lavish-axi/`
   - `scripts/slot_allocator.py` — registry
   - `scripts/launch_slot.py` — engine + nginx + expose
   - `scripts/poll_supervisor.py` — keep poll alive
