@@ -23,6 +23,18 @@ The bare `code` command often fails in Codespaces because it's not on PATH or th
 
 A script that finds the CLI automatically and opens files. Works in any Codespace with VS Code connected.
 
+## Installation
+
+```bash
+# Run the install script to copy vscode-open.sh to ~/.hermes/scripts/
+~/.hermes/skills/codespace/codespace-vscode-open/scripts/install.sh
+
+# Or from the skill directory
+.devcontainer/skills/codespace-vscode-open/scripts/install.sh
+```
+
+The script is installed to `~/.hermes/scripts/vscode-open.sh` by the install script.
+
 ## Usage
 
 ```bash
@@ -35,9 +47,12 @@ A script that finds the CLI automatically and opens files. Works in any Codespac
 
 ## How It Works
 
-1. Searches `/vscode/bin/linux-x64/` for the `code` binary
-2. Executes it with the provided file path
-3. Opens the file in the user's connected VS Code window
+1. Finds the **active VS Code server PID** (`pgrep -f "server-main.js"`)
+2. **Extracts commit SHA** from the server's command line to get the exact matching CLI
+3. **Fallback**: if commit SHA extraction fails, picks the newest `code` binary by mtime
+4. Executes the CLI with the provided file path — opens in the user's connected VS Code
+
+This ensures we always use the CLI from the **active VS Code server**, not a stale version from a previous update.
 
 ## Installation
 
@@ -46,7 +61,17 @@ The script is installed to `~/.hermes/scripts/vscode-open.sh` by the skill autho
 ## Files
 
 - `scripts/vscode-open.sh` — Main executable script
+- `scripts/install.sh` — Installs vscode-open.sh to `~/.hermes/scripts/`
 - `references/vscode-cli-discovery.md` — Discovery pattern and troubleshooting
+
+## Pitfalls
+
+| Pitfall | Symptom | Fix |
+|---------|---------|-----|
+| **Stale CLI selected** | File opens against old VS Code server, doesn't reach connected editor | Use active server's commit SHA (from `/proc/PID/cmdline`) or fallback to newest by mtime |
+| **Script not installed** | `~/.hermes/scripts/vscode-open.sh: No such file or directory` | Run `scripts/install.sh` — it's not auto-linked like skills |
+| **VS Code not connected** | `VS Code server not running` error | Connect VS Code desktop to Codespace before running |
+| **Multiple VS Code versions** | Arbitrary `find \| head -1` picks wrong version | Sort by mtime (`-printf "%T@ %p\n" \| sort -n \| tail -1`) |
 
 ## Related Skills
 
