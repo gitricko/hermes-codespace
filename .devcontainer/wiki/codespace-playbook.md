@@ -49,7 +49,7 @@ In a GitHub Codespace, several GitHub-related tokens/env vars exist, but most of
 
 ### Solution A: Extract the Real Token from VS Code Server (Preferred)
 
-The VS Code server process has the real GitHub OAuth token (`ghu_xxx`). You can extract it:
+The VS Code server process has a **GitHub App user-to-server token** (`ghu_xxx`). You can extract it:
 
 ```bash
 # Find the VS Code server PID
@@ -62,11 +62,17 @@ GITHUB_TOKEN=$(cat /proc/$VSCODE_PID/environ 2>/dev/null \
   | cut -d= -f2-)
 
 # Verify it works
-curl -s -H "Authorization: token $GITHUB_TOKEN" \
+curl -s -H "Authorization: token ***" \
   https://api.github.com/user | python3 -c "import json,sys; print(json.load(sys.stdin).get('login','FAILED'))"
 ```
 
-**Important**: The token is a GitHub OAuth user token (starts with `ghu_`, ~40 chars). It gives you the same permissions as the user who opened the Codespace.
+**Important**: The token is a **GitHub App user-to-server token** (starts with `ghu_`, ~40 chars).
+It has `repo` scope but is **gated by GitHub App installation**. It works for:
+- The Codespace's origin repository
+- Other repositories where the GitHub Codespaces app is installed
+
+It will **FAIL (403)** on repositories where the user has access but the Codespaces app is not installed.
+For those cases, use **Solution B (device flow)** instead.
 
 ### Solution B: Use the gh CLI Device Flow (Alternative)
 

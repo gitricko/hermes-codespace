@@ -39,7 +39,18 @@ gh auth status
 - Do NOT use GITHUB_CODESPACE_TOKEN for REST API calls (returns 401)
 - Do NOT run gh auth login (unnecessary)
 - The VS Code server PID can be found with: pgrep -f "server-main.js"
-- Token is a GitHub OAuth user token (ghu_xxx prefix), ~40 chars
+- Token is a GitHub App user-to-server token (ghu_xxx prefix), ~40 chars
+- **Critical limitation**: This is a GitHub App token gated by Codespaces app installation. It works for the origin repo and Codespaces-connected repos, but FAILS (403) on other repos the user has access to. Use device code flow for those cases.
+
+### Token Scope Comparison
+
+| Method | Token Type | Scope | Works On |
+|--------|------------|-------|----------|
+| **Extract from VS Code** | GitHub App user-to-server (`ghu_`) | `repo` (app-gated) | Origin repo + Codespaces-connected repos only |
+| **Device code flow** | Classic OAuth (`gho_`/`ghp_`) | Full user scopes | **All repos the user has access to** |
+| **Unauthenticated API** | None | Public only | Public repos (read-only) |
+
+**When to use device flow instead**: Working on repos outside the Codespaces app installation (other users' repos, orgs without Codespaces app).
 
 ## References
 

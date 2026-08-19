@@ -73,10 +73,10 @@ The device code flow IS the expected auth path in a Codespace. If the agent
 can't authenticate, try the device code flow first — the user just needs to
 open a URL and paste a code, which is seamless.
 
-### Token Extraction from VS Code Server (Most Reliable — No Browser)
+### Token Extraction from VS Code Server (Preferred — No Browser)
 
-The VS Code server process has the real GitHub OAuth token (`ghu_xxx`) in its
-environment. This is the most reliable auth method in Codespaces — no browser,
+The VS Code server process has a GitHub App user-to-server token (`ghu_xxx`) in its
+environment. This is the preferred auth method in Codespaces — no browser,
 no device flow, no user interaction needed.
 
 ```bash
@@ -94,8 +94,14 @@ curl -s -H "Authorization: token ***" \
   https://api.github.com/user | python3 -c "import json,sys; print(json.load(sys.stdin).get('login','FAILED'))"
 ```
 
-The token gives you the same permissions as the user who opened the Codespace.
-Use it for API calls, PR comments, and even `gh` CLI:
+**Critical limitation**: This token is a **GitHub App token** (from the GitHub Codespaces app).
+It has `repo` scope but is **gated by GitHub App installation**. It works for:
+- The Codespace's origin repository
+- Other repositories where the GitHub Codespaces app is installed
+
+It will **FAIL (403)** on repositories where the user has access but the Codespaces app is not installed.
+
+Use it for API calls, PR comments, and even `gh` CLI **on supported repos**:
 
 ```bash
 unset GH_TOKEN
@@ -107,6 +113,16 @@ gh auth status  # Should show authenticated
 environment — `GITHUB_CODESPACE_TOKEN` and `GH_TOKEN` in the shell are
 different (limited/invalid) tokens. The real token lives in the server
 process's `/proc/PID/environ` and must be extracted explicitly.
+
+### Token Scope Comparison
+
+| Method | Token Type | Scope | Works On |
+|--------|------------|-------|----------|
+| **Extract from VS Code** | GitHub App user-to-server (`ghu_`) | `repo` (app-gated) | Origin repo + Codespaces-connected repos only |
+| **Device code flow** | Classic OAuth (`gho_`/`ghp_`) | Full user scopes | **All repos the user has access to** |
+| **Unauthenticated API** | None | Public only | Public repos (read-only) |
+
+**When to use device flow instead**: Working on repos outside the Codespaces app installation (other users' repos, orgs without Codespaces app).
 
 ### Pitfall: Multiple VS Code Server Processes
 
