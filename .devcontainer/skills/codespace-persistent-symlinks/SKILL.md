@@ -68,3 +68,7 @@ self-check.sh). Run locally:
 ## Sync note (wiki)
 - `persistent-memory-proposal.md` — reference/proposal doc vs this procedural skill.
   Keep the Option-A split and the self-check wiring (below) mirrored in both.
+
+## Cleanup
+When deleting a skill/project, also purge its persisted files and cross-references:
+- [persistent-knowledge/references/cleanup-deleted-skill.md](../persistent-knowledge/references/cleanup-deleted-skill.md) — Full procedure for wiki, Mnemon DB, seed.json, skills, and cross-references

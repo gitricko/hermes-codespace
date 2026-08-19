@@ -17,7 +17,7 @@
       "category": "context",     // preference|decision|insight|fact|context|general
       "importance": 5,            // 1–5
       "tags": ["codespace","cdp"],
-      "entities": ["cdp-browser-testing","lavish-axi"],
+      "entities": [],
       "source": "agent"
     }
   ]
