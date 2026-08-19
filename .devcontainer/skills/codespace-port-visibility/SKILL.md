@@ -75,14 +75,13 @@ def get_codespace_token():
                         return entry.decode().split('=', 1)[1]
 ```
 
-## Integration with Lavish-AXI
+## Integration Example
 
 ```bash
-# In lavish-axi startup script:
-# 1. Make lavish-axi port (4387) private for security
+# 1. Make service port private for security
 python3 scripts/set_port_visibility.py 4387 private
 
-# 2. Make nginx proxy port (8080) public for access  
+# 2. Make proxy port public for access
 python3 scripts/set_port_visibility.py 8080 public
 
 # 3. Start services
@@ -100,4 +99,3 @@ sudo nginx -g 'daemon off;' &
 
 - `codespace-gh-auth` — GitHub auth setup for Codespaces
 - `github-codespace` — Full Codespace workflow (auth, CI, PR)
-- `cdp-browser-testing` — Headless browser automation in Codespaces

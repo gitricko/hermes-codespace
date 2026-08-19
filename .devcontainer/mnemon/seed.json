@@ -489,72 +489,6 @@
       "source": "agent"
     },
     {
-      "content": "Skill: codespace/cdp-browser-testing \u2014 Headless browser automation in Codespaces via Playwright CDP. Location: .devcontainer/skills/cdp-browser-testing/ (files: SKILL.md, scripts/launch-chrome-cdp.sh [idempotent CDP launcher], scripts/cdp-client.py [async Python CDP client], templates/common-operations.py [cookbook], references/cdp-api.md). Problem solved: Codespaces have NO system Chrome and the browser_use tool's built-in browser fails to launch; solution drives cached Playwright Chromium (~/.cache/ms-playwright/chromium-*/chrome-linux64/chrome) over CDP on ws://127.0.0.1:9222. Verified end-to-end against a live lavish-axi session on loopback (full browser\u2192agent\u2192browser feedback round-trip, 5/5 pass). Read .devcontainer/skills/cdp-browser-testing/SKILL.md for full usage.",
-      "category": "context",
-      "importance": 5,
-      "tags": [
-        "skill",
-        "cdp-browser-testing",
-        "codespace",
-        "playwright",
-        "cdp",
-        "browser",
-        "headless"
-      ],
-      "entities": [
-        "cdp-browser-testing",
-        ".devcontainer/skills",
-        "Playwright Chromium",
-        "CDP",
-        "lavish-axi"
-      ],
-      "source": "agent"
-    },
-    {
-      "content": "lavish-axi local testing in Codespaces (verified): Must access via localhost/loopback (http://127.0.0.1:4387/session/<id>), NOT the *.app.github.dev proxy \u2014 a DNS-rebinding guard enforces loopback-only. Suppress the GUI auto-open with LAVISH_AXI_NO_OPEN=1 or --no-open. The browser\u2192agent feedback loop: run `node dist/cli.mjs poll sample.html` to receive prompts, post agent replies via POST /api/<session>/agent-reply with body {\"text\":\"...\"}. poll returns ONCE per feedback cycle then exits 0 (re-run per cycle). The cdp-browser-testing skill automates the browser side headlessly. Full round-trip proven working.",
-      "category": "insight",
-      "importance": 4,
-      "tags": [
-        "lavish-axi",
-        "loopback",
-        "testing",
-        "dns-rebinding",
-        "cdp",
-        "agent-reply"
-      ],
-      "entities": [
-        "lavish-axi",
-        "127.0.0.1:4387",
-        "agent-reply",
-        "DNS-rebinding",
-        "poll"
-      ],
-      "source": "agent"
-    },
-    {
-      "content": "Skill: codespace-port-visibility \u2014 Automates GitHub Codespace port visibility (public/private/org) via CLI. Key insight: GITHUB_TOKEN must be extracted from vscode-server process environment (/proc/<PID>/environ), NOT shell env (which has GITHUB_CODESPACE_TOKEN, useless for API). Uses gh codespace ports visibility CLI. Scripts: get_codespace_token.py (reusable module), set_port_visibility.py (main CLI), export_codespace_token.sh (shell source). Verified working for lavish-axi automation: make 4387 private, 8080 public.",
-      "category": "insight",
-      "importance": 4,
-      "tags": [
-        "skill",
-        "codespace",
-        "port-visibility",
-        "automation",
-        "github",
-        "cli",
-        "lavish-axi"
-      ],
-      "entities": [
-        "codespace-port-visibility",
-        "GITHUB_TOKEN",
-        "vscode-server",
-        "gh CLI",
-        "lavish-axi",
-        "nginx"
-      ],
-      "source": "agent"
-    },
-    {
       "content": "codespace-port-visibility skill scripts location: ~/.hermes/skills/codespace/codespace-port-visibility/scripts/ (get_codespace_token.py, set_port_visibility.py, export_codespace_token.sh). Symlinked to .devcontainer/skills/codespace-port-visibility/scripts/ for persistence.",
       "category": "fact",
       "importance": 4,
@@ -575,95 +509,6 @@
       "source": "agent"
     },
     {
-      "content": "Wiki: lavish-axi-codespace-setup.md \u2014 Complete setup & troubleshooting for lavish-axi in GitHub Codespaces. Covers architecture (Browser \u2192 nginx:8080 \u2192 lavish-axi:4387 \u2192 CDP:9222), why nginx is required (same-origin guard + DNS-rebinding + Codespace proxy conflict), nginx config with Origin rewrite, port visibility conflict table, step-by-step setup, feedback loop contract, verified round-trip test, known limitations (mermaid iframe warning on public URLs), troubleshooting checklist, env vars, quick reference commands. Read .devcontainer/wiki/lavish-axi-codespace-setup.md.",
-      "category": "context",
-      "importance": 4,
-      "tags": [
-        "wiki",
-        "lavish-axi",
-        "codespace",
-        "setup",
-        "nginx",
-        "mermaid",
-        "automation"
-      ],
-      "entities": [
-        "lavish-axi",
-        "nginx",
-        "codespace",
-        "port-visibility",
-        "mermaid",
-        "wiki"
-      ],
-      "source": "agent"
-    },
-    {
-      "content": "lavish-axi working config in Codespaces (final): Public port 8080 via nginx proxy \u2192 lavish-axi on loopback 4387. Nginx rewrites Origin/Host/Referer to 127.0.0.1 so same-origin check passes. Send-to-agent, annotation, mermaid SVG all work. Mermaid whiteboard iframe shows GitHub warning on public URLs (platform limitation, not bug). Private 4387 requires LAVISH_AXI_ALLOWED_HOSTS=* (code change reverted per user). Use URL: https://<codespace>-8080.app.github.dev/session/<key>",
-      "category": "fact",
-      "importance": 5,
-      "tags": [
-        "lavish-axi",
-        "codespace",
-        "nginx",
-        "port-visibility",
-        "working-config"
-      ],
-      "entities": [
-        "lavish-axi",
-        "nginx",
-        "codespace",
-        "port-visibility",
-        "8080",
-        "4387"
-      ],
-      "source": "agent"
-    },
-    {
-      "content": "Skill: lavish-axi \u2014 Launch a dedicated lavish-axi planning session per Hermes conversation with zero port collisions. Dynamic per-session slots: each Hermes conversation gets its own slot (loopback engine 43XX + public nginx 99XX + poll supervisor) keyed by Hermes session ID in ~/.lavish-axi/slots.json. Scripts: slot_allocator.py (registry), launch_slot.py (engine + nginx + expose), poll_supervisor.py (harness background), nginx_slot.template (Origin rewrite + WS upgrade). Depends on codespace-port-visibility skill (expose_port.py). Verified: public 9988 returns 200, poll supervisor listening.",
-      "category": "insight",
-      "importance": 4,
-      "tags": [
-        "skill",
-        "lavish-axi",
-        "dynamic-ports",
-        "slot",
-        "planning",
-        "homes"
-      ],
-      "entities": [
-        "lavish-axi",
-        "slot_allocator",
-        "launch_slot",
-        "poll_supervisor",
-        "nginx",
-        "codespace"
-      ],
-      "source": "agent"
-    },
-    {
-      "content": "Wiki: lavish-axi-skill-design.md \u2014 Design spec for lavish-axi as a Hermes skill: per-session slots, dynamic ports (engine 43XX \u2194 public 99XX matching suffixes), slot registry (slots.json with Hermes session ID), trigger phrase 'iterate this in lavish', poll supervisor (harness background), public port exposure via codespace-port-visibility expose_port.py (forward + visibility). Resolved: session ownership \u2192 Hermes session ID in registry; auto-open vs link \u2192 link in chat; Mermaid iframe \u2192 deferred (in-page only); HTML vs MD \u2192 HTML = scratchpad, MD = record. Read .devcontainer/wiki/lavish-axi-skill-design.md.",
-      "category": "context",
-      "importance": 4,
-      "tags": [
-        "wiki",
-        "lavish-axi",
-        "skill",
-        "design",
-        "dynamic-port",
-        "slot",
-        "proposal"
-      ],
-      "entities": [
-        "lavish-axi",
-        "skill-design",
-        "wiki",
-        "slot",
-        "registry",
-        "poll-supervisor"
-      ],
-      "source": "agent"
-    },
-    {
       "content": "Skill: codespace-vscode-open \u2014 Auto-discovers VS Code CLI in Codespaces at /vscode/bin/linux-x64/<commit>/bin/remote-cli/code and opens files in connected VS Code. Script at ~/.hermes/scripts/vscode-open.sh and .devcontainer/skills/codespace-vscode-open/scripts/vscode-open.sh. Wiki: .devcontainer/wiki/vscode-cli-codespaces.md. Use this skill whenever you need to open a file in the user's VS Code from a Codespace.",
       "category": "fact",
       "importance": 4,
@@ -678,6 +523,45 @@
         "vscode-open.sh",
         "VS Code CLI",
         "Codespaces"
+      ],
+      "source": "agent"
+    },
+    {
+      "content": "MANDATORY: Run ci-lint-check skill before ANY commit or PR that modifies .devcontainer/skills/**, .devcontainer/wiki/**, .devcontainer/mnemon/**, .devcontainer/memories/**, or .devcontainer/*.sh. This mirrors the GitHub Actions lint-check job and prevents CI failures. One command: bash .devcontainer/skills/ci-lint-check/scripts/ci_lint_check.sh",
+      "category": "decision",
+      "importance": 5,
+      "entities": [
+        "ci-lint-check",
+        "pre-commit",
+        "github-actions",
+        "validation",
+        "mandatory"
+      ],
+      "tags": [
+        "mandatory",
+        "workflow",
+        "ci",
+        "pre-commit"
+      ],
+      "source": "agent"
+    },
+    {
+      "content": "codespace-lavish skill fully installed and working: launches headed Lavish-AXI whiteboard over noVNC with auto-connect (autoconnect=true) and local scaling (resize=scale). Includes continuous poll loop with auto-restart (2s), --monitor flag, Chrome GPU fix (SwiftShader), session key derivation, and stable noVNC URL. Script is idempotent and self-healing.",
+      "category": "fact",
+      "importance": 4,
+      "entities": [
+        "codespace-lavish",
+        "lavish-axi",
+        "novnc",
+        "whiteboard",
+        "poll",
+        "swiftshader"
+      ],
+      "tags": [
+        "skill",
+        "gui",
+        "automation",
+        "codespace"
       ],
       "source": "agent"
     }

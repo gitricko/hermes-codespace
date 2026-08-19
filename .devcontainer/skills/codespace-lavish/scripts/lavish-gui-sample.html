@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Lavish GUI Sample</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    body { background:#0d1117; color:#e6edf3; font-family: system-ui, sans-serif; padding:2rem; }
+    h1 { color:#58a6ff; }
+    .mermaid { background:#161b22; padding:1rem; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <h1>Lavish GUI Sample</h1>
+  <p>Standalone Mermaid demo used by the lavish-planning-gui skill to validate the
+     headed-browser → virtual-display → noVNC stack without a live Lavish session.</p>
+  <div class="mermaid">
+    graph TD
+      A[Idea] --> B[Plan in Lavish]
+      B --> C{Human review}
+      C -->|approve| D[Ship]
+      C -->|revise| B
+  </div>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  </script>
+</body>
+</html>

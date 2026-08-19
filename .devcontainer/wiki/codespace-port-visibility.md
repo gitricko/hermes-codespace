@@ -9,7 +9,7 @@ This article documents the reference architecture for automating Codespace port 
 ## The Problem
 
 VS Code auto-detects and forwards some ports (e.g., 8080), but:
-- New ports started by services (nginx, lavish-axi, etc.) are not auto-forwarded
+- New ports started by services (nginx, etc.) are not auto-forwarded
 - Changing visibility requires clicking in the VS Code Ports panel
 - No CLI existed until `gh codespace ports` commands were added
 
@@ -97,15 +97,13 @@ source scripts/export_codespace_token.sh
 gh codespace ports visibility 8080:public -c $CODESPACE_NAME
 ```
 
-## Integration with Lavish-AXI
+## Integration Example
 
 ```bash
-# In lavish-axi startup script:
-
-# 1. Make lavish-axi port (4387) private for security
+# 1. Make service port private for security
 python3 scripts/set_port_visibility.py 4387 private
 
-# 2. Make nginx proxy port (8080) public for access
+# 2. Make proxy port public for access
 python3 scripts/set_port_visibility.py 8080 public
 
 # 3. Start services
@@ -113,12 +111,7 @@ LAVISH_AXI_NO_OPEN=1 node dist/cli.mjs sample.html --no-open &
 sudo nginx -g 'daemon off;' &
 ```
 
-## Port Scheme Reference (Lavish-AXI Slots)
-
-| Component | Port Formula | Example (slot 1) | Example (slot 2) |
-|-----------|--------------|------------------|------------------|
-| Engine (loopback) | `4387 + (slot-1)` | 4387 | 4388 |
-| Public (nginx) | `9987 + (slot-1)` | 9987 | 9988 |
+## Port Scheme Reference (Slot-based)
 
 ## Prerequisites
 
@@ -131,5 +124,4 @@ sudo nginx -g 'daemon off;' &
 - **Skill**: `.devcontainer/skills/codespace-port-visibility/` — Procedural how-to
 - **Skill**: `.devcontainer/skills/codespace-gh-auth/` — Token extraction from VS Code
 - **Wiki**: [codespace-gh-auth.md](codespace-gh-auth.md) — Token extraction details
-- **Wiki**: [lavish-axi-codespace-setup.md](lavish-axi-codespace-setup.md) — Full lavish-axi setup with port visibility
 - **Wiki**: [github-codespace.md](github-codespace.md) — Complete Codespace workflow

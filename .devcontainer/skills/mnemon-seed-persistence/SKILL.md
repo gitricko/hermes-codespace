@@ -28,7 +28,7 @@ Codespace, it must be in `seed.json` (and committed), not just the live DB.
       "category": "context",     // preference|decision|insight|fact|context|general
       "importance": 5,            // 1–5
       "tags": ["codespace","cdp"],
-      "entities": ["cdp-browser-testing","lavish-axi"],
+      "entities": [],
       "source": "agent" }
   ] }
 ```
@@ -37,7 +37,9 @@ importance ≥ 4 missing from seed.json (action-needed before merge).
 
 ## Workflow (when committing a skill or durable insight)
 1. **Propose** the entry for user review — do NOT blind auto-commit (user wants sign-off on durable memory).
-2. **Edit** `.devcontainer/mnemon/seed.json` — append to the `insights` array.
+2. **Edit** `.devcontainer/mnemon/seed.json` — append to the `insights` array with correct field names:
+   - Use `content` (not `text`) for the insight body
+   - Include `category`, `importance`, `tags`, `entities`, `source: "agent"`
 3. **Also commit a standalone extract** `seed-<topic>.json` (same schema, just the new insights)
    into the same PR, so the memory ships with the code that needs it.
 4. **Validate before commit** (the exact step `start-hermes.sh` runs):
@@ -50,6 +52,10 @@ importance ≥ 4 missing from seed.json (action-needed before merge).
 ## Live tool still matters
 Use `mnemon_remember`/`mnemon_recall` during the session for immediate recall and for staging what
 should later be promoted to seed.json. Live DB = working set; seed.json = durable snapshot.
+
+## Cleanup
+When deleting a skill/project, also purge its seed.json entries:
+- [persistent-knowledge/references/cleanup-deleted-skill.md](../persistent-knowledge/references/cleanup-deleted-skill.md) — Full procedure for wiki, Mnemon DB, seed.json, and cross-references
 
 ## Related
 - codespace/memory-automation — the live Mnemon workflow this extends with durable persistence
