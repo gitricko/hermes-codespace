@@ -662,6 +662,24 @@
         "poll-supervisor"
       ],
       "source": "agent"
+    },
+    {
+      "content": "Skill: codespace-vscode-open \u2014 Auto-discovers VS Code CLI in Codespaces at /vscode/bin/linux-x64/<commit>/bin/remote-cli/code and opens files in connected VS Code. Script at ~/.hermes/scripts/vscode-open.sh and .devcontainer/skills/codespace-vscode-open/scripts/vscode-open.sh. Wiki: .devcontainer/wiki/vscode-cli-codespaces.md. Use this skill whenever you need to open a file in the user's VS Code from a Codespace.",
+      "category": "fact",
+      "importance": 4,
+      "tags": [
+        "skill",
+        "codespace",
+        "vscode",
+        "automation"
+      ],
+      "entities": [
+        "codespace-vscode-open",
+        "vscode-open.sh",
+        "VS Code CLI",
+        "Codespaces"
+      ],
+      "source": "agent"
     }
   ]
 }
