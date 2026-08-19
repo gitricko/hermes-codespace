@@ -54,10 +54,6 @@ The script is installed to `~/.hermes/scripts/vscode-open.sh` by the install scr
 
 This ensures we always use the CLI from the **active VS Code server**, not a stale version from a previous update.
 
-## Installation
-
-The script is installed to `~/.hermes/scripts/vscode-open.sh` by the skill author. No additional dependencies.
-
 ## Files
 
 - `scripts/vscode-open.sh` — Main executable script
