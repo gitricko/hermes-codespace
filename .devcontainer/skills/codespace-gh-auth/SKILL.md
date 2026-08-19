@@ -40,3 +40,7 @@ gh auth status
 - Do NOT run gh auth login (unnecessary)
 - The VS Code server PID can be found with: pgrep -f "server-main.js"
 - Token is a GitHub OAuth user token (ghu_xxx prefix), ~40 chars
+
+## References
+
+- `references/git-push-with-token.md` — Complete git push + PR workflow using extracted token
