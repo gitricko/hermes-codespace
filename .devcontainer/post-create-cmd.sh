@@ -44,13 +44,28 @@ else
   echo "[$SCRIPT_NAME] ollama not found, skipping start"
 fi
 
-# Install hermes-agent
-if ! command -v hermes &>/dev/null; then
-  echo "[$SCRIPT_NAME] Installing hermes-agent ${HERMES_VERSION}..."
-  curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh" | bash -s -- --skip-setup
-  npm cache clean --force
-  sudo rm -rf /var/lib/apt/lists/* 
+# Install hermes-agent (fix 429 from github issue)
+HERMES_INSTALL_URI="https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh"
+HERMES_FALLBACK_URI="https://hermes-agent.nousresearch.com/install.sh"
+INSTALL_SCRIPT="$(mktemp)"
+
+if ! curl -fsSL --max-time 15 --retry 3 -o "$INSTALL_SCRIPT" "$HERMES_INSTALL_URI"; then
+  echo "[$SCRIPT_NAME] Primary Hermes installer failed; trying fallback..."
+  if ! curl -fsSL --max-time 15 --retry 3 -o "$INSTALL_SCRIPT" "$HERMES_FALLBACK_URI"; then
+    echo "[$SCRIPT_NAME] Could not download Hermes installer."
+    rm -f "$INSTALL_SCRIPT"
+    exit 1
+  fi
 fi
+
+if ! bash "$INSTALL_SCRIPT" --skip-setup; then
+  echo "[$SCRIPT_NAME] Hermes installer failed."
+  rm -f "$INSTALL_SCRIPT"
+  exit 1
+fi
+rm -f "$INSTALL_SCRIPT"
+npm cache clean --force
+sudo rm -rf /var/lib/apt/lists/* 
 
 # Symlink the Hermes memories dir into the repo (skills-style folder symlink).
 # postCreateCommand runs exactly once on a FRESH container, so this is the
@@ -116,8 +131,6 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
   # optimize for kanban
   hermes config set agent.max_turns 120
   hermes config set kanban.failure_limit 3
-  # default: a message typed while a turn is running steers into the run, not interrupt it
-  hermes config set display.busy_input_mode steer
 
   # Populate default skill and .hermes.md
   echo "[$SCRIPT_NAME] Installing Skill: memory-automation.md"
