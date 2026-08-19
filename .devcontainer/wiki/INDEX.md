@@ -16,6 +16,16 @@
 | [karpathy-coding-guidelines.md](karpathy-coding-guidelines.md) | Reference: Karpathy's LLM coding-pitfall guidelines — four principles, origin, how they map to Hermes skills | coding, discipline, guidelines, karpathy, reference |
 | [lavish-axi-codespace-setup.md](lavish-axi-codespace-setup.md) | Complete setup & troubleshooting for lavish-axi in Codespaces: nginx proxy, port visibility, mermaid, feedback loop | lavish-axi, codespace, nginx, port-visibility, setup, mermaid |
 | [lavish-axi-skill-design.md](lavish-axi-skill-design.md) | Design spec for lavish-axi as a Hermes skill: per-session slots, dynamic ports, poll supervisor, trigger phrase | lavish-axi, skill, slot, dynamic-port, design, proposal |
+| [cdp-browser-testing.md](cdp-browser-testing.md) | Headless browser automation in Codespaces via Playwright CDP — launch, interact, extract, troubleshoot | codespace, browser, cdp, playwright, testing, skill |
+| [codespace-gh-auth.md](codespace-gh-auth.md) | Extract real GitHub OAuth token from VS Code server process for API and gh CLI in Codespaces | codespace, github, auth, token, vscode, skill |
+| [codespace-persistent-symlinks.md](codespace-persistent-symlinks.md) | Whole-folder symlink pattern to persist Hermes memories and skills across Codespace rebuilds | codespace, persistence, symlink, memory, skill |
+| [codespace-port-visibility.md](codespace-port-visibility.md) | Automate Codespace port visibility via CLI: forward + public/private visibility using gh CLI | codespace, ports, visibility, github, automation, skill |
+| [github-codespace.md](github-codespace.md) | Full GitHub Codespace workflow: auth, CI monitoring, debugging, API access, PR operations | github, codespace, ci, debugging, api, workflow, skill |
+| [github-pr-review.md](github-pr-review.md) | Evaluate CodeQL and Copilot suggestions on PRs — fetch, triage, propose fixes with decision framework | github, pr, codeql, copilot, review, security, skill |
+| [memory-automation.md](memory-automation.md) | Automated Mnemon workflow: recall on start, recall before turn, auto-save after response | memory, mnemon, persistence, automation, workflow, skill |
+| [mnemon-seed-persistence.md](mnemon-seed-persistence.md) | Persist Mnemon memory across Codespace rebuilds via checked-in seed.json with validation | mnemon, seed, persistence, codespace, memory, skill |
+| [persistent-knowledge.md](persistent-knowledge.md) | Persistent skills/knowledge in Codespace via symlinks — validated pattern and self-check wiring | persistence, symlink, codespace, knowledge, skill |
+| [vscode-cli-codespaces.md](vscode-cli-codespaces.md) | Auto-discover VS Code CLI in Codespaces and open files in connected editor | codespace, vscode, editor, cli, skill |
 
 ## How to Use
 
@@ -37,4 +47,4 @@
 
 ---
 
-*Last updated: 2026-08-02*
+*Last updated: 2026-08-19*
