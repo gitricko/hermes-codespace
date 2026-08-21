@@ -564,6 +564,26 @@
         "codespace"
       ],
       "source": "agent"
+    },
+    {
+      "content": "When the user asks to launch/start/open a 'webtop', 'remote desktop', 'browser desktop', 'VNC alternative', or 'Selkies/XFCE desktop' in a Codespace or Ubuntu environment, LOAD the codespace-webtop skill and run its control script. The skill lives at .devcontainer/skills/codespace-webtop/ with scripts/selkies-native.sh (install/start/stop/status/autostart/logs). Quick path: bash .devcontainer/skills/codespace-webtop/scripts/selkies-native.sh start, then forward port 3000. CRITICAL: use the pixelflux-based selkies wheel (GitHub Actions 'selkies-wheel' artifact), NOT PyPI selkies==1.6.1 (legacy GStreamer). Requires libva2 libva-drm2 libva-x11-2 for H.264.",
+      "category": "decision",
+      "importance": 4,
+      "tags": [
+        "selkies",
+        "webtop",
+        "remote-desktop",
+        "xfce",
+        "skill-invocation",
+        "codespace"
+      ],
+      "entities": [
+        "codespace-webtop",
+        ".devcontainer/skills/codespace-webtop",
+        "port-3000",
+        "pixelflux"
+      ],
+      "source": "agent"
     }
   ]
 }

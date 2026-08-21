@@ -25,6 +25,8 @@
 | [persistent-knowledge.md](persistent-knowledge.md) | Persistent skills/knowledge in Codespace via symlinks — validated pattern and self-check wiring | persistence, symlink, codespace, knowledge, skill |
 | [vscode-cli-codespaces.md](vscode-cli-codespaces.md) | Auto-discover VS Code CLI in Codespaces and open files in connected editor | codespace, vscode, editor, cli, skill |
 | [ci-lint-check.md](ci-lint-check.md) | Pre-commit CI lint validation — run locally before push to avoid GitHub Actions failures | ci, lint, pre-commit, validation, github-actions, skill |
+| [codespace-webtop.md](codespace-webtop.md) | Native Selkies/XFCE webtop (browser desktop) via pixelflux-based selkies — architecture, WebSocket-only streaming, XFCE failsafe fix, port 3000 | selkies, xfce, webtop, desktop, websocket, codespace, browser-desktop, skill |
+| [selkies-package-discrepancy.md](selkies-package-discrepancy.md) | Critical: PyPI `selkies==1.6.1` is legacy GStreamer; correct pixelflux-based package is a GitHub Actions artifact | selkies, package, pixelflux, webrtc, gotcha |
 
 ## How to Use
 

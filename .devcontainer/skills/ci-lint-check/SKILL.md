@@ -114,6 +114,7 @@ This guarantees identical validation in both environments. Never duplicate valid
 - **markdownlint config** is embedded in the script (matches CI config)
 - **Mnemon seed validation** requires the validator script to exist
 - **Symlink check** validates boot script logic, not actual runtime symlinks
+- **MD034 / no-bare-urls** — raw URLs in any `.md` fail lint with `error MD034/no-bare-urls Bare URL used`. Wrap them in angle brackets: `<https://example.com>` not `https://example.com`. This broke PR #3 (two bare URLs in a SKILL.md References block and a references/*.md). The markdownlint config here does NOT disable MD034, so every URL must be bracketed.
 
 ## Integration with Git Hooks (Optional)
 

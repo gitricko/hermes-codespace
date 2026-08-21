@@ -458,6 +458,12 @@ the knowledge from the previous session."
 
 ---
 
+## References
+
+- [Selkies Package Discrepancy: PyPI vs GitHub Actions](references/selkies-package-discrepancy.md) — Critical finding: PyPI `selkies==1.6.1` is legacy GStreamer; correct pixelflux-based package is a GitHub Actions artifact.
+
+---
+
 ## Complete Codespace Workflow
 
 ```bash
