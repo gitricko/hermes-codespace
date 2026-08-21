@@ -64,6 +64,27 @@ self-check.sh). Run locally:
   ONLY the injected marker line (perl/grep), never tail-trim — you can truncate a real
   directive and the file shrinks unexpectedly (observed 1297B → 504B).
 - Verify the guard against ALL THREE cases, not just the happy path.
+<<<<<<< Updated upstream
+=======
+- **Mixed-state runtime dirs need per-file symlinks, not whole-folder.** `~/.pi/agent/`
+  is the canonical case: symlink only `models.json`/`settings.json` into
+  `.devcontainer/pi-config/`; never symlink the whole dir (it drags in `auth.json`,
+  `sessions/`, locks). Add a `start-hermes.sh` guard to re-link past the tool's own
+  first-launch stub, and verify the guard replaces a plain stub with the symlink.
+- **Test-stub leak: never `cp` from runtime back to tracked during guard testing.** When
+  simulating a rebuild, the runtime file (e.g. `~/.pi/agent/settings.json`) may contain
+  the tool's own stub (`defaultProvider: "x"`). If you `cp` it to the tracked location
+  (`.devcontainer/pi-config/settings.json`), you commit the stub instead of the intended
+  config. Instead: write the correct canonical content to the tracked file directly, then
+  verify the guard correctly relinks from tracked → runtime. The guard's job is
+  tracked→runtime; the test's job is to ensure tracked has the RIGHT content. (Observed:
+  Greptile caught `defaultProvider: "x"` shipped in a PR because a rebuild-sim had copied the
+  pi stub back into the tracked file.)
+- **Name tracked config dirs after the tool, not the skill.** A folder named after the
+  installing skill (e.g. `firstmate/` holding pi's LM config) is misleading to reviewers and
+  drifts from the PR's actual purpose. Name it for what it holds (`pi-config/`), and keep the
+  PR title scoped to the real change (persisting pi config), not the skill install.
+>>>>>>> Stashed changes
 
 ## Sync note (wiki)
 - `persistent-memory-proposal.md` — reference/proposal doc vs this procedural skill.

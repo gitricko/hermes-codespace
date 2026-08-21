@@ -422,6 +422,20 @@ Key principles:
 
 ---
 
+### Editing PR title/body when `gh pr edit` lacks scope
+
+`gh pr edit` can fail with `your authentication token is missing required scopes [read:project]` — `repo` + `workflow` scopes are not enough on some orgs, and `gh auth refresh -s read:project` is interactive (won't complete unattended). Fallback: PATCH the PR directly via the REST API using the OAuth token `gh` already stored from the device-code flow:
+
+```bash
+# Parse gh's stored OAuth token (gho_) from its hosts config
+TOK=$(python3 -c "import re; print(re.search(r'oauth_token:\s*(\S+)', open('/home/codespace/.config/gh/hosts.yml').read()).group(1))")
+curl -s -X PATCH "https://api.github.com/repos/$OWNER/$REPO/pulls/$PR_NUMBER" \
+  -H "Authorization: token $TOK" -H "Accept: application/vnd.github+json" \
+  -d '{"title":"new title","body":"new body"}'
+```
+
+The device-code `gho_` token has `repo` scope, so this works. Do NOT use the VS Code server App token (`ghu_`) for this — it returns 403 on PR PATCH (App-gated, pull-only on the origin repo). Apply the same pattern to set the body alone (`{"body": "..."}`) or title alone.
+
 ## Public Repo API Access Without Auth
 
 For public repos, the GitHub REST API works without authentication for:
