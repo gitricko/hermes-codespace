@@ -131,6 +131,30 @@ The Selkies client uses a `ResizeObserver` on the browser window. When you drag-
 
 The skill version (PR #3) is the portable one — it works on any Ubuntu/Debian base with environment-variable overrides for all paths, ports, and display.
 
+## Security & Exposure
+
+The webtop intentionally runs selkies with `--enable-basic-auth=false`. This is by
+design, not an oversight:
+
+- **GitHub Codespace**: the public port (3000) is reachable **only** through
+  GitHub's authenticated port-forward tunnel. Unauthenticated users cannot open the
+  desktop, so no app-level auth is required for the standard Codespace usage.
+- **Bare-metal / VM** (the skill's other supported target): if port 3000 is routed
+  to the public internet, anyone with the URL controls the full XFCE desktop
+  (keyboard, clipboard, file transfer). The architecture diagram above shows
+  `--enable-basic-auth=false` deliberately — Codespaces handles the auth boundary.
+
+**Hardening for VM/bare-metal hosts:**
+- Keep the forwarded port **private** (do not expose it publicly), **or**
+- Place nginx behind an authenticating proxy (Authelia, OAuth2 Proxy, Cloudflare
+  Access), **or**
+- Enable selkies basic-auth — but note it is a single shared credential and weak on
+  its own; treat it as defense-in-depth, not primary access control.
+
+> Greptile (PR #41, P1) flagged "public webtop bypasses authentication." The
+> resolution: keep auth off for the Codespace path (already gated), document the
+> exposure, and require an auth boundary for the VM/bare-metal path.
+
 ## Verification
 
 ```bash

@@ -147,6 +147,20 @@ Environment variables (all optional, with defaults):
 - **selkies wheel acquisition is NOT plug-and-play**: The GitHub Actions artifact (`selkies-wheel`) requires auth (401 unauthenticated), the `releases/latest/download/selkies-wheel.zip` URL returns 404, and the PyPI package (`selkies==1.6.1`) is the wrong legacy GStreamer package. **The only reliable unattended path is `pip wheel git+https://github.com/selkies-project/selkies.git`** (built into `cmd_install` as fallback (c)). If you add a vendored wheel to `wheels/` it will be used, but the skill no longer ships one.
 - **Web client is NOT bundled in the selkies wheel**: The wheel contains only the Python streaming server (`selkies.selkies_web` namespace is empty). The React/Vite client lives in `addons/selkies-web-core` in the selkies repo. `install` **must** run `cmd_build_web` (clone repo → npm install → npm run build → copy to `~/.selkies/web_root`) and `start` **must** pass `--web-root=~/.selkies/web_root`. Without this, selkies returns HTTP 404 on `/` and nginx has no UI to proxy.
 
+## Security
+
+**Authentication posture — intentional, not a bug.** The webtop runs selkies with `--enable-basic-auth=false`. This is deliberate:
+
+- **In a GitHub Codespace** the public port (3000) is only reachable through GitHub's **authenticated port-forward** — unauthenticated users cannot reach it. No additional app-level auth is needed for the normal Codespace flow.
+- **On a bare-metal/VM host** (the skill's other supported target), a publicly routed port with auth off means *anyone with the URL* gets full XFCE control (input, clipboard, file transfer).
+
+**If you run this on a VM/bare-metal host:**
+- Keep the forwarded port **private**, or
+- Put nginx behind an authenticating reverse proxy (e.g. Authelia, OAuth2 Proxy, Cloudflare Access), or
+- Enable selkies basic-auth (note: a single shared credential — weak on its own; defense-in-depth only).
+
+Greptile flagged this as P1 on PR #41. We keep auth off by design for the Codespace case (already gated) and document the exposure for the VM case rather than flipping the default, which would break the frictionless Codespace flow.
+
 ## Verification
 
 ```bash

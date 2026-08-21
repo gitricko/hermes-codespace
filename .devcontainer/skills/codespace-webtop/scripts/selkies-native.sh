@@ -177,7 +177,8 @@ cmd_install() {
 
   # Install nginx config template (substitute placeholders)
   echo "[nginx] installing config to $NGINX_SITE"
-  local tmp_conf="/tmp/selkies-nginx-$$.conf"
+  local tmp_conf
+  tmp_conf="$(mktemp /tmp/selkies-nginx-XXXXXX.conf)"
   sed \
     -e "s/NGINX_PORT_PLACEHOLDER/$NGINX_PORT/" \
     -e "s/SELKIES_ADDR_PLACEHOLDER/$SELKIES_ADDR/" \
@@ -310,6 +311,11 @@ cmd_start() {
   if ! is_running "$selkies_pid"; then
     pkill -f "selkies.*--port=$SELKIES_PORT" 2>/dev/null || true
     sleep 0.5
+    # SECURITY: --enable-basic-auth=false is intentional. In a Codespace the
+    # public port (3000) is gated by GitHub's authenticated port-forward, so the
+    # desktop is not exposed to the open internet. On a bare-metal/VM host where
+    # the port is publicly routed, keep it private or put nginx behind an
+    # authenticating proxy (selkies basic-auth is a single shared credential).
     DISPLAY="$XVFB_DISPLAY" start_daemon selkies \
       "$VENV_DIR/bin/selkies" \
       --addr="$SELKIES_ADDR" \
