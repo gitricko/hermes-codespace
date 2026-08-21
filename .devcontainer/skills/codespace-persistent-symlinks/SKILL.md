@@ -17,11 +17,32 @@ target:   .devcontainer/memories/       (git-tracked: MEMORY.md, USER.md, .gitig
 .gitignore:  *.lock  *.log              (Hermes writes lock/log beside the memories)
 ```
 
-- Whole-folder symlink (skills-style), NOT per-file links: single point of truth,
+- Whole-folder symlink (skills-style) is the default: single point of truth,
   no copy-back between `~/.hermes` and the repo, edits flow both ways instantly.
+  Use per-file symlinks only for mixed-state runtime dirs (see below) — never as a
+  general substitute for the whole-folder pattern.
 - Hermes memory writes are symlink-safe: `atomic_replace` (utils.py) re-solves the
   symlink and writes the real git file — no Hermes change needed.
 - Memory path is `~/.hermes/memories/`, NOT `profiles/default/memories/`.
+
+## Per-file symlink exception (mixed-state runtime dirs)
+
+The whole-folder rule assumes the runtime dir holds ONLY durable, persistable
+state. Some tools keep durable config in a dir that also holds private/runtime
+state (e.g. `~/.pi/agent/` mixes `models.json`/`settings.json` with `auth.json`,
+`sessions/`, lock files). Symlinking the whole folder would persist secrets and
+ephemeral state into the repo — wrong. Instead:
+
+1. Track ONLY the durable config files under `.devcontainer/<name>/`
+   (e.g. `.devcontainer/pi-config/models.json`, `settings.json`).
+2. Replace each runtime file with a symlink to the tracked copy:
+   `ln -sf "$TRACKED/$f" "$RUNTIME/$f"` — replace a plain file, but never clobber
+   an existing symlink that already resolves to the target.
+3. Add an idempotent guard in `start-hermes.sh` (repair-guard style) that re-links
+   them on every boot, because the tool writes its own stub on first launch:
+   `if [ "$(readlink -f "$runtime")" != "$(readlink -f "$tracked")" ]; then rm -f "$runtime"; ln -s "$tracked" "$runtime"; fi`
+
+This keeps secrets/ephemeral state out of git while surviving rebuilds.
 
 ## Placement decision (Option A — validated 2026-08)
 
@@ -64,6 +85,11 @@ self-check.sh). Run locally:
   ONLY the injected marker line (perl/grep), never tail-trim — you can truncate a real
   directive and the file shrinks unexpectedly (observed 1297B → 504B).
 - Verify the guard against ALL THREE cases, not just the happy path.
+- **Mixed-state runtime dirs need per-file symlinks, not whole-folder.** `~/.pi/agent/`
+  is the canonical case: symlink only `models.json`/`settings.json` into
+  `.devcontainer/pi-config/`; never symlink the whole dir (it drags in `auth.json`,
+  `sessions/`, locks). Add a `start-hermes.sh` guard to re-link past the tool's own
+  first-launch stub, and verify the guard replaces a plain stub with the symlink.
 
 ## Sync note (wiki)
 - `persistent-memory-proposal.md` — reference/proposal doc vs this procedural skill.
