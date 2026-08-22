@@ -7,6 +7,7 @@ OLLAMA_VERSION=0.32.9
 NODE_VERSION=24.18.0
 MNEMON_VERSION=0.1.17
 PI_AGENT_VERSION=0.84.2
+HERDR_VERSION=0.7.4
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
@@ -265,6 +266,41 @@ tar xzf /tmp/mnemon.tar.gz -C /tmp
 sudo cp /tmp/mnemon /usr/local/bin/mnemon
 sudo chmod +x /usr/local/bin/mnemon
 rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
+
+# Install Herdr (pinned CI-verified build with SHA-256 verification)
+# Mirrors docker/scripts/fm-install-herdr.sh logic
+HERDR_REPO=ogulcancelik/herdr
+HERDR_TAG="v${HERDR_VERSION}"
+HERDR_ASSET=herdr-linux-x86_64
+HERDR_SHA256=bc0fc02d4ba500f9cac2353a43e67fe036785ecca6eb55378e050fac3c103059
+HERDR_MAX_BYTES=25000000
+
+echo "[$SCRIPT_NAME] Installing Herdr ${HERDR_VERSION}..."
+HERDR_TMP=$(mktemp -d /tmp/herdr-install.XXXXXX)
+trap 'rm -rf "$HERDR_TMP"' EXIT
+HERDR_URL="https://github.com/${HERDR_REPO}/releases/download/${HERDR_TAG}/${HERDR_ASSET}"
+curl -fsSL --max-filesize "$HERDR_MAX_BYTES" "$HERDR_URL" -o "$HERDR_TMP/$HERDR_ASSET" || {
+  echo "[$SCRIPT_NAME] Herdr download failed for $HERDR_URL"
+  exit 1
+}
+ACTUAL_SHA256=$(sha256sum "$HERDR_TMP/$HERDR_ASSET" | awk '{print $1}')
+[ "$ACTUAL_SHA256" = "$HERDR_SHA256" ] || {
+  echo "[$SCRIPT_NAME] Herdr checksum mismatch (expected $HERDR_SHA256, got $ACTUAL_SHA256)"
+  exit 1
+}
+sudo install -m 0755 "$HERDR_TMP/$HERDR_ASSET" /usr/local/bin/herdr
+# Post-install gate: exact version + protocol floor
+installed_version=$("/usr/local/bin/herdr" --version 2>/dev/null | awk '{print $2; exit}')
+[ "$installed_version" = "$HERDR_VERSION" ] || {
+  echo "[$SCRIPT_NAME] installed herdr version is '${installed_version:-<empty>}', expected exact pin $HERDR_VERSION"
+  exit 1
+}
+protocol=$("/usr/local/bin/herdr" status --json 2>/dev/null | jq -r '.client.protocol // empty')
+[ -n "$protocol" ] && [ "$protocol" -ge 16 ] || {
+  echo "[$SCRIPT_NAME] herdr protocol ${protocol:-<unknown>} is below required floor 16"
+  exit 1
+}
+echo "[$SCRIPT_NAME] Herdr ${HERDR_VERSION} (protocol $protocol) installed to /usr/local/bin/herdr"
 
 # Install Cline with default configuration
 echo "[$SCRIPT_NAME] Installing Cline with default configuration..."
