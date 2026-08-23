@@ -175,6 +175,10 @@ if [ -d "$PI_CONF_TRACKED" ]; then
   done
 fi
 
+# Install Pi-agent hermes like fallback extension
+echo "[$SCRIPT_NAME] Installing Pi-agent extension..."
+pi install git:github.com/gitricko/pi-failover@hermes-impl
+
 # 5.7. Starting keepalive (idempotent) — keeps codespace from idle-shutting-down
 if ! pgrep -f "keepalive.sh" > /dev/null; then
     echo "[$SCRIPT_NAME] Starting keepalive..."

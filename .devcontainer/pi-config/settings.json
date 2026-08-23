@@ -1,5 +1,4 @@
 {
   "defaultProvider": "omniroute",
-  "defaultModel": "auto-fastest",
-  "lastChangelogVersion": "0.84.2"
+  "defaultModel": "auto-fastest"
 }
