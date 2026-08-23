@@ -171,8 +171,8 @@ cmd_install() {
     pixelflux pcmflux \
     "$SELKIES_WHEEL"
 
-  # Build and install selkies web frontend from addons/selkies-web-core
-  echo "[web] building selkies-web-core (vite)..."
+  # Build and install selkies web frontend (selkies-dashboard + embedded core)
+  echo "[web] building selkies-dashboard web client (vite)..."
   cmd_build_web
 
   # Install nginx config template (substitute placeholders)
@@ -228,37 +228,48 @@ cmd_download_wheel() {
   rm -rf "$tmpdir" "$tmpzip"
 }
 
-# Build selkies web frontend from addons/selkies-web-core
+# Build selkies web frontend.
+# CRITICAL: serve selkies-dashboard, NOT selkies-web-core.
+# selkies-web-core is only the embeddable streaming Core: it mounts with the
+# sidebar CLOSED and only opens on a toggleDashboard postMessage, so serving it
+# alone gives a desktop feed with NO sidebar chrome. selkies-dashboard is the
+# standalone UI (sidebar + Core embedded); its copy-core.js prebuild pulls
+# ../selkies-web-core/dist/selkies-core.js, so both addons must be siblings
+# under one cloned repo. Build web-core first, then dashboard, serve dashboard dist.
 cmd_build_web() {
-  echo "[web] building selkies-web-core..."
+  echo "[web] building selkies web client (dashboard + embedded core)..."
 
-  local web_src="$HOME/.selkies/selkies-web-core"
+  local repo_dir="$HOME/.selkies/selkies-src"
+  local web_core_dir="$repo_dir/addons/selkies-web-core"
+  local dashboard_dir="$repo_dir/addons/selkies-dashboard"
   local web_dist="$HOME/.selkies/web_root"
 
-  # Clone or update the web-core repo
-  if [[ ! -d "$web_src/.git" ]]; then
-    echo "[web] cloning selkies-web-core..."
-    git clone --depth 1 https://github.com/selkies-project/selkies.git /tmp/selkies-full 2>/dev/null
-    mkdir -p "$web_src"
-    cp -r /tmp/selkies-full/addons/selkies-web-core/* "$web_src/"
-    rm -rf /tmp/selkies-full
+  # Clone full selkies repo once (both addons must be siblings)
+  if [[ ! -d "$repo_dir/.git" ]]; then
+    echo "[web] cloning selkies (full repo, both addons needed)..."
+    rm -rf "$repo_dir"
+    git clone --depth 1 https://github.com/selkies-project/selkies.git "$repo_dir" 2>&1 | tail -3
   else
     echo "[web] updating existing clone..."
-    (cd "$web_src" && git pull --depth 1) 2>/dev/null || true
+    (cd "$repo_dir" && git pull --depth 1) 2>/dev/null || true
   fi
 
-  # Install deps and build with Vite
-  (cd "$web_src" && npm ci --no-audit --no-fund >/dev/null 2>&1) || {
-    echo "[web] npm ci failed, trying npm install..."
-    (cd "$web_src" && npm install --no-audit --no-fund 2>&1 | tail -3)
+  build_addon() {
+    local dir="$1"
+    echo "[web] npm build in $dir ..."
+    ( cd "$dir" && { npm ci --no-audit --no-fund 2>/dev/null || npm install --no-audit --no-fund; } && npm run build ) 2>&1 | tail -8
   }
-  (cd "$web_src" && npm run build 2>&1 | tail -5)
 
-  # Copy built dist to web_root (where selkies will serve from)
+  # web-core first (dashboard prebuild imports its dist), then dashboard
+  build_addon "$web_core_dir"
+  build_addon "$dashboard_dir"
+
+  # Serve the DASHBOARD dist (has the sidebar + embeds the Core)
   mkdir -p "$web_dist"
-  cp -r "$web_src/dist/"* "$web_dist/"
+  rm -rf "$web_dist"/* 2>/dev/null || true
+  cp -r "$dashboard_dir/dist/"* "$web_dist/"
 
-  echo "[web] built and copied to $web_dist"
+  echo "[web] built and copied dashboard to $web_dist"
   ls -la "$web_dist/"
 }
 
@@ -475,7 +486,7 @@ cmd_autostart() {
         cat >> "$target_rc" <<EOF
 
 $hook_marker
-[[ -x "$SCRIPT_DIR/selkies-native.sh" ]] && { $hook_cmd } &>/dev/null &
+[[ -x "$SCRIPT_DIR/selkies-native.sh" ]] && { $hook_cmd; } &>/dev/null &
 EOF
         echo "[autostart] enabled (appended to $target_rc)"
       else

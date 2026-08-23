@@ -3,4 +3,4 @@
 # Guards prevent duplicate entries and double-start
 
 # selkies-native autostart
-[[ -x "$HOME/.selkies/selkies-native.sh" ]] && { "$HOME/.selkies/selkies-native.sh" start } &>/dev/null &
+[[ -x "$HOME/.selkies/selkies-native.sh" ]] && { "$HOME/.selkies/selkies-native.sh" start; } &>/dev/null &
