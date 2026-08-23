@@ -239,7 +239,7 @@ if command -v omniroute &>/dev/null; then
     echo "[$SCRIPT_NAME] omniroute is already running, skipping"
   else
     echo "[$SCRIPT_NAME] Starting omniroute in the background..."
-    setsid /usr/local/bin/omniroute >> /tmp/omniroute.log 2>&1 &
+    setsid /usr/local/bin/omniroute --no-open >> /tmp/omniroute.log 2>&1 &
   fi
 else
     echo "[$SCRIPT_NAME] omniroute not found, skipping start"
@@ -254,7 +254,6 @@ else
   sudo npm install -g --ignore-scripts @earendil-works/pi-coding-agent@${PI_AGENT_VERSION}
   echo "[$SCRIPT_NAME] pi-agent installed"
 fi
-
 
 # Install TailScale
 sudo mkdir -p /var/run/tailscale /var/lib/tailscale && sudo curl -fsSL https://tailscale.com/install.sh | sh && sudo rm -rf /var/lib/apt/lists/*
