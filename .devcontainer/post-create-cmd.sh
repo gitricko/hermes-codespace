@@ -108,6 +108,7 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
   echo "[$SCRIPT_NAME] Initializing hermes config..."
 
   hermes config set terminal.cwd $HOME
+  hermes config set display.busy_input_mode steer
   hermes config set model.default auto-fastest
   hermes config set model.provider omniroute
   hermes config set providers.omniroute.base_url http://localhost:20128/v1
