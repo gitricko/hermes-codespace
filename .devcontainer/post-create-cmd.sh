@@ -3,8 +3,6 @@
 HERMES_VERSION="v2026.8.31"
 OMNIROUTE_VERSION=3.8.49
 MODELRELAY_VERSION=1.22.1
-OLLAMA_VERSION=0.33.2
-NODE_VERSION=26.7.0
 MNEMON_VERSION=0.2.7
 PI_AGENT_VERSION=0.84.4
 HERDR_VERSION=0.7.4
@@ -146,8 +144,7 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
 fi
 
 # Install modelrelay globally
-# sudo npm install -g modelrelay@${MODELRELAY_VERSION} && \
-sudo npm install github:gitricko/modelrelay -g --prefix /usr/local/lib/modelrelay
+sudo npm install -g modelrelay@${MODELRELAY_VERSION} --prefix /usr/local/lib/modelrelay
 sudo ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay
 sudo npm cache clean --force
 
