@@ -58,6 +58,8 @@ if ! curl -fsSL --max-time 15 --retry 3 -o "$INSTALL_SCRIPT" "$HERMES_INSTALL_UR
   fi
 fi
 
+# to get rid of npm prompt
+export CI=true
 if ! bash "$INSTALL_SCRIPT" --skip-setup; then
   echo "[$SCRIPT_NAME] Hermes installer failed."
   rm -f "$INSTALL_SCRIPT"
