@@ -96,7 +96,7 @@ jobs:
 
           echo "[3/3] Claude retrieves via mnemon..."
           CLAUDE_OUTPUT=$(docker exec -u abc "$CONTAINER_NAME" \
-            /config/.local/bin/claude --dangerously-skip-permissions -p \
+            $HOME/.local/bin/claude --dangerously-skip-permissions -p \
             "Use mnemon recall to find my name. Reply with ONLY the name." 2>&1) || true
           echo "Claude: $CLAUDE_OUTPUT"
           echo "$CLAUDE_OUTPUT" | grep -q "$TEST_NAME" \
