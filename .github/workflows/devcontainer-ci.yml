@@ -3,8 +3,15 @@ name: Dev Container CI
 on:
   push:
     branches: [main]
+    paths:
+      - '.devcontainer/**'
+      - '.github/workflows/**'
+
   pull_request:
     branches: [main]
+    paths:
+      - '.devcontainer/**'
+      - '.github/workflows/**'
 
 permissions:
   contents: read
