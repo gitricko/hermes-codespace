@@ -336,7 +336,7 @@ MAX_ATTEMPTS=180
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
     echo "[$SCRIPT_NAME] Waiting for OmniRoute to be ready (attempt $attempt/$MAX_ATTEMPTS)..."
     
-    if curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://localhost:20128/login | grep -q "200"; then
+    if curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://localhost:20128/healthz | grep -q "200"; then
         break
     fi
     if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
@@ -357,43 +357,25 @@ conn.commit()
 conn.close()
 "
 
-# Create auto-fastest combo
-while ! omniroute combo create auto-fastest --strategy auto ; do
+# Create auto-fastest combo (.50 change cli that needs --models)
+while ! omniroute combo create auto-fastest --strategy auto --models '["oc/deepseek-v4-flash-free","oc/big-pickle","opencode-zen/deepseek-v4-flash-free","opencode-zen/hy3-free","opencode-zen/mimo-v2.5-free","opencode-zen/north-mini-code-free","opencode-zen/nemotron-3-ultra-free","opencode-zen/big-pickle"]' ; do
     echo "[$SCRIPT_NAME] omniroute still not ready yet, retrying..."
     sleep 3
 done
 echo "[$SCRIPT_NAME] OmniRoute Combo auto-fastest created!"
 
-# Enable OmniRoute MCP if not already enabled
-if omniroute mcp status --json 2>/dev/null | python3 -c "import sys,json;exit(0 if json.load(sys.stdin).get('enabled') else 1)"; then
-    echo "[$SCRIPT_NAME] MCP enabled"
-else
-    echo "[$SCRIPT_NAME] Enabling MCP..."
-    curl -s -X PATCH http://localhost:20128/api/settings \
-        -H "Content-Type: application/json" -d '{"mcpEnabled":true}' >/dev/null
-    echo "[$SCRIPT_NAME] MCP enabled"
-fi
+# Enable OmniRoute MCP if not already enabled - Disable MCP
+# if omniroute mcp status --json 2>/dev/null | python3 -c "import sys,json;exit(0 if json.load(sys.stdin).get('enabled') else 1)"; then
+#     echo "[$SCRIPT_NAME] MCP enabled"
+# else
+#     echo "[$SCRIPT_NAME] Enabling MCP..."
+#     curl -s -X PATCH http://localhost:20128/api/settings \
+#         -H "Content-Type: application/json" -d '{"mcpEnabled":true}' >/dev/null
+#     echo "[$SCRIPT_NAME] MCP enabled"
+# fi
 
 # Add omniroute MCP to hermes
-yes Y | hermes mcp add omniroute --command omniroute --args --mcp
-
-# 2. Get the combo ID (skip the banner line from CLI output)
-COMBO_ID=$(omniroute combo list --json | grep -v "📋" | \
-python3 -c "import sys,json; d=json.load(sys.stdin); print([c['id'] for c in d['combos'] if c['name']=='auto-fastest'][0])")
-
-# 3. Add models + config via API
-curl -s -X PUT "http://localhost:20128/api/combos/$COMBO_ID" \
--H "Content-Type: application/json" \
--d '{
-    "models": ["oc/deepseek-v4-flash-free","oc/big-pickle","opencode-zen/deepseek-v4-flash-free","opencode-zen/hy3-free","opencode-zen/mimo-v2.5-free","opencode-zen/north-mini-code-free","opencode-zen/nemotron-3-ultra-free","opencode-zen/big-pickle"],
-    "strategy": "auto",
-    "config": {
-    "maxRetries": 2,
-    "retryDelayMs": 1000,
-    "timeoutMs": 120000,
-    "healthCheckEnabled": true
-    }
-}'
+# yes Y | hermes mcp add omniroute --command omniroute --args --mcp
 
 echo "[$SCRIPT_NAME] OmniRoute initialization complete!"
 
