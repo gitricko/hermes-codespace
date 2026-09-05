@@ -112,13 +112,13 @@ fi
 
 # Wait for Hermes dashboard to be ready (replaces brittle sleep 15)
 echo "[$SCRIPT_NAME] Waiting for Hermes dashboard to become healthy..."
-for i in $(seq 1 20); do
+for i in $(seq 1 200); do
   if curl -s -o /dev/null -w "%{http_code}" http://localhost:9119 2>/dev/null | grep -q "200\|302\|401"; then
     echo "[$SCRIPT_NAME] Dashboard ready after $((i * 3)) seconds."
     break
   fi
-  if [ "$i" -eq 20 ]; then
-    echo "[$SCRIPT_NAME] WARNING: Dashboard did not respond within 60 seconds. Check ~/.hermes/logs/dashboard.log"
+  if [ "$i" -eq 200 ]; then
+    echo "[$SCRIPT_NAME] WARNING: Dashboard did not respond within 600 seconds. Check ~/.hermes/logs/dashboard.log"
   fi
   sleep 3
 done
