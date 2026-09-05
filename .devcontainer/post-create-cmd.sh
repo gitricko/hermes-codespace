@@ -336,7 +336,7 @@ MAX_ATTEMPTS=180
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
     echo "[$SCRIPT_NAME] Waiting for OmniRoute to be ready (attempt $attempt/$MAX_ATTEMPTS)..."
     
-    if curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://localhost:20128/v1/models | grep -q "200"; then
+    if curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://localhost:20128/login | grep -q "200"; then
         break
     fi
     if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
