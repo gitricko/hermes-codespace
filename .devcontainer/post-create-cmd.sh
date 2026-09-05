@@ -332,7 +332,7 @@ mnemon setup --yes --global  --target claude-code
 
 # Preconfigure Omniroute
 #   Wait for OmniRoute to be ready
-MAX_ATTEMPTS=10
+MAX_ATTEMPTS=180
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
     echo "[$SCRIPT_NAME] Waiting for OmniRoute to be ready (attempt $attempt/$MAX_ATTEMPTS)..."
     
