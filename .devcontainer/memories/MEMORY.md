@@ -2,7 +2,7 @@ SKILL-LOADING RULE: Before ANY GitHub/Git operation in a Codespace, ALWAYS load 
 §
 WIKI-SKILL SYNC RULE: When updating a skill in `.devcontainer/skills/`, always check if any wiki article in `.devcontainer/wiki/` references the same topic and needs a corresponding update (or cross-reference). User explicitly asked: "check whether the change in this skill deserve some changes in some LM wiki that we have stored." Wiki = reference knowledge; skill = procedural. They should stay in sync on the same topic.
 §
-CI path-filter (user-validated): .devcontainer/memories/** and .devcontainer/skills/** = CONTENT -> 30s lint-check only. Only boot scripts/devcontainer.json/workflows = infrastructure -> full-build. Never move markdown content into infrastructure. Self-check Persistence = 9a+9b only.
+CI path-filter (user-validated): .devcontainer/skills/** and .devcontainer/memories/** are CONTENT -> runtime group, 30s lint-check only. Only boot scripts/.devcontainer.json/workflows = infrastructure -> full-build. Never promote content dirs into infrastructure. Mnemon seed import parses `imported` field (not 'added') from mnemon import JSON. PR-ONLY POLICY: Never commit changes to .devcontainer/memories/MEMORY.md or USER.md on a PR branch — memory-automation artifacts create diffs-vs-main that must be reverted.
 §
 Mnemon persistence: fresh Codespace spawns re-seed from .devcontainer/mnemon/seed.json (imported by start-hermes.sh every spawn). The LIVE Mnemon DB is ephemeral and does NOT survive a rebuild. To persist a memory/skill across spawns, write a seed.json entry, not just mnemon_remember. Validate: `mnemon import --dry-run .devcontainer/mnemon/seed.json` -> 'validation passed'.
 §

@@ -13,6 +13,7 @@
 | [persistent-memory-proposal.md](persistent-memory-proposal.md) | Proposal for versioning Hermes MEMORY.md / USER.md via a symlink architecture (runtime vs tracked) | architecture, memory, persistence, symlink |
 | [keepalive-proposal.md](keepalive-proposal.md) | Proposal: Codespace keepalive to mimic client activity and avoid idle shutdown (A: terminal heartbeat, B: /delay-shutdown pinger) | codespace, keepalive, idle-timeout, lifecycle, proposal |
 | [codespace-lifecycle.md](codespace-lifecycle.md) | Reference: how Codespaces detects idle & shuts down, diagnosing container death, keeping a codespace alive | codespace, lifecycle, idle, keep-alive, shutdown, reference |
+| [mnemon-graph-viewer.md](mnemon-graph-viewer.md) | Reference: 3D Mnemon knowledge-graph viewer — pipeline, data model, key design decisions, regeneration | mnemon, knowledge-graph, visualization, 3d-force-graph, tool |
 | [karpathy-coding-guidelines.md](karpathy-coding-guidelines.md) | Reference: Karpathy's LLM coding-pitfall guidelines — four principles, origin, how they map to Hermes skills | coding, discipline, guidelines, karpathy, reference |
 | [codespace-gh-auth.md](codespace-gh-auth.md) | Extract real GitHub OAuth token from VS Code server process for API and gh CLI in Codespaces | codespace, github, auth, token, vscode, skill |
 | [codespace-persistent-symlinks.md](codespace-persistent-symlinks.md) | Whole-folder symlink pattern to persist Hermes memories and skills across Codespace rebuilds | codespace, persistence, symlink, memory, skill |
