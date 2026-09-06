@@ -313,7 +313,7 @@
     Graph = ForceGraph3D();
     Graph(container)
           .graphData({nodes:nodes,links:links})
-          .nodeRelSize(3).nodeVal('val').nodeLabel(function(n){return n.label;})
+          .nodeRelSize(3).nodeVal('val').nodeLabel(function(n){return esc(n.label);})
           .nodeColor('color').nodeOpacity(0.95).nodeResolution(20)
           .linkColor(function(){ return 'rgba(120,132,146,0.85)'; })
           .linkWidth(function(l){ var w=l.weight||1; return Math.max(0.6,Math.min(4,w*0.9)); })
