@@ -7,6 +7,7 @@ Usage: python3 export_graph.py [path-to-mnemon.db] [-o out.json]
 """
 import json
 import os
+import re
 import sqlite3
 import sys
 from datetime import datetime, timezone
@@ -18,7 +19,7 @@ SHORT_LEN = 42
 def short_label(content: str) -> str:
     s = " ".join(content.split())
     # Strip common wiki prefixes for cleaner labels
-    for p in ("Wiki: ", "CI Debugging ", ""):
+    for p in ("Wiki: ", "CI Debugging "):
         if s.startswith(p):
             s = s[len(p):]
             break
@@ -108,7 +109,11 @@ def main():
     # file:// where fetch() is blocked. Viewer prefers GRAPH_DATA when present.
     out_js = os.path.splitext(out)[0] + "-data.js"
     with open(out_js, "w") as f:
-        f.write("window.GRAPH_DATA = " + json.dumps(data) + ";\n")
+        # JSON must not contain `</script` or the browser ends our <script> tag
+        # early (broken viewer / potential injection). Escape the sequence in
+        # all case-insensitive forms before embedding into executable JS.
+        safe_json = re.sub(r"</script", "<\\/script", json.dumps(data), flags=re.IGNORECASE)
+        f.write("window.GRAPH_DATA = " + safe_json + ";\n")
     print(f"Exported {len(nodes)} nodes, {len(edges)} edges -> {out} (+{os.path.basename(out_js)})")
 
 

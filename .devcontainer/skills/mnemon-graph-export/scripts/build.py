@@ -21,6 +21,13 @@ OUT = os.path.join(HERE, "mnemon-graph.html")
 CACHE_DIR = os.environ.get("KG_CACHE", os.path.join(HERE, ".cache"))
 FG_URL = "https://unpkg.com/3d-force-graph@1.80.0/dist/3d-force-graph.min.js"
 FG_FILE = os.path.join(CACHE_DIR, "fg2.js")
+# Pinned SHA-256 of the fg2 bundle (verified against unpkg at vendor time).
+FG_SHA256 = "d96e738edcca580edd524730c1c6b05ed2efce028c23ca95db1bf43033a72e42"
+
+
+def sha256_bytes(b: bytes) -> str:
+    import hashlib
+    return hashlib.sha256(b).hexdigest()
 
 
 def fetch(url: str, dest: str) -> None:
@@ -30,14 +37,25 @@ def fetch(url: str, dest: str) -> None:
 
 
 def load_fg() -> str:
-    if not os.path.exists(FG_FILE):
+    need_fetch = not os.path.exists(FG_FILE)
+    if need_fetch:
         os.makedirs(CACHE_DIR, exist_ok=True)
         try:
             fetch(FG_URL, FG_FILE)
         except Exception as e:  # offline or blocked: surface clearly
             raise SystemExit(f"Could not fetch {FG_URL}: {e}\n"
                              f"Place the bundle at {FG_FILE} and re-run.")
-    return open(FG_FILE, encoding="utf-8", errors="replace").read()
+    with open(FG_FILE, "rb") as f:
+        raw = f.read()
+    got = sha256_bytes(raw)
+    if got != FG_SHA256:
+        raise SystemExit(
+            f"Vendored 3d-force-graph bundle fails integrity check.\n"
+            f"expected {FG_SHA256}\n     got {got}\n"
+            f"File: {FG_FILE}\n"
+            f"If you intentionally updated the bundle, update FG_SHA256 "
+            f"(verify the new hash against unpkg) and re-run build.py.")
+    return raw.decode("utf-8", errors="replace")
 
 
 def main():

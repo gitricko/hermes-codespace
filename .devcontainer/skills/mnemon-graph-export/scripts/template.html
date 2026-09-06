@@ -165,12 +165,19 @@
 
        // ENHANCED: much stronger forces to prevent clustering
        const linkDist = Math.max(150, targetSpan / Math.pow(N, 0.7) * (1 + avgDeg * 0.2));
-       const chargeStr = -Math.max(800, targetSpan * N * 0.015 * (1 + avgDeg * 1.0));
-       const chargeMin = Math.max(20, targetSpan * 0.06);
+             const chargeStr = -Math.max(800, targetSpan * N * 0.015 * (1 + avgDeg * 1.0));
+             const chargeMin = Math.max(20, targetSpan * 0.06);
 
-       console.log("[Auto-Layout] linkDist=" + Math.round(linkDist) + ", chargeStr=" + Math.round(chargeStr) + ", chargeMin=" + Math.round(chargeMin) + " (nodes=" + N + ", edges=" + E + ")");
+             // Clamp to the sliders' declared ranges so the visible knob always
+             // matches the applied force (otherwise the browser clamps the knob but
+             // the sim gets the unbounded value, and the first tweak jumps).
+             const linkDistC = Math.min(300, Math.max(10, linkDist));
+             const chargeStrC = Math.max(-1000, Math.min(-10, chargeStr));
+             const chargeMinC = Math.min(100, Math.max(1, chargeMin));
 
-       return { linkDist: Math.round(linkDist), chargeStr: Math.round(chargeStr), chargeMin: Math.round(chargeMin) };
+             console.log("[Auto-Layout] linkDist=" + Math.round(linkDistC) + ", chargeStr=" + Math.round(chargeStrC) + ", chargeMin=" + Math.round(chargeMinC) + " (nodes=" + N + ", edges=" + E + ")");
+
+             return { linkDist: Math.round(linkDistC), chargeStr: Math.round(chargeStrC), chargeMin: Math.round(chargeMinC) };
      }
      /* ---------- state ---------- */
      var container = document.getElementById('graph-container');
@@ -196,7 +203,7 @@
       '<div class="tt-title">'+esc(n.label)+'</div>'+
       '<div class="tt-body">'+esc(n.content)+'</div>'+
       '<div class="tt-meta">'+
-        (n.importance?'importance <b>'+n.importance+'</b>':'')+
+        (n.importance?'importance <b>'+esc(n.importance)+'</b>':'')+
         (ents?'<br>entities: '+esc(ents):'')+
         (tags?'<br>tags: '+esc(tags):'')+
         '<br>created '+esc(n.created||'')+'</div>';
@@ -324,7 +331,7 @@
             if(p && isFinite(p.x) && isFinite(p.y)){
               lastMouse.x = p.x; lastMouse.y = p.y;
             }
-            Graph.cameraPosition({ x:n.x+(n.x||0)*0.9, y:n.y, z:(n.z||0)+90 }, n, 600);
+            Graph.cameraPosition({ x:(n.x||0)+((n.x||0))*0.9, y:n.y||0, z:(n.z||0)+90 }, n, 600);
             showTooltip(n);
           })
           .onNodeDragEnd(function(n){ n.fx=n.x; n.fy=n.y; n.fz=n.z; })
