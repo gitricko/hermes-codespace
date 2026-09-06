@@ -177,7 +177,7 @@
 
              console.log("[Auto-Layout] linkDist=" + Math.round(linkDistC) + ", chargeStr=" + Math.round(chargeStrC) + ", chargeMin=" + Math.round(chargeMinC) + " (nodes=" + N + ", edges=" + E + ")");
 
-             return { linkDist: Math.round(linkDistC), chargeStr: Math.round(chargeStrC), chargeMin: Math.round(chargeMinC) };
+             return { linkDist: Math.round(linkDistC), chargeStr: Math.round(chargeStrC / 10) * 10, chargeMin: Math.round(chargeMinC) };
      }
      /* ---------- state ---------- */
      var container = document.getElementById('graph-container');
