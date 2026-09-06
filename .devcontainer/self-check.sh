@@ -95,7 +95,7 @@ section "Services"
 
 if ! should_skip "services"; then
   # Poll all service ports until all respond or timeout
-  PORT_POLL_TIMEOUT=60
+  PORT_POLL_TIMEOUT=120
   POLL_STARTED_AT=$(date +%s)
   declare -A RESPONDED=([3000]="" [8888]="" [7352]="" [20128]="", [9119]="")
 
@@ -457,7 +457,8 @@ fi
 echo ""
 
 # ── Write JSON report ────────────────────────────────────────────────────────
-cat > "$REPORT_FILE" <<EOF
+rm -f "$REPORT_FILE" 2>/dev/null || true
+cat > "$REPORT_FILE" <<EOF || true
 {
   "timestamp": "$TIMESTAMP",
   "exit_code": $EXIT_CODE,

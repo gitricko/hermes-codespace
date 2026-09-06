@@ -1,0 +1,3 @@
+# Vendored wheels are built at install-time, not committed
+wheels/
+*.whl

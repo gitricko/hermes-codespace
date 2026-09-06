@@ -112,13 +112,13 @@ fi
 
 # Wait for Hermes dashboard to be ready (replaces brittle sleep 15)
 echo "[$SCRIPT_NAME] Waiting for Hermes dashboard to become healthy..."
-for i in $(seq 1 20); do
+for i in $(seq 1 200); do
   if curl -s -o /dev/null -w "%{http_code}" http://localhost:9119 2>/dev/null | grep -q "200\|302\|401"; then
     echo "[$SCRIPT_NAME] Dashboard ready after $((i * 3)) seconds."
     break
   fi
-  if [ "$i" -eq 20 ]; then
-    echo "[$SCRIPT_NAME] WARNING: Dashboard did not respond within 60 seconds. Check ~/.hermes/logs/dashboard.log"
+  if [ "$i" -eq 200 ]; then
+    echo "[$SCRIPT_NAME] WARNING: Dashboard did not respond within 600 seconds. Check ~/.hermes/logs/dashboard.log"
   fi
   sleep 3
 done
@@ -153,7 +153,33 @@ else
   echo "[$SCRIPT_NAME] Memories folder symlink already correct"
 fi
 
-# 5.6. Starting keepalive (idempotent) — keeps codespace from idle-shutting-down
+# 5.6. Pi-agent LM config persistence — REPAIR GUARD ONLY.
+# The pi crewmate (firstmate-bridge skill) needs ~/.pi/agent/{models,settings}.json
+# pointed at the local OmniRoute relay. Those files are tracked under
+# .devcontainer/pi-config/ so they survive rebuilds; this guard (re)links them.
+# pi writes its own stub on first launch, so we replace a plain file but never
+# clobber an existing symlink that already resolves to the tracked target.
+PI_CONF_TRACKED="$WORKSPACE_ROOT/.devcontainer/pi-config"
+PI_AGENT_DIR="$HOME/.pi/agent"
+if [ -d "$PI_CONF_TRACKED" ]; then
+  mkdir -p "$PI_AGENT_DIR"
+  for f in models.json settings.json; do
+    tracked="$PI_CONF_TRACKED/$f"
+    [ -f "$tracked" ] || continue
+    runtime="$PI_AGENT_DIR/$f"
+    if [ "$(readlink -f "$runtime" 2>/dev/null)" != "$(readlink -f "$tracked")" ]; then
+      rm -f "$runtime"
+      ln -s "$tracked" "$runtime"
+      echo "[$SCRIPT_NAME] Linked pi config: $runtime -> $tracked"
+    fi
+  done
+fi
+
+# Install Pi-agent hermes like fallback extension
+echo "[$SCRIPT_NAME] Installing Pi-agent extension..."
+pi install git:github.com/gitricko/pi-failover@hermes-impl
+
+# 5.7. Starting keepalive (idempotent) — keeps codespace from idle-shutting-down
 if ! pgrep -f "keepalive.sh" > /dev/null; then
     echo "[$SCRIPT_NAME] Starting keepalive..."
     setsid nohup "${SCRIPT_DIR}/keepalive.sh" >> /tmp/keepalive.log 2>&1 &

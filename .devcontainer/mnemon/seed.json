@@ -2,195 +2,587 @@
   "schema_version": "1",
   "insights": [
     {
-      "content": "Wiki: codespace-playbook.md — Comprehensive guide for GitHub operations in Codespaces. Covers token extraction from VS Code server (/proc/PID/environ), gh CLI setup, PR monitoring, git push, common pitfalls. Read .devcontainer/wiki/codespace-playbook.md for full details.",
+      "content": "Wiki: codespace-playbook.md \u2014 Comprehensive guide for GitHub operations in Codespaces. Covers token extraction from VS Code server (/proc/PID/environ), gh CLI setup, PR monitoring, git push, common pitfalls. Read .devcontainer/wiki/codespace-playbook.md for full details.",
       "category": "context",
       "importance": 4,
-      "tags": ["wiki", "github", "codespace", "auth", "playbook"],
-      "entities": ["codespace-playbook", ".devcontainer/wiki", "GITHUB_TOKEN", "VS Code server"],
+      "tags": [
+        "wiki",
+        "github",
+        "codespace",
+        "auth",
+        "playbook"
+      ],
+      "entities": [
+        "codespace-playbook",
+        ".devcontainer/wiki",
+        "GITHUB_TOKEN",
+        "VS Code server"
+      ],
       "source": "agent"
     },
     {
-      "content": "Wiki: repository-analysis.md — Deep dive of hermes-codespace architecture. Covers startup flow (post-create-cmd.sh → start-hermes.sh → Hermes Agent), what's used vs unused, self-check.sh validation, CI verification. Read .devcontainer/wiki/repository-analysis.md for full details.",
+      "content": "Wiki: repository-analysis.md \u2014 Deep dive of hermes-codespace architecture. Covers startup flow (post-create-cmd.sh \u2192 start-hermes.sh \u2192 Hermes Agent), what's used vs unused, self-check.sh validation, CI verification. Read .devcontainer/wiki/repository-analysis.md for full details.",
       "category": "context",
       "importance": 4,
-      "tags": ["wiki", "architecture", "repository", "startup", "analysis"],
-      "entities": ["repository-analysis", ".devcontainer/wiki", "post-create-cmd.sh", "start-hermes.sh"],
+      "tags": [
+        "wiki",
+        "architecture",
+        "repository",
+        "startup",
+        "analysis"
+      ],
+      "entities": [
+        "repository-analysis",
+        ".devcontainer/wiki",
+        "post-create-cmd.sh",
+        "start-hermes.sh"
+      ],
       "source": "agent"
     },
     {
-      "content": "Wiki: github-actions-testing-plan.md — Phased CI/CD testing plan for hermes-codespace. Covers path-filtered CI with dorny/paths-filter@v3, lint checks (markdownlint, SKILL.md validation, shell syntax), full build with pre-build and smoke test. Read .devcontainer/wiki/github-actions-testing-plan.md for full details.",
+      "content": "Wiki: github-actions-testing-plan.md \u2014 Phased CI/CD testing plan for hermes-codespace. Covers path-filtered CI with dorny/paths-filter@v3, lint checks (markdownlint, SKILL.md validation, shell syntax), full build with pre-build and smoke test. Read .devcontainer/wiki/github-actions-testing-plan.md for full details.",
       "category": "context",
       "importance": 4,
-      "tags": ["wiki", "ci", "github-actions", "testing", "cd"],
-      "entities": ["github-actions-testing-plan", ".devcontainer/wiki", "dorny/paths-filter", "CI"],
+      "tags": [
+        "wiki",
+        "ci",
+        "github-actions",
+        "testing",
+        "cd"
+      ],
+      "entities": [
+        "github-actions-testing-plan",
+        ".devcontainer/wiki",
+        "dorny/paths-filter",
+        "CI"
+      ],
       "source": "agent"
     },
     {
-      "content": "Wiki: persistent-knowledge-proposal.md — Architecture decision document for the Persistent Knowledge System. Covers symlink-based skills persistence, wiki base, Mnemon seeding, directory structure, boot workflow. Read .devcontainer/wiki/persistent-knowledge-proposal.md for full details.",
+      "content": "Wiki: persistent-knowledge-proposal.md \u2014 Architecture decision document for the Persistent Knowledge System. Covers symlink-based skills persistence, wiki base, Mnemon seeding, directory structure, boot workflow. Read .devcontainer/wiki/persistent-knowledge-proposal.md for full details.",
       "category": "context",
       "importance": 4,
-      "tags": ["wiki", "architecture", "persistent-knowledge", "proposal"],
-      "entities": ["persistent-knowledge-proposal", ".devcontainer/wiki", "skills", "wiki", "Mnemon"],
+      "tags": [
+        "wiki",
+        "architecture",
+        "persistent-knowledge",
+        "proposal"
+      ],
+      "entities": [
+        "persistent-knowledge-proposal",
+        ".devcontainer/wiki",
+        "skills",
+        "wiki",
+        "Mnemon"
+      ],
       "source": "agent"
     },
     {
       "content": "GITHUB_TOKEN extraction: The real GITHUB_TOKEN is in the VS Code server's process environment at /proc/<PID>/environ, NOT in the shell env. GITHUB_CODESPACE_TOKEN in shell is useless for API calls. GH_TOKEN is set to an invalid value. See .devcontainer/wiki/codespace-playbook.md section 2 for details.",
       "category": "fact",
       "importance": 5,
-      "tags": ["github", "auth", "token", "codespace", "pitfall"],
-      "entities": ["GITHUB_TOKEN", "VS Code server", "/proc/PID/environ", "GITHUB_CODESPACE_TOKEN"],
+      "tags": [
+        "github",
+        "auth",
+        "token",
+        "codespace",
+        "pitfall"
+      ],
+      "entities": [
+        "GITHUB_TOKEN",
+        "VS Code server",
+        "/proc/PID/environ",
+        "GITHUB_CODESPACE_TOKEN"
+      ],
       "source": "agent"
     },
     {
-      "content": "Persistent Knowledge System uses symlinks (not rsync/cp). ~/.hermes/skills/codespace → .devcontainer/skills/. Writes to the symlinked path land directly in the workspace. Git sees everything. Boot script: start-hermes.sh creates symlink on every start (idempotent, checks first).",
+      "content": "Persistent Knowledge System uses symlinks (not rsync/cp). ~/.hermes/skills/codespace \u2192 .devcontainer/skills/. Writes to the symlinked path land directly in the workspace. Git sees everything. Boot script: start-hermes.sh creates symlink on every start (idempotent, checks first).",
       "category": "decision",
       "importance": 5,
-      "tags": ["persistent-knowledge", "skills", "symlink", "architecture"],
-      "entities": ["skills", "symlink", "start-hermes.sh", ".devcontainer/skills"],
+      "tags": [
+        "persistent-knowledge",
+        "skills",
+        "symlink",
+        "architecture"
+      ],
+      "entities": [
+        "skills",
+        "symlink",
+        "start-hermes.sh",
+        ".devcontainer/skills"
+      ],
       "source": "agent"
     },
     {
       "content": "Boot script location: start-hermes.sh (NOT post-create-cmd.sh). start-hermes.sh runs on every Codespace start/rebuild, making it the reliable place for idempotent setup like symlink creation and Mnemon seeding. post-create-cmd.sh only runs on first create.",
       "category": "decision",
       "importance": 5,
-      "tags": ["architecture", "boot", "start-hermes", "decision"],
-      "entities": ["start-hermes.sh", "post-create-cmd.sh", "boot"],
+      "tags": [
+        "architecture",
+        "boot",
+        "start-hermes",
+        "decision"
+      ],
+      "entities": [
+        "start-hermes.sh",
+        "post-create-cmd.sh",
+        "boot"
+      ],
       "source": "agent"
     },
     {
       "content": "Path-filtered CI: devcontainer-ci.yml uses dorny/paths-filter@v3 with three jobs. detect-changes classifies files into infrastructure/runtime/docs. full-build runs only for infrastructure changes (~15min). lint-check runs for docs/runtime changes (~30s). Concurrency group cancels in-progress runs.",
       "category": "fact",
       "importance": 4,
-      "tags": ["ci", "github-actions", "path-filter", "architecture"],
-      "entities": ["devcontainer-ci.yml", "dorny/paths-filter", "CI", "lint-check"],
+      "tags": [
+        "ci",
+        "github-actions",
+        "path-filter",
+        "architecture"
+      ],
+      "entities": [
+        "devcontainer-ci.yml",
+        "dorny/paths-filter",
+        "CI",
+        "lint-check"
+      ],
       "source": "agent"
     },
     {
       "content": "Hermes discovers skills via os.walk(followlinks=True) with ~30s cache TTL. New skills written to ~/.hermes/skills/codespace/ (symlinked to .devcontainer/skills/) are auto-discovered within ~30 seconds. No restart needed. Skill format: SKILL.md with YAML frontmatter (name, description, version).",
       "category": "fact",
       "importance": 4,
-      "tags": ["skills", "discovery", "hermes", "runtime"],
-      "entities": ["os.walk", "followlinks", "skills", "SKILL.md"],
+      "tags": [
+        "skills",
+        "discovery",
+        "hermes",
+        "runtime"
+      ],
+      "entities": [
+        "os.walk",
+        "followlinks",
+        "skills",
+        "SKILL.md"
+      ],
       "source": "agent"
     },
     {
       "content": "Mnemon is the persistent memory system for Hermes. CLI: mnemon remember/recall/search/import. Database at ~/.mnemon/data/default/mnemon.db. Import format: JSON with schema_version '1' and insights array. Deduplication built-in. Categories: preference, decision, insight, fact, context. Importance: 1-5.",
       "category": "fact",
       "importance": 4,
-      "tags": ["mnemon", "memory", "hermes", "architecture"],
-      "entities": ["Mnemon", "mnemon.db", "memory", "recall"],
+      "tags": [
+        "mnemon",
+        "memory",
+        "hermes",
+        "architecture"
+      ],
+      "entities": [
+        "Mnemon",
+        "mnemon.db",
+        "memory",
+        "recall"
+      ],
       "source": "agent"
     },
     {
       "content": "CI Fix: Silent failures from npm ci. When npm ci fails, it kills the process before writing error output. Fix: pre-build web UI in post-create-cmd.sh using 'npm ci CI=1 --include=dev --workspace web' with explicit error handling and fallback to 'npm install'. See .devcontainer/post-create-cmd.sh for the pattern.",
       "category": "insight",
       "importance": 4,
-      "tags": ["ci", "debugging", "npm", "pitfall", "fix"],
-      "entities": ["npm ci", "post-create-cmd.sh", "CI", "web UI"],
+      "tags": [
+        "ci",
+        "debugging",
+        "npm",
+        "pitfall",
+        "fix"
+      ],
+      "entities": [
+        "npm ci",
+        "post-create-cmd.sh",
+        "CI",
+        "web UI"
+      ],
       "source": "agent"
     },
     {
-      "content": "CI Debugging lesson: Fix root cause, never weaken the test. Silent failures are hardest — when a process is killed before writing output, you get zero error info. Always compare passing vs failing commits to find the real cause. Self-check.sh CRITICAL_SERVICES variable is defined but unused — all services are always critical.",
+      "content": "CI Debugging lesson: Fix root cause, never weaken the test. Silent failures are hardest \u2014 when a process is killed before writing output, you get zero error info. Always compare passing vs failing commits to find the real cause. Self-check.sh CRITICAL_SERVICES variable is defined but unused \u2014 all services are always critical.",
       "category": "insight",
       "importance": 4,
-      "tags": ["ci", "debugging", "lessons", "workflow"],
-      "entities": ["CI", "self-check.sh", "debugging", "lessons"],
+      "tags": [
+        "ci",
+        "debugging",
+        "lessons",
+        "workflow"
+      ],
+      "entities": [
+        "CI",
+        "self-check.sh",
+        "debugging",
+        "lessons"
+      ],
       "source": "agent"
     },
     {
       "content": "Wiki naming convention: Use 'wiki' (not 'knowledge' or 'KNOWLEDGE.md'). Follows LM Wiki / Karpathy concept of interlinked markdown articles. .hermes.md instructs agent to read from .devcontainer/wiki/. INDEX.md serves as table of contents.",
       "category": "decision",
       "importance": 4,
-      "tags": ["wiki", "naming", "convention", "architecture"],
-      "entities": ["wiki", ".devcontainer/wiki", "INDEX.md", "LM Wiki"],
+      "tags": [
+        "wiki",
+        "naming",
+        "convention",
+        "architecture"
+      ],
+      "entities": [
+        "wiki",
+        ".devcontainer/wiki",
+        "INDEX.md",
+        "LM Wiki"
+      ],
       "source": "agent"
     },
     {
       "content": "Knowledge capture workflow: Both proactive AND user-triggered. Agent proposes entries for seed.json (importance >= 4 or new wiki/skill). User reviews via git diff, approves/rejects, commits when ready. Same pattern as skills: agent proposes, user reviews, git persists.",
       "category": "decision",
       "importance": 4,
-      "tags": ["workflow", "knowledge", "capture", "process"],
-      "entities": ["seed.json", "knowledge capture", "workflow"],
+      "tags": [
+        "workflow",
+        "knowledge",
+        "capture",
+        "process"
+      ],
+      "entities": [
+        "seed.json",
+        "knowledge capture",
+        "workflow"
+      ],
       "source": "agent"
     },
     {
-      "content": "HARD RULE: Before merging ANY PR, always check GitHub CodeQL and Copilot review suggestions (if available). Use the github-pr-review skill to fetch, triage, and evaluate comments. Present findings to user for approval before merging. This is a merge gate — do not skip.",
+      "content": "HARD RULE: Before merging ANY PR, always check GitHub CodeQL and Copilot review suggestions (if available). Use the github-pr-review skill to fetch, triage, and evaluate comments. Present findings to user for approval before merging. This is a merge gate \u2014 do not skip.",
       "category": "decision",
       "importance": 5,
-      "tags": ["workflow", "PR", "merge-gate", "code-quality", "security"],
-      "entities": ["PR merge", "CodeQL", "Copilot", "code review", "github-pr-review"],
+      "tags": [
+        "workflow",
+        "PR",
+        "merge-gate",
+        "code-quality",
+        "security"
+      ],
+      "entities": [
+        "PR merge",
+        "CodeQL",
+        "Copilot",
+        "code review",
+        "github-pr-review"
+      ],
       "source": "agent"
     },
     {
-      "content": "Mnemon seed import in start-hermes.sh uses dry-run validation first, then real import. Output parsing must use 'imported' field (not 'added') — the mnemon import JSON returns {imported, skipped, updated, errors}. Fixed grep pattern to match actual output format.",
+      "content": "Mnemon seed import in start-hermes.sh uses dry-run validation first, then real import. Output parsing must use 'imported' field (not 'added') \u2014 the mnemon import JSON returns {imported, skipped, updated, errors}. Fixed grep pattern to match actual output format.",
       "category": "fact",
       "importance": 4,
-      "tags": ["mnemon", "debugging", "output-parsing"],
-      "entities": ["mnemon", "import", "output", "debugging"],
+      "tags": [
+        "mnemon",
+        "debugging",
+        "output-parsing"
+      ],
+      "entities": [
+        "mnemon",
+        "import",
+        "output",
+        "debugging"
+      ],
       "source": "agent"
     },
     {
       "content": "Refactored start-hermes.sh with unified dependency validation: single loop checks 5 binaries (modelrelay, omniroute, ollama, hermes, mnemon) + skills directory + seed.json. Fails fast with FATAL message listing all missing items. Simplified service sections to use pgrep only.",
       "category": "decision",
       "importance": 4,
-      "tags": ["refactoring", "fail-fast", "boot-script"],
-      "entities": ["start-hermes.sh", "dependency validation", "mnemon", "hermes"],
+      "tags": [
+        "refactoring",
+        "fail-fast",
+        "boot-script"
+      ],
+      "entities": [
+        "start-hermes.sh",
+        "dependency validation",
+        "mnemon",
+        "hermes"
+      ],
       "source": "agent"
     },
     {
       "content": "github-pr-review skill: 5-step workflow for evaluating GitHub CodeQL and Copilot suggestions on PRs. Fetch comments, triage by source, evaluate (ACCEPT/REJECT/DEFER), present proposal as table, implement after approval. Decision framework: always accept security findings, reject false positives, defer architectural changes.",
       "category": "insight",
       "importance": 4,
-      "tags": ["skill", "code-review", "security"],
-      "entities": ["github-pr-review", "CodeQL", "Copilot", "PR review"],
+      "tags": [
+        "skill",
+        "code-review",
+        "security"
+      ],
+      "entities": [
+        "github-pr-review",
+        "CodeQL",
+        "Copilot",
+        "PR review"
+      ],
       "source": "agent"
     },
     {
       "content": "Keepalive implementation: keepalive.sh service started by start-hermes.sh to prevent idle shutdown. Contains A+B approach: (A) periodic terminal heartbeat on hermes's pty to mimic user activity (GitHub platform idle detection), (B) internal pinger hitting VS Code server /delay-shutdown endpoint to reset server-side shutdown timer (5-min grace). Testable with --test flag. Wires into container lifecycle, idempotent, survives start/rebuild.",
       "category": "decision",
       "importance": 5,
-      "tags": ["keepalive", "idle-timeout", "platform-idle", "layer-1", "layer-2", "terminal-activity"],
-      "entities": ["keepalive.sh", "start-hermes.sh", "layer-1", "layer-2", "terminal-activity", "delay-shutdown", "platform"],
+      "tags": [
+        "keepalive",
+        "idle-timeout",
+        "platform-idle",
+        "layer-1",
+        "layer-2",
+        "terminal-activity"
+      ],
+      "entities": [
+        "keepalive.sh",
+        "start-hermes.sh",
+        "layer-1",
+        "layer-2",
+        "terminal-activity",
+        "delay-shutdown",
+        "platform"
+      ],
       "source": "agent"
     },
     {
-      "content": "Persistent Memory Option A (validated 2026-08): post-create-cmd.sh is authoritative for symlink creation (runs once on fresh container, right after Hermes install, before Hermes instantiates ~/.hermes/memories). start-hermes.sh keeps only a slim repair guard (~12 lines) for pre-existing containers where postCreateCommand doesn't re-run. Symlink: ~/.hermes/memories → .devcontainer/memories/ (whole folder, skills pattern). .gitignore in tracked dir ignores *.lock *.log. Mnemon primary rule preserved in tracked USER.md.",
+      "content": "Persistent Memory Option A (validated 2026-08): post-create-cmd.sh is authoritative for symlink creation (runs once on fresh container, right after Hermes install, before Hermes instantiates ~/.hermes/memories). start-hermes.sh keeps only a slim repair guard (~12 lines) for pre-existing containers where postCreateCommand doesn't re-run. Symlink: ~/.hermes/memories \u2192 .devcontainer/memories/ (whole folder, skills pattern). .gitignore in tracked dir ignores *.lock *.log. Mnemon primary rule preserved in tracked USER.md.",
       "category": "decision",
       "importance": 5,
-      "tags": ["persistent-memory", "option-a", "symlink", "post-create", "start-hermes", "architecture"],
-      "entities": ["post-create-cmd.sh", "start-hermes.sh", "memories", "symlink", "mnemon"],
+      "tags": [
+        "persistent-memory",
+        "option-a",
+        "symlink",
+        "post-create",
+        "start-hermes",
+        "architecture"
+      ],
+      "entities": [
+        "post-create-cmd.sh",
+        "start-hermes.sh",
+        "memories",
+        "symlink",
+        "mnemon"
+      ],
       "source": "agent"
     },
     {
-      "content": "Self-check.sh Persistence section (section 9) validates both memories and skills symlinks: 9a) ~/.hermes/memories → .devcontainer/memories, 9b) ~/.hermes/skills/codespace → .devcontainer/skills. Each handles 3 cases: correct symlink (ok), real dir (fail), missing (fail). 9c (tracked content existence) removed as redundant with git checkout. CI lint-check also validates symlinks via standalone step for runtime changes.",
+      "content": "Self-check.sh Persistence section (section 9) validates both memories and skills symlinks: 9a) ~/.hermes/memories \u2192 .devcontainer/memories, 9b) ~/.hermes/skills/codespace \u2192 .devcontainer/skills. Each handles 3 cases: correct symlink (ok), real dir (fail), missing (fail). 9c (tracked content existence) removed as redundant with git checkout. CI lint-check also validates symlinks via standalone step for runtime changes.",
       "category": "decision",
       "importance": 4,
-      "tags": ["self-check", "persistence", "symlink-validation", "ci", "lint-check"],
-      "entities": ["self-check.sh", "persistence", "memories", "skills", "lint-check"],
+      "tags": [
+        "self-check",
+        "persistence",
+        "symlink-validation",
+        "ci",
+        "lint-check"
+      ],
+      "entities": [
+        "self-check.sh",
+        "persistence",
+        "memories",
+        "skills",
+        "lint-check"
+      ],
       "source": "agent"
     },
     {
       "content": "CI path-filter for persistence: .devcontainer/memories/** and .devcontainer/skills/** are in runtime (not infrastructure) so content changes trigger 30s lint-check, not 15min full-build. lint-check now includes 'Validate symlink persistence' step asserting both symlinks. infrastructure remains boot scripts only (post-create-cmd.sh, start-hermes.sh, self-check.sh, devcontainer.json, workflows). This keeps CI fast for content edits while still gating symlink correctness.",
       "category": "decision",
       "importance": 5,
-      "tags": ["ci", "path-filter", "runtime", "infrastructure", "lint-check", "full-build"],
-      "entities": ["devcontainer-ci.yml", "dorny/paths-filter", "memories", "skills", "full-build"],
+      "tags": [
+        "ci",
+        "path-filter",
+        "runtime",
+        "infrastructure",
+        "lint-check",
+        "full-build"
+      ],
+      "entities": [
+        "devcontainer-ci.yml",
+        "dorny/paths-filter",
+        "memories",
+        "skills",
+        "full-build"
+      ],
       "source": "agent"
     },
     {
-      "content": "Wiki: persistent-memory-proposal.md — Architecture decision document for Hermes persistent memory (MEMORY.md/USER.md) versioning via whole-folder symlink. Covers Option A split (post-create authoritative + start-hermes guard), self-check validation, CI wiring, .gitignore for lock/log files, Mnemon primary rule in USER.md. Read .devcontainer/wiki/persistent-memory-proposal.md for full details.",
+      "content": "Wiki: persistent-memory-proposal.md \u2014 Architecture decision document for Hermes persistent memory (MEMORY.md/USER.md) versioning via whole-folder symlink. Covers Option A split (post-create authoritative + start-hermes guard), self-check validation, CI wiring, .gitignore for lock/log files, Mnemon primary rule in USER.md. Read .devcontainer/wiki/persistent-memory-proposal.md for full details.",
       "category": "context",
       "importance": 4,
-      "tags": ["wiki", "architecture", "persistent-memory", "proposal", "symlink"],
-      "entities": ["persistent-memory-proposal", ".devcontainer/wiki", "memories", "symlink", "mnemon"],
+      "tags": [
+        "wiki",
+        "architecture",
+        "persistent-memory",
+        "proposal",
+        "symlink"
+      ],
+      "entities": [
+        "persistent-memory-proposal",
+        ".devcontainer/wiki",
+        "memories",
+        "symlink",
+        "mnemon"
+      ],
       "source": "agent"
     },
     {
-      "content": "Skill: codespace-persistent-symlinks — Procedural skill for persisting Hermes state (memories + skills) across Codespace rebuilds via whole-folder symlinks. Documents Option A placement, self-check verification, 3-case guard logic, pitfalls (seed block removal, head truncation bug, verification cases). Symlink pattern mirrors skills: ~/.hermes/memories → .devcontainer/memories/, ~/.hermes/skills/codespace → .devcontainer/skills/. Read .devcontainer/skills/codespace-persistent-symlinks/SKILL.md for full procedure.",
+      "content": "Skill: codespace-persistent-symlinks \u2014 Procedural skill for persisting Hermes state (memories + skills) across Codespace rebuilds via whole-folder symlinks. Documents Option A placement, self-check verification, 3-case guard logic, pitfalls (seed block removal, head truncation bug, verification cases). Symlink pattern mirrors skills: ~/.hermes/memories \u2192 .devcontainer/memories/, ~/.hermes/skills/codespace \u2192 .devcontainer/skills/. Read .devcontainer/skills/codespace-persistent-symlinks/SKILL.md for full procedure.",
       "category": "context",
       "importance": 4,
-      "tags": ["skill", "persistent-memory", "symlink", "codespace", "procedure"],
-      "entities": ["codespace-persistent-symlinks", "skills", "memories", "symlink", "start-hermes.sh"],
+      "tags": [
+        "skill",
+        "persistent-memory",
+        "symlink",
+        "codespace",
+        "procedure"
+      ],
+      "entities": [
+        "codespace-persistent-symlinks",
+        "skills",
+        "memories",
+        "symlink",
+        "start-hermes.sh"
+      ],
+      "source": "agent"
+    },
+    {
+      "content": "HARD RULE: Never commit or push directly to main. All changes to main must go through a pull request (branch -> push -> PR -> review -> merge). User explicitly mandated this.",
+      "category": "decision",
+      "importance": 5,
+      "tags": [
+        "git",
+        "workflow",
+        "hard-rule",
+        "pr"
+      ],
+      "entities": [
+        "main",
+        "pull-request",
+        "git",
+        "merge"
+      ],
+      "source": "agent"
+    },
+    {
+      "content": "HARD RULE: For ANY coding task (writing, editing, reviewing, refactoring, debugging code), always load the karpathy-coding-guidelines skill first (skill_view) and follow its discipline. User explicitly mandated this. The skill itself exempts trivial one-liners from full rigor.",
+      "category": "decision",
+      "importance": 5,
+      "tags": [
+        "skill",
+        "coding",
+        "hard-rule",
+        "karpathy-coding-guidelines"
+      ],
+      "entities": [
+        "karpathy-coding-guidelines",
+        "skill-loading",
+        "coding"
+      ],
+      "source": "agent"
+    },
+    {
+      "content": "codespace-port-visibility skill scripts location: ~/.hermes/skills/codespace/codespace-port-visibility/scripts/ (get_codespace_token.py, set_port_visibility.py, export_codespace_token.sh). Symlinked to .devcontainer/skills/codespace-port-visibility/scripts/ for persistence.",
+      "category": "fact",
+      "importance": 4,
+      "tags": [
+        "skill",
+        "codespace",
+        "port-visibility",
+        "automation",
+        "github",
+        "cli"
+      ],
+      "entities": [
+        "codespace-port-visibility",
+        "GITHUB_TOKEN",
+        "vscode-server",
+        "gh CLI"
+      ],
+      "source": "agent"
+    },
+    {
+      "content": "Skill: codespace-vscode-open \u2014 Auto-discovers VS Code CLI in Codespaces at /vscode/bin/linux-x64/<commit>/bin/remote-cli/code and opens files in connected VS Code. Script at ~/.hermes/scripts/vscode-open.sh and .devcontainer/skills/codespace-vscode-open/scripts/vscode-open.sh. Wiki: .devcontainer/wiki/vscode-cli-codespaces.md. Use this skill whenever you need to open a file in the user's VS Code from a Codespace.",
+      "category": "fact",
+      "importance": 4,
+      "tags": [
+        "skill",
+        "codespace",
+        "vscode",
+        "automation"
+      ],
+      "entities": [
+        "codespace-vscode-open",
+        "vscode-open.sh",
+        "VS Code CLI",
+        "Codespaces"
+      ],
+      "source": "agent"
+    },
+    {
+      "content": "MANDATORY: Run ci-lint-check skill before ANY commit or PR that modifies .devcontainer/skills/**, .devcontainer/wiki/**, .devcontainer/mnemon/**, .devcontainer/memories/**, or .devcontainer/*.sh. This mirrors the GitHub Actions lint-check job and prevents CI failures. One command: bash .devcontainer/skills/ci-lint-check/scripts/ci_lint_check.sh",
+      "category": "decision",
+      "importance": 5,
+      "entities": [
+        "ci-lint-check",
+        "pre-commit",
+        "github-actions",
+        "validation",
+        "mandatory"
+      ],
+      "tags": [
+        "mandatory",
+        "workflow",
+        "ci",
+        "pre-commit"
+      ],
+      "source": "agent"
+    },
+    {
+      "content": "codespace-lavish skill fully installed and working: launches headed Lavish-AXI whiteboard over noVNC with auto-connect (autoconnect=true) and local scaling (resize=scale). Includes continuous poll loop with auto-restart (2s), --monitor flag, Chrome GPU fix (SwiftShader), session key derivation, and stable noVNC URL. Script is idempotent and self-healing.",
+      "category": "fact",
+      "importance": 4,
+      "entities": [
+        "codespace-lavish",
+        "lavish-axi",
+        "novnc",
+        "whiteboard",
+        "poll",
+        "swiftshader"
+      ],
+      "tags": [
+        "skill",
+        "gui",
+        "automation",
+        "codespace"
+      ],
+      "source": "agent"
+    },
+    {
+      "content": "When the user asks to launch/start/open a 'webtop', 'remote desktop', 'browser desktop', 'VNC alternative', or 'Selkies/XFCE desktop' in a Codespace or Ubuntu environment, LOAD the codespace-webtop skill and run its control script. The skill lives at .devcontainer/skills/codespace-webtop/ with scripts/selkies-native.sh (install/start/stop/status/autostart/logs). Quick path: bash .devcontainer/skills/codespace-webtop/scripts/selkies-native.sh start, then forward port 3000. CRITICAL: use the pixelflux-based selkies wheel (GitHub Actions 'selkies-wheel' artifact), NOT PyPI selkies==1.6.1 (legacy GStreamer). Requires libva2 libva-drm2 libva-x11-2 for H.264.",
+      "category": "decision",
+      "importance": 4,
+      "tags": [
+        "selkies",
+        "webtop",
+        "remote-desktop",
+        "xfce",
+        "skill-invocation",
+        "codespace"
+      ],
+      "entities": [
+        "codespace-webtop",
+        ".devcontainer/skills/codespace-webtop",
+        "port-3000",
+        "pixelflux"
+      ],
       "source": "agent"
     }
   ]

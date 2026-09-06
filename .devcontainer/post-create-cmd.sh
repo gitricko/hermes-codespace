@@ -1,11 +1,11 @@
 #!/bin/bash
 
-HERMES_VERSION="v2026.7.20"
-OMNIROUTE_VERSION=3.8.49
-MODELRELAY_VERSION=1.18.0
-OLLAMA_VERSION=0.32.5
-NODE_VERSION=24.18.0
-MNEMON_VERSION=0.1.17
+HERMES_VERSION="v2026.8.31"
+OMNIROUTE_VERSION=3.8.50
+MODELRELAY_VERSION=1.22.1
+MNEMON_VERSION=0.2.8
+PI_AGENT_VERSION=0.85.1
+HERDR_VERSION=0.7.4
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
@@ -44,13 +44,30 @@ else
   echo "[$SCRIPT_NAME] ollama not found, skipping start"
 fi
 
-# Install hermes-agent
-if ! command -v hermes &>/dev/null; then
-  echo "[$SCRIPT_NAME] Installing hermes-agent ${HERMES_VERSION}..."
-  curl -fsSL "https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh" | bash -s -- --skip-setup
-  npm cache clean --force
-  sudo rm -rf /var/lib/apt/lists/* 
+# Install hermes-agent (fix 429 from github issue)
+HERMES_INSTALL_URI="https://raw.githubusercontent.com/NousResearch/hermes-agent/${HERMES_VERSION}/scripts/install.sh"
+HERMES_FALLBACK_URI="https://hermes-agent.nousresearch.com/install.sh"
+INSTALL_SCRIPT="$(mktemp)"
+
+if ! curl -fsSL --max-time 15 --retry 3 -o "$INSTALL_SCRIPT" "$HERMES_INSTALL_URI"; then
+  echo "[$SCRIPT_NAME] Primary Hermes installer failed; trying fallback..."
+  if ! curl -fsSL --max-time 15 --retry 3 -o "$INSTALL_SCRIPT" "$HERMES_FALLBACK_URI"; then
+    echo "[$SCRIPT_NAME] Could not download Hermes installer."
+    rm -f "$INSTALL_SCRIPT"
+    exit 1
+  fi
 fi
+
+# to get rid of npm prompt
+export CI=true
+if ! bash "$INSTALL_SCRIPT" --skip-setup; then
+  echo "[$SCRIPT_NAME] Hermes installer failed."
+  rm -f "$INSTALL_SCRIPT"
+  exit 1
+fi
+rm -f "$INSTALL_SCRIPT"
+npm cache clean --force
+sudo rm -rf /var/lib/apt/lists/* 
 
 # Symlink the Hermes memories dir into the repo (skills-style folder symlink).
 # postCreateCommand runs exactly once on a FRESH container, so this is the
@@ -90,6 +107,8 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
   echo "[$SCRIPT_NAME] No sessions found, setting up default configuration for custom provider"
   echo "[$SCRIPT_NAME] Initializing hermes config..."
 
+  hermes config set terminal.cwd $HOME
+  hermes config set display.busy_input_mode steer
   hermes config set model.default auto-fastest
   hermes config set model.provider omniroute
   hermes config set providers.omniroute.base_url http://localhost:20128/v1
@@ -127,8 +146,7 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
 fi
 
 # Install modelrelay globally
-# sudo npm install -g modelrelay@${MODELRELAY_VERSION} && \
-sudo npm install github:gitricko/modelrelay -g --prefix /usr/local/lib/modelrelay
+sudo npm install -g modelrelay@${MODELRELAY_VERSION} --prefix /usr/local/lib/modelrelay
 sudo ln -sf /usr/local/lib/modelrelay/bin/modelrelay /usr/local/bin/modelrelay
 sudo npm cache clean --force
 
@@ -221,12 +239,21 @@ if command -v omniroute &>/dev/null; then
     echo "[$SCRIPT_NAME] omniroute is already running, skipping"
   else
     echo "[$SCRIPT_NAME] Starting omniroute in the background..."
-    setsid /usr/local/bin/omniroute >> /tmp/omniroute.log 2>&1 &
+    setsid /usr/local/bin/omniroute --no-open >> /tmp/omniroute.log 2>&1 &
   fi
 else
-  echo "[$SCRIPT_NAME] omniroute not found, skipping start"
+    echo "[$SCRIPT_NAME] omniroute not found, skipping start"
 fi
 
+
+# Install Pi-agent for firstmate-bridge crewmate harness
+echo "[$SCRIPT_NAME] Installing Pi-agent..."
+if command -v pi &>/dev/null; then
+  echo "[$SCRIPT_NAME] pi already installed: $(pi --version 2>&1 | head -1)"
+else
+  sudo npm install -g --ignore-scripts @earendil-works/pi-coding-agent@${PI_AGENT_VERSION}
+  echo "[$SCRIPT_NAME] pi-agent installed"
+fi
 
 # Install TailScale
 sudo mkdir -p /var/run/tailscale /var/lib/tailscale && sudo curl -fsSL https://tailscale.com/install.sh | sh && sudo rm -rf /var/lib/apt/lists/*
@@ -238,6 +265,41 @@ tar xzf /tmp/mnemon.tar.gz -C /tmp
 sudo cp /tmp/mnemon /usr/local/bin/mnemon
 sudo chmod +x /usr/local/bin/mnemon
 rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
+
+# Install Herdr (pinned CI-verified build with SHA-256 verification)
+# Mirrors docker/scripts/fm-install-herdr.sh logic
+HERDR_REPO=ogulcancelik/herdr
+HERDR_TAG="v${HERDR_VERSION}"
+HERDR_ASSET=herdr-linux-x86_64
+HERDR_SHA256=bc0fc02d4ba500f9cac2353a43e67fe036785ecca6eb55378e050fac3c103059
+HERDR_MAX_BYTES=25000000
+
+echo "[$SCRIPT_NAME] Installing Herdr ${HERDR_VERSION}..."
+HERDR_TMP=$(mktemp -d /tmp/herdr-install.XXXXXX)
+trap 'rm -rf "$HERDR_TMP"' EXIT
+HERDR_URL="https://github.com/${HERDR_REPO}/releases/download/${HERDR_TAG}/${HERDR_ASSET}"
+curl -fsSL --max-filesize "$HERDR_MAX_BYTES" "$HERDR_URL" -o "$HERDR_TMP/$HERDR_ASSET" || {
+  echo "[$SCRIPT_NAME] Herdr download failed for $HERDR_URL"
+  exit 1
+}
+ACTUAL_SHA256=$(sha256sum "$HERDR_TMP/$HERDR_ASSET" | awk '{print $1}')
+[ "$ACTUAL_SHA256" = "$HERDR_SHA256" ] || {
+  echo "[$SCRIPT_NAME] Herdr checksum mismatch (expected $HERDR_SHA256, got $ACTUAL_SHA256)"
+  exit 1
+}
+sudo install -m 0755 "$HERDR_TMP/$HERDR_ASSET" /usr/local/bin/herdr
+# Post-install gate: exact version + protocol floor
+installed_version=$("/usr/local/bin/herdr" --version 2>/dev/null | awk '{print $2; exit}')
+[ "$installed_version" = "$HERDR_VERSION" ] || {
+  echo "[$SCRIPT_NAME] installed herdr version is '${installed_version:-<empty>}', expected exact pin $HERDR_VERSION"
+  exit 1
+}
+protocol=$("/usr/local/bin/herdr" status --json 2>/dev/null | jq -r '.client.protocol // empty')
+[ -n "$protocol" ] && [ "$protocol" -ge 16 ] || {
+  echo "[$SCRIPT_NAME] herdr protocol ${protocol:-<unknown>} is below required floor 16"
+  exit 1
+}
+echo "[$SCRIPT_NAME] Herdr ${HERDR_VERSION} (protocol $protocol) installed to /usr/local/bin/herdr"
 
 # Install Cline with default configuration
 echo "[$SCRIPT_NAME] Installing Cline with default configuration..."
@@ -270,11 +332,11 @@ mnemon setup --yes --global  --target claude-code
 
 # Preconfigure Omniroute
 #   Wait for OmniRoute to be ready
-MAX_ATTEMPTS=10
+MAX_ATTEMPTS=180
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
     echo "[$SCRIPT_NAME] Waiting for OmniRoute to be ready (attempt $attempt/$MAX_ATTEMPTS)..."
     
-    if curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://localhost:20128/v1/models | grep -q "200"; then
+    if curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://localhost:20128/healthz | grep -q "200"; then
         break
     fi
     if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
@@ -295,43 +357,25 @@ conn.commit()
 conn.close()
 "
 
-# Create auto-fastest combo
-while ! omniroute combo create auto-fastest --strategy auto ; do
+# Create auto-fastest combo (.50 change cli that needs --models)
+while ! omniroute combo create auto-fastest --strategy auto --models '["oc/deepseek-v4-flash-free","oc/big-pickle","opencode-zen/deepseek-v4-flash-free","opencode-zen/hy3-free","opencode-zen/mimo-v2.5-free","opencode-zen/north-mini-code-free","opencode-zen/nemotron-3-ultra-free","opencode-zen/big-pickle"]' ; do
     echo "[$SCRIPT_NAME] omniroute still not ready yet, retrying..."
     sleep 3
 done
 echo "[$SCRIPT_NAME] OmniRoute Combo auto-fastest created!"
 
-# Enable OmniRoute MCP if not already enabled
-if omniroute mcp status --json 2>/dev/null | python3 -c "import sys,json;exit(0 if json.load(sys.stdin).get('enabled') else 1)"; then
-    echo "[$SCRIPT_NAME] MCP enabled"
-else
-    echo "[$SCRIPT_NAME] Enabling MCP..."
-    curl -s -X PATCH http://localhost:20128/api/settings \
-        -H "Content-Type: application/json" -d '{"mcpEnabled":true}' >/dev/null
-    echo "[$SCRIPT_NAME] MCP enabled"
-fi
+# Enable OmniRoute MCP if not already enabled - Disable MCP
+# if omniroute mcp status --json 2>/dev/null | python3 -c "import sys,json;exit(0 if json.load(sys.stdin).get('enabled') else 1)"; then
+#     echo "[$SCRIPT_NAME] MCP enabled"
+# else
+#     echo "[$SCRIPT_NAME] Enabling MCP..."
+#     curl -s -X PATCH http://localhost:20128/api/settings \
+#         -H "Content-Type: application/json" -d '{"mcpEnabled":true}' >/dev/null
+#     echo "[$SCRIPT_NAME] MCP enabled"
+# fi
 
 # Add omniroute MCP to hermes
-yes Y | hermes mcp add omniroute --command omniroute --args --mcp
-
-# 2. Get the combo ID (skip the banner line from CLI output)
-COMBO_ID=$(omniroute combo list --json | grep -v "📋" | \
-python3 -c "import sys,json; d=json.load(sys.stdin); print([c['id'] for c in d['combos'] if c['name']=='auto-fastest'][0])")
-
-# 3. Add models + config via API
-curl -s -X PUT "http://localhost:20128/api/combos/$COMBO_ID" \
--H "Content-Type: application/json" \
--d '{
-    "models": ["oc/deepseek-v4-flash-free","oc/big-pickle","opencode-zen/deepseek-v4-flash-free","opencode-zen/hy3-free","opencode-zen/mimo-v2.5-free","opencode-zen/north-mini-code-free","opencode-zen/nemotron-3-ultra-free","opencode-zen/big-pickle"],
-    "strategy": "auto",
-    "config": {
-    "maxRetries": 2,
-    "retryDelayMs": 1000,
-    "timeoutMs": 120000,
-    "healthCheckEnabled": true
-    }
-}'
+# yes Y | hermes mcp add omniroute --command omniroute --args --mcp
 
 echo "[$SCRIPT_NAME] OmniRoute initialization complete!"
 

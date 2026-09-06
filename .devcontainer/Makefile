@@ -12,6 +12,10 @@ install:
 	@echo "Installing dependencies..."
 	@bash post-create-cmd.sh
 
+start:
+	@echo "Starting Hermes and services..."
+	@bash start-hermes.sh
+
 ext-install:
 	@echo "Installing external dependencies..."
 	mkdir -p ~/.cline/data
