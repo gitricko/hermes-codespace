@@ -2,7 +2,7 @@
 
 > Reference: how the 3D knowledge-graph viewer works and how to regenerate it.
 > Procedure: see skill `mnemon-graph-export`. Design detail:
-> `.devcontainer/tools/knowledge-graph/DESIGN.md`.
+> `scripts/DESIGN.md`.
 
 ## What it is
 
@@ -68,13 +68,13 @@ without knowing the artifact filename. The fg2 bundle is fetched once into
 ## Regeneration (quick)
 
 ```bash
-cd .devcontainer/tools/knowledge-graph
+cd .devcontainer/skills/mnemon-graph-export/scripts
 python3 export_graph.py      # fresh graph.json + graph-data.js (the ONLY refresh step)
 python3 -m http.server 8130  # optional: serve; or just double-click mnemon-graph.html
 ```
 
 `python3 build.py` only when `template.html` (the template) changes.
-Full steps + pitfalls: skill `mnemon-graph-export`, or DESIGN.md §6.
+Full steps + pitfalls: skill `mnemon-graph-export`, or `scripts/DESIGN.md`.
 
 ## Serving
 
@@ -87,6 +87,6 @@ file://, so the script tag is the data path there).
 ## Related
 
 - Skill: [mnemon-graph-export](../skills/mnemon-graph-export/SKILL.md)
-- Design: `.devcontainer/tools/knowledge-graph/DESIGN.md`
+- Design: `scripts/DESIGN.md`
 - [persistent-knowledge-proposal.md](persistent-knowledge-proposal.md) — how
   memory/skills/wiki persist across rebuilds

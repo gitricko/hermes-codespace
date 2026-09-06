@@ -1,7 +1,0 @@
-# build cache (fetched 3d-force-graph bundle) — re-fetched on demand by build.py
-.cache/
-__pycache__/
-
-# generated data — refreshed by export_graph.py; do not commit
-graph.json
-graph-data.js

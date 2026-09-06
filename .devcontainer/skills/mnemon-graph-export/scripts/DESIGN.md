@@ -1,7 +1,7 @@
 # Mnemon Knowledge-Graph Viewer — Design Document
 
 Status: implemented, reviewed in PR #25
-Scope: `.devcontainer/tools/knowledge-graph/`
+Scope: `.devcontainer/skills/mnemon-graph-export/scripts/`
 Last verified: 2026-08-04 (regeneration workflow re-run end-to-end against live DB)
 
 ## 1. Purpose
@@ -196,7 +196,7 @@ Run when you have new memories in Mnemon. **Verified end-to-end on
 2026-08-04** (fresh export → viewer renders 69-node graph without any rebuild).
 
 ```bash
-cd .devcontainer/tools/knowledge-graph
+cd .devcontainer/skills/mnemon-graph-export/scripts
 
 # 1) Export the latest snapshot from the live DB (read-only) into graph.json
 #    (+ graph-data.js, the file://-safe sibling)

@@ -6,13 +6,13 @@ description: "Use when exporting/regenerating the Mnemon knowledge graph."
 # Mnemon Knowledge-Graph Export (3D viewer regeneration)
 
 Regenerate the 3D knowledge-graph viewer from the latest Mnemon data. The tool
-lives in `.devcontainer/tools/knowledge-graph/`; the pipeline is
+lives in `.devcontainer/skills/mnemon-graph-export/scripts/`; the pipeline is
 `export_graph.py -> graph.json (+graph-data.js)`, and the STATIC viewer
 (`mnemon-graph.html`) loads the data on open — **data refresh never rebuilds
 the viewer**. It works both by double-clicking the HTML (file://, via
 `graph-data.js`) and over http (fetch). Plus Mnemon's own `viz` command for
 the vis.js fallback. Design rationale: see
-`.devcontainer/tools/knowledge-graph/DESIGN.md`; wiki reference:
+`scripts/DESIGN.md`; wiki reference:
 `.devcontainer/wiki/mnemon-graph-viewer.md`.
 
 ## Trigger
@@ -23,7 +23,7 @@ graph", "update the 3D viewer", "new graph from mnemon".
 ## Steps (verified end-to-end 2026-08)
 
 ```bash
-cd .devcontainer/tools/knowledge-graph
+cd .devcontainer/skills/mnemon-graph-export/scripts
 
 # 1) Fresh snapshot from the live DB (read-only SQLite) -> graph.json
 #    (+ graph-data.js, the file://-safe sibling — keep both in sync)
@@ -56,6 +56,20 @@ Static greps / `node --check` are NOT verification. Prove it renders:
 1. **file:// mode** (the user-reported failure): copy `mnemon-graph.html` +
    `graph-data.js` to a fresh dir, open the HTML via `file://` in a headless
    browser — subtitle must read "N memories, M connections" with NO server.
+
+   Verified headless invocation (chromium from playwright cache, no module
+   needed — full render incl. WebGL):
+   ```bash
+   CHROME=~/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome
+   $CHROME --headless=new --no-sandbox --use-angle=swiftshader \
+     --enable-unsafe-swiftshader --virtual-time-budget=15000 \
+     --dump-dom file:///abs/path/mnemon-graph.html > dom.html 2>/dev/null
+   grep -oE 'id="subtitle">[^<]*' dom.html   # must be "N memories, M connections"
+   grep -c '<canvas' dom.html                # must be >=1
+   grep -o 'class="nl"' dom.html | wc -l     # must equal N (label pills == nodes)
+   ```
+   For http mode: serve a dir containing ONLY `mnemon-graph.html` +
+   `graph.json` (no graph-data.js) and dump-dom the http:// URL instead.
 2. **http mode**: serve a dir with viewer + `graph.json` (no `graph-data.js`),
    open `/mnemon-graph.html` — same subtitle (fetch path).
 3. Assert category label pills == node count (`.nl` elements in `#labels`).
