@@ -584,6 +584,28 @@
         "pixelflux"
       ],
       "source": "agent"
+    },
+    {
+      "content": "Skill: mnemon-graph-export \u2014 Export Mnemon knowledge graph to 3D viewer. Location: .devcontainer/skills/mnemon-graph-export/. Trigger: \"export mnemon graph\", \"regenerate knowledge graph\", \"update 3D viewer\", \"new graph from mnemon\". Usage: cd .devcontainer/skills/mnemon-graph-export/scripts && python3 export_graph.py (fresh graph.json + graph-data.js) && python3 -m http.server 8130 (serve viewer at localhost:8130 or file:// mnemon-graph.html). Viewer loads data at runtime \u2014 data refresh never needs rebuild; only template.html changes require python3 build.py (vendors 3d-force-graph@1.80 with SRI pin). Wiki: .devcontainer/wiki/mnemon-graph-viewer.md.",
+      "category": "fact",
+      "importance": 4,
+      "tags": [
+        "skill",
+        "knowledge-graph",
+        "mnemon",
+        "export",
+        "viewer",
+        "codespace"
+      ],
+      "entities": [
+        "mnemon-graph-export",
+        "export_graph.py",
+        "build.py",
+        "mnemon-graph.html",
+        "graph.json",
+        "graph-data.js"
+      ],
+      "source": "agent"
     }
   ]
 }
