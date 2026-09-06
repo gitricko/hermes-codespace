@@ -22,13 +22,15 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow:hidden; }
   #graph-container { position: fixed; inset: 0; }
-  #graph-container canvas { display: block; touch-action: none; }
+  #graph-container canvas { display: block; touch-action: none; cursor: grab; }
   #labels { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
   #labels .nl { position: absolute; transform: translate(-50%,-50%);
     font-size: 12px; font-weight: 700; letter-spacing: .3px; color: #fff;
     padding: 3px 10px; border-radius: 12px; white-space: nowrap;
     text-shadow: 0 1px 2px rgba(0,0,0,.8); border: 1px solid rgba(255,255,255,.25);
-    box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+    box-shadow: 0 1px 4px rgba(0,0,0,.4);
+    pointer-events: auto;   /* hover anywhere on the pill shows the node tooltip */
+    cursor: pointer; }
 
   #title { position: fixed; top: 14px; left: 16px; z-index: 10; pointer-events: none; }
   #title h1 { margin: 0; font-size: 16px; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
@@ -68,7 +70,7 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
 
   #tooltip { position: fixed; z-index: 40; max-width: 380px; min-width: 200px;
     background: rgba(13,17,23,.97); border:1px solid var(--border); border-radius:8px;
-    padding: 12px 14px; font-size: 12px; line-height: 1.55; pointer-events: none; opacity: 0;
+    padding: 12px 14px; font-size: 12px; line-height: 1.55; pointer-events: auto; opacity: 0;
     transition: opacity .12s; box-shadow: 0 10px 30px rgba(0,0,0,.55); }
   #tooltip.show { opacity: 1; }
   #tooltip .tt-cat { display:inline-block; font-size:10px; padding:1px 8px; border-radius:10px;
@@ -241,6 +243,8 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
         el=document.createElement('div'); el.className='nl';
         el.textContent=(n.category||'').toUpperCase();
         el.style.background=(CAT_COLOR[n.category]||CAT_COLOR.other);
+        el.addEventListener('mouseenter', function(){ showTooltip(n); });
+        el.addEventListener('mouseleave', function(){ hideTooltip(); });
         labelsBox.appendChild(el); labelEls[n.id]=el;
       }
       if(!nodeVisible(n)){ el.style.display='none'; return; }
@@ -320,7 +324,14 @@ op.readability=function(e,t){var n=op(e),i=op(t);return(Math.max(n.getLuminance(
           .onEngineStop(function(){ frameGraph(); fillStats(); })
           .onNodeHover(function(h){ h?showTooltip(h):hideTooltip(); })
           .onNodeClick(function(n){
-            Graph.cameraPosition({ x:n.x+(n.x||0)*0.9, y:n.y, z:n.z+90 || 90 }, n, 600);
+            spin = false;                    // pause auto-rotate so camera anim can complete
+            document.getElementById('toggleSpin').textContent = '\u25b6 Resume auto-rotate';
+            // Position tooltip at node's screen coords, not mouse
+            var p = Graph.graph2ScreenCoords(n.x||0, n.y||0, n.z||0);
+            if(p && isFinite(p.x) && isFinite(p.y)){
+              lastMouse.x = p.x; lastMouse.y = p.y;
+            }
+            Graph.cameraPosition({ x:n.x+(n.x||0)*0.9, y:n.y, z:(n.z||0)+90 }, n, 600);
             showTooltip(n);
           })
           .onNodeDragEnd(function(n){ n.fx=n.x; n.fy=n.y; n.fz=n.z; })

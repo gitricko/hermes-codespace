@@ -21,7 +21,9 @@
     font-size: 12px; font-weight: 700; letter-spacing: .3px; color: #fff;
     padding: 3px 10px; border-radius: 12px; white-space: nowrap;
     text-shadow: 0 1px 2px rgba(0,0,0,.8); border: 1px solid rgba(255,255,255,.25);
-    box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+    box-shadow: 0 1px 4px rgba(0,0,0,.4);
+    pointer-events: auto;   /* hover anywhere on the pill shows the node tooltip */
+    cursor: pointer; }
 
   #title { position: fixed; top: 14px; left: 16px; z-index: 10; pointer-events: none; }
   #title h1 { margin: 0; font-size: 16px; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
@@ -234,6 +236,8 @@
         el=document.createElement('div'); el.className='nl';
         el.textContent=(n.category||'').toUpperCase();
         el.style.background=(CAT_COLOR[n.category]||CAT_COLOR.other);
+        el.addEventListener('mouseenter', function(){ showTooltip(n); });
+        el.addEventListener('mouseleave', function(){ hideTooltip(); });
         labelsBox.appendChild(el); labelEls[n.id]=el;
       }
       if(!nodeVisible(n)){ el.style.display='none'; return; }
