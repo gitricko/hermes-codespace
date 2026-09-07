@@ -606,6 +606,26 @@
         "graph-data.js"
       ],
       "source": "agent"
+    },
+    {
+      "content": "docker-test-shell skill at .devcontainer/skills/docker-test-shell/ provides the `dts` primitive for testing any tool in a clean throwaway ubuntu:24.04 container. Key commands: `dts up` (fresh container, repo at /src, uid-1000), `dts exec \"<cmd>\"` (run as uid-1000, bash -l, -i no -t), `dts apt \"<pkgs>\"` (root apt installs), `dts shell` (interactive -it), `dts clean` (remove container), `dts status` (state). Verified end-to-end with OmniRoute 3.8.50: dts up -> dts apt xz-utils g++ make -> dts exec install.sh -> dts exec hermes chat -q works via auto-fastest combo. Golden rules: never trust host, -i not -it when scripted, bash -l login shell, uid-1000 parity, apt via dts apt not exec, md5 verify mount, always dts clean. Root vs uid-1000: test commands always uid-1000 (CI parity); root only for apt (dts apt) or explicit inspection (docker exec -u 0:0).",
+      "category": "insight",
+      "importance": 4,
+      "entities": [
+        "docker-test-shell",
+        "dts",
+        "omniroute",
+        "devcontainer",
+        "skill"
+      ],
+      "tags": [
+        "skill",
+        "testing",
+        "docker",
+        "standalone",
+        "codespace"
+      ],
+      "source": "agent"
     }
   ]
 }
