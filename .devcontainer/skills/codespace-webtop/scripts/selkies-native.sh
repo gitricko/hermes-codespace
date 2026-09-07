@@ -208,7 +208,7 @@ cmd_install() {
 
   # Build and install selkies web frontend (selkies-dashboard + embedded core)
   echo "[web] building selkies-dashboard web client..."
-  cmd_build_web
+  cmd_build_web || return 1
 
   # ── Cleanup: remove build-time-only artifacts to save disk ──────────
   # Rust toolchain + cargo registry are only needed during pip install
@@ -263,7 +263,7 @@ cmd_build_web() {
 
   # Clone full selkies repo once (both addons must be siblings).
   # Pin to the same commit as the Python package for reproducibility.
-  local SELKIES_WEB_COMMIT="1d9b67be6f9c695f187a0509a3c1d3b3e204807b"
+  # Uses the global SELKIES_WEB_COMMIT env var (can be overridden externally).
   if [[ ! -d "$repo_dir/.git" ]]; then
     echo "[web] cloning selkies (full repo, both addons needed)..."
     rm -rf "$repo_dir"
