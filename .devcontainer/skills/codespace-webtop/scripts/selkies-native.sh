@@ -164,6 +164,15 @@ cmd_install() {
       echo "[rust] ERROR: could not download rustup-init"
       return 1
     }
+    # Verify checksum before executing. Note: this detects accidental
+    # corruption or a mirror with corrupted data, but does not address a
+    # compromised distribution origin — if static.rust-lang.org itself is
+    # serving a malicious binary with a matching forged checksum, the
+    # executable still runs with the installer's privileges. The checksum
+    # comparison assumes the download channel (HTTPS) provides transport
+    # integrity against accidental corruption; supply-chain risk is
+    # out-of-scope for this installer and applies equally to all package
+    # managers (npm, pip, cargo, apt).
     ( cd /tmp && grep -q "rustup-init" rustup-init.sha256 \
       && echo "$(awk '{print $1}' rustup-init.sha256)  rustup-init" | sha256sum -c - ) || {
       echo "[rust] ERROR: rustup-init checksum verification failed"
