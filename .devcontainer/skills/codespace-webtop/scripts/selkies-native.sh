@@ -254,7 +254,9 @@ cmd_build_web() {
   local dashboard_dir="$repo_dir/addons/selkies-dashboard"
   local web_dist="$HOME/.selkies/web_root"
 
-  # Clone full selkies repo once (both addons must be siblings)
+  # Clone full selkies repo once (both addons must be siblings).
+  # Pin to the same commit as the Python package for reproducibility.
+  local SELKIES_WEB_COMMIT="1d9b67be6f9c695f187a0509a3c1d3b3e204807b"
   if [[ ! -d "$repo_dir/.git" ]]; then
     echo "[web] cloning selkies (full repo, both addons needed)..."
     rm -rf "$repo_dir"
@@ -262,9 +264,17 @@ cmd_build_web() {
       echo "[web] ERROR: git clone failed"
       return 1
     fi
+    # Checkout the pinned commit
+    (cd "$repo_dir" && git checkout -q "$SELKIES_WEB_COMMIT") || {
+      echo "[web] ERROR: failed to checkout commit $SELKIES_WEB_COMMIT"
+      return 1
+    }
   else
-    echo "[web] updating existing clone..."
-    (cd "$repo_dir" && git pull --depth 1) 2>/dev/null || true
+    echo "[web] updating existing clone to pinned commit..."
+    (cd "$repo_dir" && git fetch --depth 1 origin "$SELKIES_WEB_COMMIT" && git checkout -q "$SELKIES_WEB_COMMIT") 2>/dev/null || {
+      echo "[web] ERROR: failed to update to pinned commit $SELKIES_WEB_COMMIT"
+      return 1
+    }
   fi
 
   build_addon() {
