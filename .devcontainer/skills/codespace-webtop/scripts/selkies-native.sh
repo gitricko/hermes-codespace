@@ -268,7 +268,7 @@ cmd_build_web() {
   local repo_dir="$HOME/.selkies/selkies-src"
   local web_core_dir="$repo_dir/addons/selkies-web-core"
   local dashboard_dir="$repo_dir/addons/selkies-dashboard"
-  local web_dist="$HOME/.selkies/web_root"
+  local web_dist="$WEB_ROOT"
 
   # Clone full selkies repo once (both addons must be siblings).
   # Pin to the same commit as the Python package for reproducibility.
