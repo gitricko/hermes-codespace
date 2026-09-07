@@ -168,6 +168,28 @@ cmd_install() {
   echo "[web] building selkies-dashboard web client..."
   cmd_build_web
 
+  # ── Cleanup: remove build-time-only artifacts to save disk ──────────
+  # Rust toolchain + cargo registry are only needed during pip install
+  # (pixelflux/pcmflux compile Rust → .so). After that, only the
+  # compiled extensions in the venv are needed at runtime.
+  local before_kb after_kb saved_mb
+  before_kb=$(du -sk "$HOME/.rustup" "$HOME/.cargo" "$HOME/.selkies/selkies-src" "$HOME/.cache/pip" 2>/dev/null \
+    | awk '{s+=$1} END{print s+0}')
+
+  echo "[cleanup] removing Rust toolchain (build-time only, ~1.5GB)..."
+  rm -rf "$HOME/.rustup" "$HOME/.cargo"
+
+  echo "[cleanup] removing selkies source clone (web dist already copied)..."
+  rm -rf "$HOME/.selkies/selkies-src"
+
+  echo "[cleanup] removing pip cache..."
+  rm -rf "$HOME/.cache/pip"
+
+  after_kb=$(du -sk "$HOME/.rustup" "$HOME/.cargo" "$HOME/.selkies/selkies-src" "$HOME/.cache/pip" 2>/dev/null \
+    | awk '{s+=$1} END{print s+0}')
+  saved_mb=$(( (before_kb - after_kb) / 1024 ))
+  echo "[cleanup] freed ~${saved_mb}MB"
+
   # Mark as installed
   mkdir -p "$PID_DIR"
   touch "$PID_DIR/.installed"
