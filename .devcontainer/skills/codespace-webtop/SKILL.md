@@ -246,5 +246,6 @@ codespace-webtop/
 
 - Architecture details: `references/architecture.md`
 - Troubleshooting: `references/troubleshooting.md`
+- Disk optimization: `references/disk-optimization.md`
 - PyPI selkies==1.6.1 is WRONG: <https://pypi.org/project/selkies/> (legacy GStreamer package)
 - Correct pixelflux-based selkies: <https://github.com/selkies-project/selkies> (install from git source)

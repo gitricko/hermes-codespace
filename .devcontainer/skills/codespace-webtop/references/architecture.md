@@ -3,7 +3,7 @@
 ## Stack Overview
 
 ```
-Browser (port 3000, GitHub auth) → nginx → selkies (127.0.0.1:8082, mode=websockets)
+Browser (port 3000, GitHub auth) → selkies (0.0.0.0:3000, mode=websockets)
   selkies drives pixelflux capture on Xvfb :20 running XFCE
   pixelflux: Rust X11 capture → H.264/JPEG stripes → WebSocket
 ```
@@ -14,9 +14,8 @@ Browser (port 3000, GitHub auth) → nginx → selkies (127.0.0.1:8082, mode=web
 |-----------|---------|------|---------|
 | Xvfb | `Xvfb :20` | — | Headless X11 display (1920x1080x24) |
 | XFCE | `xfce4-session` | — | Desktop environment (window manager, panel, file manager) |
-| selkies | `selkies` | 127.0.0.1:8082 | Serves React client + WebSocket media/input protocol |
+| selkies | `selkies` | 0.0.0.0:3000 | Serves React client + WebSocket media/input protocol |
 | pixelflux | (Rust .so) | — | X11 screen capture → H.264/JPEG stripes |
-| nginx | `nginx` | 0.0.0.0:3000 | Reverse proxy with WS upgrade |
 
 ## Data Flow
 
@@ -40,10 +39,8 @@ Browser (port 3000, GitHub auth) → nginx → selkies (127.0.0.1:8082, mode=web
 ```
 ~/.selkies/
 ├── venv/          # Python venv with selkies + pixelflux + pcmflux
-├── wheels/        # Vendored selkies wheel (for offline install)
+├── web_root/      # Built React dashboard (copied at install)
 └── pid/           # PID files (xvfb, xfce, selkies)
-
-/etc/nginx/sites-enabled/selkies  # nginx reverse proxy config
 ```
 
 ## Logs
@@ -51,4 +48,13 @@ Browser (port 3000, GitHub auth) → nginx → selkies (127.0.0.1:8082, mode=web
 - Xvfb:      `/tmp/selkies-logs/xvfb.log`
 - XFCE:      `/tmp/selkies-logs/xfce.log`
 - selkies:   `/tmp/selkies-logs/selkies.log`
-- nginx:     `/var/log/nginx/error.log`
+
+## Migration: Legacy nginx Cleanup
+
+The original architecture used nginx as a reverse proxy (`3000 → 127.0.0.1:8082`). The current architecture binds selkies directly to `0.0.0.0:3000`. On upgrades, the `start` command handles legacy artifacts:
+
+1. **Port check** — If port 3000 (or `$SELKIES_PORT`) is occupied, attempt graceful nginx stop via `nginx -s quit`.
+2. **Force cleanup** — If port remains occupied, use `fuser -k` to kill the occupying process.
+3. **Config removal** — Delete `/etc/nginx/sites-enabled/selkies` so a later nginx restart won't reload the stale proxy config.
+
+This ensures clean migration from old installations without affecting unrelated nginx instances on the same host.
