@@ -258,7 +258,10 @@ cmd_build_web() {
   if [[ ! -d "$repo_dir/.git" ]]; then
     echo "[web] cloning selkies (full repo, both addons needed)..."
     rm -rf "$repo_dir"
-    git clone --depth 1 https://github.com/selkies-project/selkies.git "$repo_dir" 2>&1 | tail -3
+    if ! git clone --depth 1 https://github.com/selkies-project/selkies.git "$repo_dir" 2>&1 | tail -3; then
+      echo "[web] ERROR: git clone failed"
+      return 1
+    fi
   else
     echo "[web] updating existing clone..."
     (cd "$repo_dir" && git pull --depth 1) 2>/dev/null || true
@@ -267,17 +270,27 @@ cmd_build_web() {
   build_addon() {
     local dir="$1"
     echo "[web] npm build in $dir ..."
-    ( cd "$dir" && { npm ci --no-audit --no-fund 2>/dev/null || npm install --no-audit --no-fund; } && npm run build ) 2>&1 | tail -8
+    if ! ( cd "$dir" && { npm ci --no-audit --no-fund 2>/dev/null || npm install --no-audit --no-fund; } && npm run build ) 2>&1 | tail -8; then
+      echo "[web] ERROR: npm build failed in $dir"
+      return 1
+    fi
   }
 
   # web-core first (dashboard prebuild imports its dist), then dashboard
-  build_addon "$web_core_dir"
-  build_addon "$dashboard_dir"
+  if ! build_addon "$web_core_dir"; then
+    return 1
+  fi
+  if ! build_addon "$dashboard_dir"; then
+    return 1
+  fi
 
   # Serve the DASHBOARD dist (has the sidebar + embeds the Core)
   mkdir -p "$web_dist"
   rm -rf "$web_dist"/* 2>/dev/null || true
-  cp -r "$dashboard_dir/dist/"* "$web_dist/"
+  if ! cp -r "$dashboard_dir/dist/"* "$web_dist/"; then
+    echo "[web] ERROR: failed to copy dashboard dist"
+    return 1
+  fi
 
   echo "[web] built and copied dashboard to $web_dist"
   ls -la "$web_dist/"
@@ -292,14 +305,23 @@ cmd_start() {
   #    Don't rely on ss -tlnp process names — unprivileged ss omits them for
   #    root-owned processes. Instead, check if anything occupies our port and
   #    attempt a graceful nginx stop. If nginx isn't running, the stop is a no-op.
+  #    Only force-kill if the process on the port IS nginx (check via ss -tlnp
+  #    with sudo to see process name). Unrelated services on the port are left alone.
   if ss -tln " sport = :$SELKIES_PORT " 2>/dev/null | grep -q ":$SELKIES_PORT"; then
     echo "[nginx] port $SELKIES_PORT occupied — stopping legacy nginx if present..."
     sudo nginx -s quit 2>/dev/null || true
     sleep 0.5
-    # If port is still occupied after nginx stop, force-kill any nginx listening on it
+    # If port is still occupied after nginx stop, check if the remaining
+    # process is nginx before force-killing
     if ss -tln " sport = :$SELKIES_PORT " 2>/dev/null | grep -q ":$SELKIES_PORT"; then
-      sudo fuser -k "$SELKIES_PORT/tcp" 2>/dev/null || true
-      sleep 0.5
+      if sudo ss -tlnp " sport = :$SELKIES_PORT " 2>/dev/null | grep -q "nginx"; then
+        echo "[nginx] forcing kill of nginx on port $SELKIES_PORT..."
+        sudo fuser -k "$SELKIES_PORT/tcp" 2>/dev/null || true
+        sleep 0.5
+      else
+        echo "[nginx] WARNING: port $SELKIES_PORT occupied by non-nginx process, not killing"
+        return 1
+      fi
     fi
     # Remove stale selkies site config so a later nginx restart won't reload it
     [[ -f /etc/nginx/sites-enabled/selkies ]] && sudo rm -f /etc/nginx/sites-enabled/selkies
