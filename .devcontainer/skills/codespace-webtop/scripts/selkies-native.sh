@@ -162,9 +162,9 @@ cmd_install() {
   # only in git HEAD. Build all three from git in order.
   echo "[pip] installing pixelflux, pcmflux, and selkies from git..."
   "$VENV_DIR/bin/pip" install --no-cache-dir \
-    "git+https://github.com/selkies-project/pixelflux.git" \
-    "git+https://github.com/selkies-project/pcmflux.git" \
-    "git+https://github.com/selkies-project/selkies.git"
+    "git+https://github.com/selkies-project/pixelflux.git@bf07c68" \
+    "git+https://github.com/selkies-project/pcmflux.git@d2683ef" \
+    "git+https://github.com/selkies-project/selkies.git@1d9b67b"
 
   # Build and install selkies web frontend (selkies-dashboard + embedded core)
   echo "[web] building selkies-dashboard web client..."

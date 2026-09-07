@@ -125,12 +125,13 @@ Validates: OS, sudo, python3, pip3, and all apt packages listed above.
 ### 2. Install (`install`)
 
 1. Creates venv at `~/.selkies/venv` (or `$SELKIES_VENV_DIR`)
-2. Installs pixelflux, pcmflux, and selkies from git source. **Why git source?** selkies `main` branch requires `pixelflux~=2.1.0` and `pcmflux~=2.1.0`, which are unreleased — PyPI only has up to 2.0.0. The 2.1.0 versions exist only in git HEAD. Building from git is the only way to satisfy these deps:
+2. Installs pixelflux, pcmflux, and selkies from pinned git commits. **Why git source?** selkies `main` branch requires `pixelflux~=2.1.0` and `pcmflux~=2.1.0`, which are unreleased — PyPI only has up to 2.0.0. The 2.1.0 versions exist only in git HEAD. Pins to specific commits for reproducibility. When updating, get the new HEAD SHAs from `git ls-remote` and update the pins in `selkies-native.sh`:
      ```bash
-     source ~/.selkies/venv/bin/activate && source ~/.cargo/env
-     pip install "git+https://github.com/selkies-project/pixelflux.git"
-     pip install "git+https://github.com/selkies-project/pcmflux.git"
-     pip install "git+https://github.com/selkies-project/selkies.git"
+     source ~/.selkies/venv/bin/activate
+     pip install \
+       "git+https://github.com/selkies-project/pixelflux.git@<SHA>" \
+       "git+https://github.com/selkies-project/pcmflux.git@<SHA>" \
+       "git+https://github.com/selkies-project/selkies.git@<SHA>"
      ```
      (PyPI `selkies==1.6.1` is the WRONG legacy GStreamer package.)
 3. **Build the web client** (`cmd_build_web`): clone the full selkies repo (both `addons/selkies-web-core` and `addons/selkies-dashboard` must be siblings), `npm install` + `npm run build` **selkies-web-core first** (the dashboard's prebuild imports its `dist/selkies-core.js`), then build **selkies-dashboard**, and copy `addons/selkies-dashboard/dist/` → `~/.selkies/web_root`. The web client is **NOT** bundled in the wheel — serve the dashboard, NOT bare web-core (see Pitfalls: bare core = no sidebar).
