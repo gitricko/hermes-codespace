@@ -45,13 +45,13 @@ export PATH="$PWD/scripts:$PATH"   # or symlink dts.sh -> /usr/local/bin/dts
 
 ## When to use `dts exec` vs raw `docker exec`
 
-| Scenario | Use | Why |
-|----------|-----|-----|
-| Normal test commands (build, version check, API call) | `dts exec` | Runs as uid-1000, `bash -l`, `-i` no `-t` — matches CI/Codespace parity |
-| Install apt packages (`apt-get install`) | `dts apt` | Dedicated root path; apt needs root, uid-1000 can't |
-| Debug interactively (human at terminal) | `dts shell` | `-it` gives full interactive TTY |
-| One-off root inspection (logs, sqlite, config files) | `docker exec -u 0:0 dts-test <cmd>` | Root-only operations outside apt; explicit `docker exec -u 0:0` signals intent |
-| Multi-step stateful commands from a script | `dts exec` with piped stdin | `printf 'cmd1\ncmd2\n' | dts exec bash` — stdin stays open, runs sequentially |
+| Scenario | Use | Why | Notes |
+|----------|-----|-----|-------|
+| Normal test commands (build, version check, API call) | `dts exec` | Runs as uid-1000, `bash -l`, `-i` no `-t` — matches CI/Codespace parity | |
+| Install apt packages (`apt-get install`) | `dts apt` | Dedicated root path; apt needs root, uid-1000 can't | |
+| Debug interactively (human at terminal) | `dts shell` | `-it` gives full interactive TTY | |
+| One-off root inspection (logs, sqlite, config files) | `docker exec -u 0:0 dts-test <cmd>` | Root-only operations outside apt; explicit `docker exec -u 0:0` signals intent | |
+| Multi-step stateful commands from a script | `dts exec` with piped stdin | `printf 'cmd1\ncmd2\n' \| dts exec bash` — stdin stays open, runs sequentially | |
 
 **Rule of thumb:** `dts exec` = the test harness path (uid-1000, parity). Raw `docker exec -u 0:0` = the escape hatch for root-only ops that aren't apt installs (e.g. reading sqlite DBs, checking process ports, killing stuck processes). Don't run test commands as root — it masks permission bugs that would fail in CI/Codespace.
 
