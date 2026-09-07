@@ -140,8 +140,10 @@ cmd_install() {
     2>&1 | tail -5
 
   # Rust toolchain (required for pixelflux/pcmflux PyO3 builds)
+  local rust_installed_by_us=0
   if ! command -v cargo &>/dev/null; then
     echo "[rust] installing Rust toolchain..."
+    rust_installed_by_us=1
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     source "$HOME/.cargo/env"
   else
@@ -177,7 +179,13 @@ cmd_install() {
     | awk '{s+=$1} END{print s+0}')
 
   echo "[cleanup] removing Rust toolchain (build-time only, ~1.5GB)..."
-  rm -rf "$HOME/.rustup" "$HOME/.cargo"
+  if [[ "$rust_installed_by_us" -eq 1 ]]; then
+    rm -rf "$HOME/.rustup" "$HOME/.cargo"
+  else
+    echo "[cleanup] Rust was pre-existing, skipping removal"
+    # Only clean the cargo build cache, not the toolchain
+    rm -rf "$HOME/.cargo/registry/cache" "$HOME/.cargo/registry/src" "$HOME/.cargo/git/db"
+  fi
 
   echo "[cleanup] removing selkies source clone (web dist already copied)..."
   rm -rf "$HOME/.selkies/selkies-src"
@@ -246,12 +254,16 @@ cmd_build_web() {
 cmd_start() {
   echo "=== selkies-native: start ==="
 
-  # 0. Kill legacy nginx if still running (from old skill installs).
+  # 0. Kill legacy nginx if still listening on our port (from old skill installs).
   #    nginx used to proxy port 3000 → selkies; now selkies binds directly.
-  if pgrep -x nginx >/dev/null 2>&1; then
-    echo "[nginx] stopping legacy nginx process..."
+  #    Only target nginx on port 3000 — unrelated nginx instances are left alone.
+  if ss -tlnp 2>/dev/null | grep -q ":3000.*nginx" || \
+     ss -tlnp 2>/dev/null | grep -q ":$SELKIES_PORT.*nginx"; then
+    echo "[nginx] stopping legacy nginx on port $SELKIES_PORT..."
     sudo nginx -s quit 2>/dev/null || sudo pkill -x nginx 2>/dev/null || true
     sleep 0.5
+    # Remove stale selkies site config so a later nginx restart won't reload it
+    [[ -f /etc/nginx/sites-enabled/selkies ]] && sudo rm -f /etc/nginx/sites-enabled/selkies
   fi
 
   # 1. Xvfb
