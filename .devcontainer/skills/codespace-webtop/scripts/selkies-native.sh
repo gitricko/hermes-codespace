@@ -140,14 +140,38 @@ cmd_install() {
     2>&1 | tail -5
 
   # Rust toolchain (required for pixelflux/pcmflux PyO3 builds)
+  # Only set rust_installed_by_us=1 if WE install it. If the user already
+  # has a rustup toolchain (even if not on PATH), we must NOT delete it
+  # during cleanup.
   local rust_installed_by_us=0
-  if ! command -v cargo &>/dev/null; then
+  if ! command -v cargo &>/dev/null && [[ ! -d "$HOME/.cargo" && ! -d "$HOME/.rustup" ]]; then
     echo "[rust] installing Rust toolchain..."
     rust_installed_by_us=1
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    # Download rustup-init binary + verify sha256 instead of curl | sh
+    local arch="$(uname -m)"
+    local dl_base="https://static.rust-lang.org/rustup/dist/${arch}-unknown-linux-gnu"
+    if ! curl -sSf "${dl_base}/rustup-init.sha256" -o /tmp/rustup-init.sha256; then
+      echo "[rust] ERROR: could not fetch rustup checksum"
+      return 1
+    fi
+    curl -sSf "${dl_base}/rustup-init" -o /tmp/rustup-init || {
+      echo "[rust] ERROR: could not download rustup-init"
+      return 1
+    }
+    ( cd /tmp && grep -q "rustup-init" rustup-init.sha256 \
+      && echo "$(awk '{print $1}' rustup-init.sha256)  rustup-init" | sha256sum -c - ) || {
+      echo "[rust] ERROR: rustup-init checksum verification failed"
+      return 1
+    }
+    chmod +x /tmp/rustup-init
+    /tmp/rustup-init -y --default-toolchain stable
+    rm -f /tmp/rustup-init /tmp/rustup-init.sha256
     source "$HOME/.cargo/env"
-  else
+  elif command -v cargo &>/dev/null; then
     echo "[rust] already installed ($(rustc --version))"
+  else
+    echo "[rust] existing rustup found on disk (not on PATH), reusing"
+    source "$HOME/.cargo/env" 2>/dev/null || true
   fi
 
   # Virtualenv
@@ -164,7 +188,16 @@ cmd_install() {
   "$VENV_DIR/bin/pip" install --no-cache-dir \
     "git+https://github.com/selkies-project/pixelflux.git@bf07c68" \
     "git+https://github.com/selkies-project/pcmflux.git@d2683ef" \
-    "git+https://github.com/selkies-project/selkies.git@1d9b67b"
+    "git+https://github.com/selkies-project/selkies.git@1d9b67b" || {
+    echo "[pip] ERROR: failed to install pixelflux/pcmflux/selkies from git"
+    return 1
+  }
+
+  # Verify selkies is importable
+  if ! "$VENV_DIR/bin/python" -c "import selkies" 2>/dev/null; then
+    echo "[pip] ERROR: selkies installed but not importable"
+    return 1
+  fi
 
   # Build and install selkies web frontend (selkies-dashboard + embedded core)
   echo "[web] building selkies-dashboard web client..."
@@ -254,14 +287,20 @@ cmd_build_web() {
 cmd_start() {
   echo "=== selkies-native: start ==="
 
-  # 0. Kill legacy nginx if still listening on our port (from old skill installs).
+  # 0. Kill legacy nginx if port $SELKIES_PORT is occupied (from old skill installs).
   #    nginx used to proxy port 3000 → selkies; now selkies binds directly.
-  #    Only target nginx on port 3000 — unrelated nginx instances are left alone.
-  if ss -tlnp 2>/dev/null | grep -q ":3000.*nginx" || \
-     ss -tlnp 2>/dev/null | grep -q ":$SELKIES_PORT.*nginx"; then
-    echo "[nginx] stopping legacy nginx on port $SELKIES_PORT..."
-    sudo nginx -s quit 2>/dev/null || sudo pkill -x nginx 2>/dev/null || true
+  #    Don't rely on ss -tlnp process names — unprivileged ss omits them for
+  #    root-owned processes. Instead, check if anything occupies our port and
+  #    attempt a graceful nginx stop. If nginx isn't running, the stop is a no-op.
+  if ss -tln " sport = :$SELKIES_PORT " 2>/dev/null | grep -q ":$SELKIES_PORT"; then
+    echo "[nginx] port $SELKIES_PORT occupied — stopping legacy nginx if present..."
+    sudo nginx -s quit 2>/dev/null || true
     sleep 0.5
+    # If port is still occupied after nginx stop, force-kill any nginx listening on it
+    if ss -tln " sport = :$SELKIES_PORT " 2>/dev/null | grep -q ":$SELKIES_PORT"; then
+      sudo fuser -k "$SELKIES_PORT/tcp" 2>/dev/null || true
+      sleep 0.5
+    fi
     # Remove stale selkies site config so a later nginx restart won't reload it
     [[ -f /etc/nginx/sites-enabled/selkies ]] && sudo rm -f /etc/nginx/sites-enabled/selkies
   fi
