@@ -108,7 +108,6 @@ python3 scripts/set_port_visibility.py 8080 public
 
 # 3. Start services
 LAVISH_AXI_NO_OPEN=1 node dist/cli.mjs sample.html --no-open &
-sudo nginx -g 'daemon off;' &
 ```
 
 ## Port Scheme Reference (Slot-based)

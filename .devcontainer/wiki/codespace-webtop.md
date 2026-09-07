@@ -15,13 +15,7 @@ The desktop is exposed to the browser over a **single WebSocket** (no WebRTC/UDP
                            │ HTTPS/WS (single port)
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ nginx (0.0.0.0:3000)                                        │
-│   - Proxies ALL traffic → 127.0.0.1:8082                   │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│ selkies server (127.0.0.1:8082)                             │
+│ selkies server (0.0.0.0:3000)                               │
 │   - --mode=websockets (no WebRTC/UDP)                      │
 │   - --enable-basic-auth=false (Codespaces handles auth)    │
 │   - --web-root=~/.selkies/web_root (built at install)      │
@@ -42,9 +36,8 @@ The desktop is exposed to the browser over a **single WebSocket** (no WebRTC/UDP
 |-----------|---------|--------------|---------|
 | Xvfb | `Xvfb :20` | — | Headless X11 display (1920x1080x24) |
 | XFCE | `xfce4-session` | — | Desktop environment (window manager, panel, file manager) |
-| selkies | `selkies` | 127.0.0.1:8082 | Serves React client via `--web-root` + WebSocket media/input protocol |
+| selkies | `selkies` | 0.0.0.0:3000 | Serves React client via `--web-root` + WebSocket media/input protocol |
 | pixelflux | (Rust .so) | — | X11 screen capture → H.264/JPEG stripes |
-| nginx | `nginx` | 0.0.0.0:3000 | Reverse proxy with WS upgrade |
 
 ## The Package Source Problem (Critical)
 
@@ -61,15 +54,11 @@ The **correct pixelflux-based `selkies`** (v0.0.0.dev0) with:
 - WebSocket endpoint at `/api/websockets`
 - Console script `selkies`
 
-...is distributed as a **GitHub Actions artifact** (`selkies-wheel`) from the `selkies-project/selkies` repository. See [selkies-package-discrepancy](selkies-package-discrepancy.md) reference for the full breakdown.
+...is built from the `selkies-project/selkies` git source at install time (along with pixelflux and pcmflux). See [selkies-package-discrepancy](selkies-package-discrepancy.md) reference for the full breakdown.
 
-### How to obtain the correct wheel
+### How to obtain the correct package
 
-1. Go to <https://github.com/selkies-project/selkies/actions>
-2. Find the latest successful `selkies-wheel` workflow run
-3. Download the `selkies-wheel` artifact (a zip)
-4. Extract `selkies-0.0.0.dev0-py3-none-any.whl`
-5. Place it in `wheels/` (vendored) or let `selkies-native.sh install` auto-download
+The skill installs pixelflux, pcmflux, and selkies from git source during `install`. PyPI `selkies==1.6.1` is the wrong legacy package. The `selkies-wheel` GitHub Actions artifact requires auth and is unreliable. Building from git is the only reliable unattended path.
 
 ### Web Client Build (New in Skill)
 
@@ -84,7 +73,7 @@ This eliminates the ~80MB vendored wheels from git — the skill is now self-con
 
 ## System Dependencies
 
-Beyond the standard `xvfb xfce4 xfce4-goodies dbus-x11 nginx python3-venv python3-pip`, pixelflux requires VA-API libraries for H.264 encoding:
+Beyond the standard `xvfb xfce4 xfce4-goodies dbus-x11 python3-venv python3-pip`, pixelflux requires VA-API libraries for H.264 encoding plus build dependencies for compiling Rust extensions from git:
 
 ```bash
 sudo apt-get install -y libva2 libva-drm2 libva-x11-2
@@ -105,18 +94,7 @@ env DISPLAY=:20 dbus-launch --exit-with-session xfce4-session
 
 ## WebSocket Endpoint
 
-Selkies serves the media/input WebSocket at **`/api/websockets`** (NOT `/websockets/primary`, which 404s). nginx must proxy the upgrade to this path:
-
-```nginx
-location / {
-    proxy_pass http://127.0.0.1:8082;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_set_header Host $host;
-    proxy_read_timeout 86400;
-}
-```
+Selkies serves the media/input WebSocket at **`/api/websockets`** (NOT `/websockets/primary`, which 404s). Since selkies binds directly to port 3000, the browser connects straight to selkies — no proxy needed.
 
 ## Auto-Resize
 
@@ -146,7 +124,7 @@ design, not an oversight:
 
 **Hardening for VM/bare-metal hosts:**
 - Keep the forwarded port **private** (do not expose it publicly), **or**
-- Place nginx behind an authenticating proxy (Authelia, OAuth2 Proxy, Cloudflare
+- Place selkies behind an authenticating proxy (Authelia, OAuth2 Proxy, Cloudflare
   Access), **or**
 - Enable selkies basic-auth — but note it is a single shared credential and weak on
   its own; treat it as defense-in-depth, not primary access control.
