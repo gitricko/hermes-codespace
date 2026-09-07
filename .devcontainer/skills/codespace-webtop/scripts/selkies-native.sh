@@ -246,6 +246,14 @@ cmd_build_web() {
 cmd_start() {
   echo "=== selkies-native: start ==="
 
+  # 0. Kill legacy nginx if still running (from old skill installs).
+  #    nginx used to proxy port 3000 → selkies; now selkies binds directly.
+  if pgrep -x nginx >/dev/null 2>&1; then
+    echo "[nginx] stopping legacy nginx process..."
+    sudo nginx -s quit 2>/dev/null || sudo pkill -x nginx 2>/dev/null || true
+    sleep 0.5
+  fi
+
   # 1. Xvfb
   echo "[Xvfb] starting on $XVFB_DISPLAY"
   local xvfb_pid="$(read_pid "$(pid_file xvfb)")"
