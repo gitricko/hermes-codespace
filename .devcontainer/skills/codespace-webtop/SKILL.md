@@ -171,6 +171,10 @@ Environment variables (all optional, with defaults):
 | `XVFB_DISPLAY` | `:20` | Xvfb display number |
 | `XVFB_SCREEN` | `1920x1080x24` | Screen resolution |
 | `SELKIES_FRAMERATE` | `30` | Capture framerate |
+| `SELKIES_WEB_ROOT` | `~/.selkies/web_root` | Web client root dir |
+| `SELKIES_WEB_COMMIT` | `1d9b67be6f9c695f187a0509a3c1d3b3e204807b` | Pinned selkies web commit |
+| `SELKIES_PIXELFLUX_COMMIT` | `bf07c68` | Pinned pixelflux commit |
+| `SELKIES_PCMFLUX_COMMIT` | `d2683ef` | Pinned pcmflux commit |
 
 ## Pitfalls
 

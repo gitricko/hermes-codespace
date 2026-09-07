@@ -18,6 +18,12 @@ SELKIES_PORT="${SELKIES_PORT:-3000}"
 SELKIES_FRAMERATE="${SELKIES_FRAMERATE:-30}"
 # Web client root (built by cmd_build_web during install)
 WEB_ROOT="${SELKIES_WEB_ROOT:-$HOME/.selkies/web_root}"
+# Pinned selkies commit for web reproducibility
+SELKIES_WEB_COMMIT="${SELKIES_WEB_COMMIT:-1d9b67be6f9c695f187a0509a3c1d3b3e204807b}"
+# Pinned Pixelflux commit (required by selkies main; unpinnable on PyPI)
+SELKIES_PIXELFLUX_COMMIT="${SELKIES_PIXELFLUX_COMMIT:-bf07c68}"
+# Pinned PCMFlux commit (required by selkies main; unpinnable on PyPI)
+SELKIES_PCMFLUX_COMMIT="${SELKIES_PCMFLUX_COMMIT:-d2683ef}"
 
 # User home for session config (auto-detect)
 USER_HOME="${SUDO_USER_HOME:-$HOME}"
@@ -183,12 +189,13 @@ cmd_install() {
   # PyPI selkies==1.6.1 is the legacy GStreamer package (wrong).
   # selkies main branch requires pixelflux~=2.1.0 and pcmflux~=2.1.0,
   # which are unreleased on PyPI (max: 2.0.0). The 2.1.0 versions exist
-  # only in git HEAD. Build all three from git in order.
-  echo "[pip] installing pixelflux, pcmflux, and selkies from git..."
+  # only in git HEAD. Pins to specific commits for reproducibility — update
+  # these SHAs when upstream changes, via env vars or direct edit.
+  echo "[pip] installing pixelflux, pcmflux, and selkies from pinned git..."
   "$VENV_DIR/bin/pip" install --no-cache-dir \
-    "git+https://github.com/selkies-project/pixelflux.git@bf07c68" \
-    "git+https://github.com/selkies-project/pcmflux.git@d2683ef" \
-    "git+https://github.com/selkies-project/selkies.git@1d9b67b" || {
+    "git+https://github.com/selkies-project/pixelflux.git@${SELKIES_PIXELFLUX_COMMIT}" \
+    "git+https://github.com/selkies-project/pcmflux.git@${SELKIES_PCMFLUX_COMMIT}" \
+    "git+https://github.com/selkies-project/selkies.git@${SELKIES_WEB_COMMIT}" || {
     echo "[pip] ERROR: failed to install pixelflux/pcmflux/selkies from git"
     return 1
   }
