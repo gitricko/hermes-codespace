@@ -1,27 +1,21 @@
 #!/usr/bin/env bash
 # selkies-native.sh — Native Selkies/XFCE webtop (browser desktop) control script
-# Manages Xvfb → XFCE → selkies (pixelflux) → nginx stack
+# Manages Xvfb → XFCE → selkies (pixelflux) stack
 # Generic: works on any Ubuntu/Debian base system (Codespaces, VM, bare metal)
 set -uo pipefail
 
 # ── Paths (override via env vars for portability) ──────────────────────
 SCRIPT_DIR="${SELKIES_SCRIPT_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)}"
 VENV_DIR="${SELKIES_VENV_DIR:-$HOME/.selkies/venv}"
-WHEEL_DIR="${SELKIES_WHEEL_DIR:-$SCRIPT_DIR/wheels}"
-SELKIES_WHEEL="${SELKIES_WHEEL:-$WHEEL_DIR/selkies-0.0.0.dev0-py3-none-any.whl}"
-NGINX_TEMPLATE="${SELKIES_NGINX_TEMPLATE:-$SCRIPT_DIR/../templates/nginx.conf.template}"
-NGINX_SITE="${NGINX_SITE:-/etc/nginx/sites-enabled/selkies}"
 PID_DIR="${SELKIES_PID_DIR:-/tmp/selkies-pids}"
 LOG_DIR="${SELKIES_LOG_DIR:-/tmp/selkies-logs}"
-WHEEL_URL="${SELKIES_WHEEL_URL:-https://github.com/selkies-project/selkies/releases/latest/download/selkies-wheel.zip}"
 
 # Display & ports (override via env)
 XVFB_DISPLAY="${XVFB_DISPLAY:-:20}"
 XVFB_SCREEN="${XVFB_SCREEN:-1920x1080x24}"
-SELKIES_ADDR="${SELKIES_ADDR:-127.0.0.1}"
-SELKIES_PORT="${SELKIES_PORT:-8082}"
+SELKIES_ADDR="${SELKIES_ADDR:-0.0.0.0}"
+SELKIES_PORT="${SELKIES_PORT:-3000}"
 SELKIES_FRAMERATE="${SELKIES_FRAMERATE:-30}"
-NGINX_PORT="${NGINX_PORT:-3000}"
 # Web client root (built by cmd_build_web during install)
 WEB_ROOT="${SELKIES_WEB_ROOT:-$HOME/.selkies/web_root}"
 
@@ -118,6 +112,8 @@ status_daemon() {
 cmd_install() {
   echo "=== selkies-native: install ==="
 
+  export DEBIAN_FRONTEND=noninteractive
+
   if ! sudo -n true 2>/dev/null; then
     echo "[install] WARNING: passwordless sudo not available."
     echo "          Commands requiring root will prompt for password."
@@ -127,105 +123,56 @@ cmd_install() {
   echo "[apt] updating package list..."
   sudo apt-get update -qq
 
-  echo "[apt] installing system dependencies..."
+  echo "[apt] installing runtime dependencies..."
   sudo apt-get install -y -qq \
     xvfb xfce4 xfce4-goodies dbus-x11 \
-    nginx python3-venv python3-pip \
+    python3-venv python3-pip \
     libva2 libva-drm2 libva-x11-2 \
     curl 2>&1 | tail -5
+
+  echo "[apt] installing build dependencies for pixelflux/pcmflux..."
+  sudo apt-get install -y -qq \
+    nasm cmake pkg-config \
+    libudev-dev libx264-dev libturbojpeg0-dev \
+    libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavfilter-dev \
+    libgbm-dev libinput-dev libwayland-dev libxkbcommon-dev \
+    libegl-dev libgles-dev libclang-dev libpixman-1-dev libdrm-dev \
+    2>&1 | tail -5
+
+  # Rust toolchain (required for pixelflux/pcmflux PyO3 builds)
+  if ! command -v cargo &>/dev/null; then
+    echo "[rust] installing Rust toolchain..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
+  else
+    echo "[rust] already installed ($(rustc --version))"
+  fi
 
   # Virtualenv
   echo "[venv] creating at $VENV_DIR"
   python3 -m venv "$VENV_DIR"
   "$VENV_DIR/bin/pip" install --quiet --no-cache-dir --upgrade pip wheel
 
-  # Install selkies wheel (pixelflux + pcmflux pulled from PyPI as deps)
-  if [[ ! -f "$SELKIES_WHEEL" ]]; then
-    echo "[wheel] vendored wheel not found at $SELKIES_WHEEL"
-    cmd_download_wheel
-  fi
-
-  # Reliable fallback: build the wheel from the selkies git source.
+  # Install selkies from git source.
   # PyPI selkies==1.6.1 is the legacy GStreamer package (wrong).
-  # The GitHub Actions selkies-wheel artifact needs auth (401) and the
-  # releases/latest download URL is dead, so building from git is the
-  # only path that works unattended on a fresh install.
-  if [[ ! -f "$SELKIES_WHEEL" ]]; then
-    echo "[wheel] download failed — building wheel from git source..."
-    "$VENV_DIR/bin/pip" wheel --no-cache-dir \
-      --wheel-dir "$(dirname "$SELKIES_WHEEL")" \
-      "git+https://github.com/selkies-project/selkies.git" 2>&1 | tail -5
-    local built
-    built="$(find "$(dirname "$SELKIES_WHEEL")" -name 'selkies-*.whl' -print -quit 2>/dev/null)"
-    [[ -n "$built" ]] && SELKIES_WHEEL="$built"
-  fi
-
-  if [[ ! -f "$SELKIES_WHEEL" ]]; then
-    echo "[wheel] ERROR: selkies wheel not available"
-    echo "        See SKILL.md for manual build from git source"
-    return 1
-  fi
-
-  echo "[pip] installing pixelflux, pcmflux, and selkies wheel..."
+  # selkies main branch requires pixelflux~=2.1.0 and pcmflux~=2.1.0,
+  # which are unreleased on PyPI (max: 2.0.0). The 2.1.0 versions exist
+  # only in git HEAD. Build all three from git in order.
+  echo "[pip] installing pixelflux, pcmflux, and selkies from git..."
   "$VENV_DIR/bin/pip" install --no-cache-dir \
-    pixelflux pcmflux \
-    "$SELKIES_WHEEL"
+    "git+https://github.com/selkies-project/pixelflux.git" \
+    "git+https://github.com/selkies-project/pcmflux.git" \
+    "git+https://github.com/selkies-project/selkies.git"
 
   # Build and install selkies web frontend (selkies-dashboard + embedded core)
-  echo "[web] building selkies-dashboard web client (vite)..."
+  echo "[web] building selkies-dashboard web client..."
   cmd_build_web
-
-  # Install nginx config template (substitute placeholders)
-  echo "[nginx] installing config to $NGINX_SITE"
-  local tmp_conf
-  tmp_conf="$(mktemp /tmp/selkies-nginx-XXXXXX.conf)"
-  sed \
-    -e "s/NGINX_PORT_PLACEHOLDER/$NGINX_PORT/" \
-    -e "s/SELKIES_ADDR_PLACEHOLDER/$SELKIES_ADDR/" \
-    -e "s/SELKIES_PORT_PLACEHOLDER/$SELKIES_PORT/" \
-    "$NGINX_TEMPLATE" > "$tmp_conf"
-  sudo cp "$tmp_conf" "$NGINX_SITE"
-  sudo nginx -t >/dev/null 2>&1 || { echo "[nginx] config test failed"; return 1; }
-  rm -f "$tmp_conf"
 
   # Mark as installed
   mkdir -p "$PID_DIR"
   touch "$PID_DIR/.installed"
 
   echo "=== install complete ==="
-}
-
-# Download selkies wheel from GitHub Actions artifact
-cmd_download_wheel() {
-  if ! command -v curl >/dev/null 2>&1; then
-    echo "[wheel] curl required for download"
-    return 1
-  fi
-
-  echo "[wheel] downloading from GitHub Actions..."
-  local tmpzip="/tmp/selkies-wheel-$$.zip"
-  curl -sL "$WHEEL_URL" -o "$tmpzip"
-  if [[ ! -s "$tmpzip" ]]; then
-    echo "[wheel] download failed"
-    rm -f "$tmpzip"
-    return 1
-  fi
-
-  # Extract the wheel from the zip
-  local tmpdir="/tmp/selkies-extract-$$"
-  mkdir -p "$tmpdir"
-  unzip -o -q "$tmpzip" -d "$tmpdir" 2>/dev/null || true
-  local wheel="$(find "$tmpdir" -name 'selkies-*.whl' -print -quit 2>/dev/null)"
-  if [[ -n "$wheel" && -f "$wheel" ]]; then
-    mkdir -p "$(dirname "$SELKIES_WHEEL")"
-    cp "$wheel" "$SELKIES_WHEEL"
-    echo "[wheel] extracted to $SELKIES_WHEEL"
-  else
-    echo "[wheel] no wheel found in archive"
-    rm -rf "$tmpdir" "$tmpzip"
-    return 1
-  fi
-  rm -rf "$tmpdir" "$tmpzip"
 }
 
 # Build selkies web frontend.
@@ -273,7 +220,7 @@ cmd_build_web() {
   ls -la "$web_dist/"
 }
 
-# ── start: Xvfb → XFCE → selkies → nginx ───────────────────────────────
+# ── start: Xvfb → XFCE → selkies ─────────────────────────────────────
 cmd_start() {
   echo "=== selkies-native: start ==="
 
@@ -323,9 +270,9 @@ cmd_start() {
     pkill -f "selkies.*--port=$SELKIES_PORT" 2>/dev/null || true
     sleep 0.5
     # SECURITY: --enable-basic-auth=false is intentional. In a Codespace the
-    # public port (3000) is gated by GitHub's authenticated port-forward, so the
+    # public port is gated by GitHub's authenticated port-forward, so the
     # desktop is not exposed to the open internet. On a bare-metal/VM host where
-    # the port is publicly routed, keep it private or put nginx behind an
+    # the port is publicly routed, keep it private or put selkies behind an
     # authenticating proxy (selkies basic-auth is a single shared credential).
     DISPLAY="$XVFB_DISPLAY" start_daemon selkies \
       "$VENV_DIR/bin/selkies" \
@@ -341,21 +288,15 @@ cmd_start() {
 
   # Wait for selkies HTTP
   local i=0
-  while ! curl -s -o /dev/null -w "%{http_code}" "http://$SELKIES_ADDR:$SELKIES_PORT/" 2>/dev/null | grep -q "200\|302"; do
+  while ! curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$SELKIES_PORT/" 2>/dev/null | grep -q "200\|302"; do
     [[ $i -ge 30 ]] && { echo "[selkies] health check timeout"; return 1; }
     sleep 0.5
     ((i++))
   done
   echo "[selkies] HTTP ready"
 
-  # 4. nginx
-  echo "[nginx] starting on port $NGINX_PORT"
-  sudo nginx -t >/dev/null 2>&1 || { echo "[nginx] config test failed"; return 1; }
-  sudo nginx 2>&1 | grep -v "invalid PID" || true
-  sleep 1
-
   echo "=== selkies-native started ==="
-  echo "  Access: forward port $NGINX_PORT → open in browser"
+  echo "  Access: forward port $SELKIES_PORT → open in browser"
 }
 
 # Ensure XFCE session XML exists, copy from system default if missing
@@ -435,8 +376,6 @@ cmd_stop() {
   stop_daemon selkies
   stop_daemon xfce
   stop_daemon xvfb
-  echo "[nginx] stopping"
-  sudo nginx -s quit 2>/dev/null || sudo pkill -f "nginx.*master" 2>/dev/null || true
   echo "=== selkies-native stopped ==="
 }
 
@@ -453,15 +392,9 @@ cmd_status() {
   status_daemon xvfb || true
   status_daemon xfce || true
   status_daemon selkies || true
-  echo -n "[nginx] "
-  if sudo nginx -t >/dev/null 2>&1 && (ss -tlnp 2>/dev/null | grep -q ":$NGINX_PORT" || netstat -tlnp 2>/dev/null | grep -q ":$NGINX_PORT"); then
-    echo "RUNNING (port $NGINX_PORT)"
-  else
-    echo "STOPPED"
-  fi
   echo ""
   echo "Ports:"
-  ss -tlnp 2>/dev/null | grep -E ":($NGINX_PORT|$SELKIES_PORT)" 2>/dev/null || netstat -tlnp 2>/dev/null | grep -E ":($NGINX_PORT|$SELKIES_PORT)" 2>/dev/null || true
+  ss -tlnp 2>/dev/null | grep ":$SELKIES_PORT" 2>/dev/null || netstat -tlnp 2>/dev/null | grep ":$SELKIES_PORT" 2>/dev/null || true
 }
 
 # ── autostart: idempotent hook ────────────────────────────────────────
@@ -532,25 +465,25 @@ usage() {
 Usage: selkies-native.sh {install|start|stop|restart|status|autostart|logs} [args]
 
 Commands:
-  install            Install system deps, create venv, install selkies+pixelflux+pcmflux, build web client, nginx config
-  start              Start Xvfb → XFCE → selkies → nginx (selkies serves built web client via --web-root)
+  install            Install system deps + Rust, create venv, install selkies+pixelflux+pcmflux from git, build web client
+  start              Start Xvfb → XFCE → selkies (serves built web client via --web-root)
   stop               Stop all components cleanly
   restart            Stop then start
   status             Show PID/health of each component
   autostart          {enable|disable|status} — hook into shell rc file
   prereqs [--fix]    Check (and optionally install) system dependencies
-  logs [component]   Show tail of logs (xvfb/xfce/selbies/nginx or 'all')
+  logs [component]   Show tail of logs (xvfb/xfce/selkies or 'all')
 
 Environment overrides:
   SELKIES_VENV_DIR     Venv path (default: ~/.selkies/venv)
-  SELKIES_PORT         selkies internal port (default: 8082)
-  NGINX_PORT           Public port (default: 3000)
+  SELKIES_ADDR         Bind address (default: 0.0.0.0)
+  SELKIES_PORT         Port (default: 3000)
   SELKIES_WEB_ROOT     Web client root dir (default: ~/.selkies/web_root, built at install)
   XVFB_DISPLAY         X11 display (default: :20)
   XVFB_SCREEN          Screen resolution (default: 1920x1080x24)
 
 Architecture:
-  Browser (port $NGINX_PORT) → nginx → selkies ($SELKIES_ADDR:$SELKIES_PORT, mode=websockets)
+  Browser (port $SELKIES_PORT) → selkies ($SELKIES_ADDR:$SELKIES_PORT, mode=websockets)
   selkies drives pixelflux capture on Xvfb $XVFB_DISPLAY running XFCE
 EOF
 }

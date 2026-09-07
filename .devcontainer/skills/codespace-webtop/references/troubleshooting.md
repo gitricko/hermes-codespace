@@ -31,12 +31,12 @@ If you already have a wheel, drop it in `scripts/wheels/` and it will be used (t
 
 ## selkies serves 404 on `/` but WS connects
 
-**Cause**: The web client is NOT bundled in the selkies wheel. selkies returns 404 on `/` unless `--web-root` points at a built client. nginx proxies `/` to selkies, so you get a 404 page in the browser even though the WebSocket at `/api/websockets` may work.
+**Cause**: The web client is NOT bundled in the selkies wheel. selkies returns 404 on `/` unless `--web-root` points at a built client.
 
 **Fix**:
 1. Build the client: `cmd_build_web` (clone selkies repo → `addons/selkies-web-core` → `npm ci` → `npm run build` → copy `dist/` to `~/.selkies/web_root`).
 2. Ensure `start` passes `--web-root=~/.selkies/web_root` (it does by default).
-3. Verify: `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8082/` → should be `200`.
+3. Verify: `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/` → should be `200`.
 
 ## ImportError: libva/libva-drm/libva-x11
 
@@ -51,27 +51,64 @@ sudo apt-get install -y libva2 libva-drm2 libva-x11-2
 
 **Cause**: The WebSocket path changed in newer selkies versions.
 
-**Fix**: The correct path is `/api/websockets`, not `/websockets/primary`. Ensure nginx config proxies WebSocket upgrade to the right path (the template handles this correctly).
+**Fix**: The correct path is `/api/websockets`, not `/websockets/primary`. Ensure the selkies `--web-root` is set correctly.
 
-## Nginx not starting on port 3000
+## selkies can't start on port 3000 (port in use)
 
-**Cause**: Port already in use, or Codespaces port visibility not set to `public`.
+**Cause**: Another process is using port 3000.
 
 **Fix**:
 ```bash
-sudo nginx -s stop  # if nginx is already running
 sudo lsof -i :3000  # check what's using the port
-# In Codespaces: set port 3000 to public in VS Code Ports panel
+# Kill the process or change SELKIES_PORT
 ```
 
 ## selkies can't see DISPLAY
 
 **Cause**: DISPLAY env var not set or incorrect.
 
-**Fix**: selkies must be started with `DISPLAY=:20` env var:
+**Fix**: selkies must be started with `DISPLAY=:20` env var (the script handles this automatically):
 ```bash
-DISPLAY=:20 ~/.selkies/venv/bin/selkies --addr=127.0.0.1 --port=8082 --mode=websockets
+DISPLAY=:20 ~/.selkies/venv/bin/selkies --addr=0.0.0.0 --port=3000 --mode=websockets
 ```
+
+## pixelflux build fails (No CMAKE_ASM_NASM_COMPILER / missing libudev / missing libavutil)
+
+**Cause**: pixelflux compiles Rust extensions that link against system C libraries. The error messages vary by missing dependency:
+- `No CMAKE_ASM_NASM_COMPILER` → missing `nasm` (for x264 SIMD assembly)
+- `Package libudev was not found` → missing `libudev-dev`
+- `HINT: if you have installed the library, try setting PKG_CONFIG_PATH to the directory containing libavutil.pc` → missing ffmpeg dev packages
+
+**Fix**: Install all build deps before `pip install`:
+```bash
+sudo apt-get install -y nasm cmake pkg-config libudev-dev libx264-dev \
+  libturbojpeg0-dev libavcodec-dev libavformat-dev libavutil-dev \
+  libswscale-dev libavfilter-dev libgbm-dev libinput-dev \
+  libwayland-dev libxkbcommon-dev libegl-dev libgles-dev libclang-dev
+```
+Plus Rust toolchain: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y`
+
+See the "Build deps" table in SKILL.md Prerequisites for the full list with purposes.
+
+## pcmflux~=2.1.0 not found (Could not find a version that satisfies the requirement)
+
+**Cause**: `selkies` requires `pcmflux~=2.1.0` (audio capture), but 2.1.0 is unreleased on PyPI (max: 2.0.0). Like pixelflux, the 2.1.0 version exists only in the selkies-project fork's git HEAD. Building from git is the only way to get it.
+
+**Fix**: Install pcmflux from git **before** selkies:
+```bash
+source ~/.selkies/venv/bin/activate
+pip install "git+https://github.com/selkies-project/pcmflux.git"
+```
+
+## Interrupted apt leaves dpkg broken (dpkg was interrupted)
+
+**Cause**: Installing XFCE4 (a large package set) can hit the terminal timeout, leaving dpkg in an unconfigured state. All subsequent apt calls fail with "dpkg was interrupted".
+
+**Fix**:
+```bash
+sudo DEBIAN_FRONTEND=noninteractive dpkg --configure -a
+```
+The `DEBIAN_FRONTEND=noninteractive` is critical — without it, `keyboard-configuration` launches an interactive debconf dialog that hangs the terminal. After this, retry `prereqs --fix`.
 
 ## Process won't die after stop
 
@@ -84,7 +121,6 @@ DISPLAY=:20 ~/.selkies/venv/bin/selkies --addr=127.0.0.1 --port=8082 --mode=webs
 pkill -f "pixelflux" 2>/dev/null
 pkill -f "xfce4" 2>/dev/null
 pkill -f "Xvfb :20" 2>/dev/null
-sudo nginx -s quit 2>/dev/null
 ```
 
 ## XFCE components not starting
