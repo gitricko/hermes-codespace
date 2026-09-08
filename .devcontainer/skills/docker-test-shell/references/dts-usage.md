@@ -51,6 +51,25 @@ These were verified empirically in a real `ubuntu:24.04` container:
 | apt prereqs | manual one-off via `dts apt`, not bundled |
 | Verification | plain shell (exit code, grep, curl) |
 
+## Long-running installs/boots: run detached (`nohup`) so they don't get SIGTERM'd
+
+A multi-minute `install.sh`/`boot.sh` run as a plain foreground `dts exec` can be killed (exit 143 / "Terminated") when the driving exec session ends, and `pkill -f install.sh` on the host matches your own exec command line (it contains "install.sh") and kills your own pipeline.
+
+**Detach the long part** and write to a log, then poll with short separate `dts exec` calls:
+
+```bash
+dts exec 'nohup bash -c "bash /src/install.sh > /home/ubuntu/install.log 2>&1; \
+  echo INSTALL_EXIT=$? >> /home/ubuntu/install.log; \
+  bash -l /home/ubuntu/.minions/boot.sh >> /home/ubuntu/boot.log 2>&1; \
+  echo BOOT_EXIT=$? >> /home/ubuntu/boot.log" >/dev/null 2>&1 & echo launched'
+
+sleep 120
+dts exec 'grep -E "installed and verified|INSTALL_EXIT|Terminated|Killed" /home/ubuntu/install.log | tail -5'
+dts exec 'tail -5 /home/ubuntu/boot.log; grep BOOT_EXIT /home/ubuntu/boot.log'
+```
+
+Rules: wrap in `nohup bash -c '...' &`, log to a file not stdout, kill by exact PID never `pkill -f '<scriptname>'`.
+
 ## Root vs uid-1000: when to use which
 
 | Operation | Command | User | Note |
