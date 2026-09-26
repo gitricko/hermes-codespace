@@ -34,10 +34,10 @@ jobs:
       docs: ${{ steps.filter.outputs.docs }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Detect changed files
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -69,10 +69,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
 
@@ -84,8 +84,29 @@ jobs:
 
       - name: Smoke Test
         run: |
+          # GitHub Actions runs steps with `bash -e`, which aborts the
+          # whole script the moment a command returns non-zero. Capture
+          # the self-check exit status with set +e / set -e so we can
+          # distinguish warnings (exit 1) from critical failures (exit 2).
+          # See .github/workflows/docker-publish.yml in hermes-webtop.
+          set +e
           bash ./.devcontainer/self-check.sh
-          echo "Smoke test passed!"
+          SELF_CHECK_STATUS=$?
+          set -e
+          echo ""
+          echo "Self-check exited with status: $SELF_CHECK_STATUS"
+          # Only fail on critical errors (exit_code=2), not warnings (exit_code=1)
+          if [ "$SELF_CHECK_STATUS" -eq 2 ]; then
+            echo "FAIL: self-check found critical failures"
+            exit 1
+          elif [ "$SELF_CHECK_STATUS" -eq 1 ]; then
+            echo "PASS: self-check passed with warnings (no critical errors)."
+          elif [ "$SELF_CHECK_STATUS" -eq 0 ]; then
+            echo "PASS: self-check passed."
+          else
+            echo "FAIL: self-check aborted abnormally (exit $SELF_CHECK_STATUS)"
+            exit 1
+          fi
 
       - name: Mnemon Integration Test
         run: |
