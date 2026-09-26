@@ -84,8 +84,12 @@ jobs:
 
       - name: Smoke Test
         run: |
-          bash ./.devcontainer/self-check.sh
-          rc=$?
+          # GitHub Actions runs steps with `bash -e`, which aborts the whole
+          # script the moment a command returns non-zero. Capture the code in
+          # a `||` guard so self-check's exit status is recorded instead of
+          # killing the step before we can inspect it.
+          rc=0
+          bash ./.devcontainer/self-check.sh || rc=$?
           # Exit 0 = all ok, 1 = warnings only (tolerated), 2 = critical.
           # Any other code (e.g. 127 missing script, 137 OOM-killed) is a
           # real failure of the harness itself, not a warning.
