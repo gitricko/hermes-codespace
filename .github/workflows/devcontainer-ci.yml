@@ -84,23 +84,29 @@ jobs:
 
       - name: Smoke Test
         run: |
-          # GitHub Actions runs steps with `bash -e`, which aborts the whole
-          # script the moment a command returns non-zero. Capture the code in
-          # a `||` guard so self-check's exit status is recorded instead of
-          # killing the step before we can inspect it.
-          rc=0
-          bash ./.devcontainer/self-check.sh || rc=$?
-          # Exit 0 = all ok, 1 = warnings only (tolerated), 2 = critical.
-          # Any other code (e.g. 127 missing script, 137 OOM-killed) is a
-          # real failure of the harness itself, not a warning.
-          case "$rc" in
-            0) echo "Smoke test passed (no warnings)." ;;
-            1) echo "Smoke test passed with warnings (exit 1) - not fatal." ;;
-            2) echo "::error::Smoke test found critical failures (exit 2)"
-               exit 1 ;;
-            *) echo "::error::self-check.sh aborted abnormally (exit $rc)"
-               exit 1 ;;
-          esac
+          # GitHub Actions runs steps with `bash -e`, which aborts the
+          # whole script the moment a command returns non-zero. Capture
+          # the self-check exit status with set +e / set -e so we can
+          # distinguish warnings (exit 1) from critical failures (exit 2).
+          # See .github/workflows/docker-publish.yml in hermes-webtop.
+          set +e
+          bash ./.devcontainer/self-check.sh
+          SELF_CHECK_STATUS=$?
+          set -e
+          echo ""
+          echo "Self-check exited with status: $SELF_CHECK_STATUS"
+          # Only fail on critical errors (exit_code=2), not warnings (exit_code=1)
+          if [ "$SELF_CHECK_STATUS" -eq 2 ]; then
+            echo "FAIL: self-check found critical failures"
+            exit 1
+          elif [ "$SELF_CHECK_STATUS" -eq 1 ]; then
+            echo "PASS: self-check passed with warnings (no critical errors)."
+          elif [ "$SELF_CHECK_STATUS" -eq 0 ]; then
+            echo "PASS: self-check passed."
+          else
+            echo "FAIL: self-check aborted abnormally (exit $SELF_CHECK_STATUS)"
+            exit 1
+          fi
 
       - name: Mnemon Integration Test
         run: |
