@@ -4,7 +4,7 @@ HERMES_VERSION="v2026.9.24"
 OMNIROUTE_VERSION=3.8.51
 NINE_ROUTER_VERSION=0.5.91
 MNEMON_VERSION=0.2.9
-PI_AGENT_VERSION=0.99.1
+PI_AGENT_VERSION=0.99.2
 HERDR_VERSION=0.7.4
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -246,7 +246,8 @@ repair_omniroute_dist_deps() {
 
   echo "[$SCRIPT_NAME] omniroute dep repair complete ($repaired package(s) restored)"
 }
-repair_omniroute_dist_deps
+
+# repair_omniroute_dist_deps
 
 sudo npm cache clean --force
 # sudo mkdir -p /usr/local/lib/node_modules/omniroute/app/logs/application
