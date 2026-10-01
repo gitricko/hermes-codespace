@@ -156,7 +156,7 @@ if command -v 9router &>/dev/null; then
     echo "[$SCRIPT_NAME] 9router is already running, skipping"
   else
     echo "[$SCRIPT_NAME] Starting 9router in the background..."
-    nohup /usr/local/bin/9router --host 0.0.0.0 --host 127.0.0.1 --port 7352 --no-browser --skip-update >> /tmp/9router.log 2>&1 &
+    nohup /usr/local/bin/9router --host 0.0.0.0 --host 127.0.0.1 --log --port 7352 --no-browser --skip-update >> /tmp/9router.log 2>&1 &
   fi
 else
   echo "[$SCRIPT_NAME] 9router not found, skipping start"
