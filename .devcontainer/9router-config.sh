@@ -38,7 +38,6 @@ curl -fsS -b "$COOKIE_FILE" \
       "oc/union-alpha",
       "oc/big-pickle",
       "oc/mimo-v2.5-free",
-      "oc/ling-3.0-flash-fin-free",
       "oc/nemotron-3-ultra-free",
       "oc/nemotron-3.5-lightning-free"
     ]

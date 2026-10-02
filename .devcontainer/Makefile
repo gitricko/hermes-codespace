@@ -7,6 +7,9 @@ EXTERNAL_REPO := https://github.com/gitricko/hermes-codespace
 EXTERNAL_DEVC := $(EXTERNAL_DIR)/.devcontainer
 
 # === Development Commands ===
+check-deps:
+	@echo "Checking dependencies for updates"
+	./scripts/check-deps.sh
 
 install:
 	@echo "Installing dependencies..."

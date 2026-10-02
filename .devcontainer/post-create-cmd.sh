@@ -1,11 +1,11 @@
 #!/bin/bash
 
 HERMES_VERSION="v2026.9.24"
-OMNIROUTE_VERSION=3.8.50
-NINE_ROUTER_VERSION=0.5.86
+OMNIROUTE_VERSION=3.8.51
+NINE_ROUTER_VERSION=0.5.95
 MNEMON_VERSION=0.2.9
-PI_AGENT_VERSION=0.87.1
-HERDR_VERSION=0.7.4
+PI_AGENT_VERSION=1.0.0
+HERDR_VERSION=0.9.3
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
@@ -156,7 +156,7 @@ if command -v 9router &>/dev/null; then
     echo "[$SCRIPT_NAME] 9router is already running, skipping"
   else
     echo "[$SCRIPT_NAME] Starting 9router in the background..."
-    nohup /usr/local/bin/9router --host 0.0.0.0 --host 127.0.0.1 --port 7352 --no-browser --skip-update >> /tmp/9router.log 2>&1 &
+    nohup /usr/local/bin/9router --host 0.0.0.0 --host 127.0.0.1 --log --port 7352 --no-browser --skip-update >> /tmp/9router.log 2>&1 &
   fi
 else
   echo "[$SCRIPT_NAME] 9router not found, skipping start"
@@ -246,6 +246,7 @@ repair_omniroute_dist_deps() {
 
   echo "[$SCRIPT_NAME] omniroute dep repair complete ($repaired package(s) restored)"
 }
+
 repair_omniroute_dist_deps
 
 sudo npm cache clean --force
@@ -286,11 +287,11 @@ rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
 
 # Install Herdr (pinned CI-verified build with SHA-256 verification)
 # Mirrors docker/scripts/fm-install-herdr.sh logic
-HERDR_REPO=ogulcancelik/herdr
+HERDR_REPO=herdrdev/herdr
 HERDR_TAG="v${HERDR_VERSION}"
 HERDR_ASSET=herdr-linux-x86_64
-HERDR_SHA256=bc0fc02d4ba500f9cac2353a43e67fe036785ecca6eb55378e050fac3c103059
-HERDR_MAX_BYTES=25000000
+HERDR_SHA256=18a8dc65f1c2fa485884344356dea1cfd911c6f06cf46fa78e193f4087f4dba7
+HERDR_MAX_BYTES=40000000
 
 echo "[$SCRIPT_NAME] Installing Herdr ${HERDR_VERSION}..."
 HERDR_TMP=$(mktemp -d /tmp/herdr-install.XXXXXX)
