@@ -247,7 +247,7 @@ repair_omniroute_dist_deps() {
   echo "[$SCRIPT_NAME] omniroute dep repair complete ($repaired package(s) restored)"
 }
 
-# repair_omniroute_dist_deps
+repair_omniroute_dist_deps
 
 sudo npm cache clean --force
 # sudo mkdir -p /usr/local/lib/node_modules/omniroute/app/logs/application
@@ -287,11 +287,11 @@ rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
 
 # Install Herdr (pinned CI-verified build with SHA-256 verification)
 # Mirrors docker/scripts/fm-install-herdr.sh logic
-HERDR_REPO=ogulcancelik/herdr
+HERDR_REPO=herdrdev/herdr
 HERDR_TAG="v${HERDR_VERSION}"
 HERDR_ASSET=herdr-linux-x86_64
-HERDR_SHA256=bc0fc02d4ba500f9cac2353a43e67fe036785ecca6eb55378e050fac3c103059
-HERDR_MAX_BYTES=25000000
+HERDR_SHA256=18a8dc65f1c2fa485884344356dea1cfd911c6f06cf46fa78e193f4087f4dba7
+HERDR_MAX_BYTES=40000000
 
 echo "[$SCRIPT_NAME] Installing Herdr ${HERDR_VERSION}..."
 HERDR_TMP=$(mktemp -d /tmp/herdr-install.XXXXXX)
