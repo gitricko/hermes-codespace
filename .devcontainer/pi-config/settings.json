@@ -2,7 +2,7 @@
   "defaultProvider": "omniroute",
   "defaultModel": "auto-fastest",
   "defaultProjectTrust": "always",
-  "lastChangelogVersion": "1.0.0",
+  "lastChangelogVersion": "1.0.2",
   "packages": [
     "git:github.com/gitricko/pi-failover@main"
   ]
