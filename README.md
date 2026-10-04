@@ -4,12 +4,12 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Dev Container](https://img.shields.io/badge/devcontainer-ready-blue?logo=docker)](https://containers.dev/)
-[![Hermes Agent](https://img.shields.io/badge/Hermes%20Agent-v2026.8.31-purple?logo=github)](https://github.com/NousResearch/hermes-agent)
-[![PI Agent](https://img.shields.io/badge/PI%20Agent-v0.85.1-brown?logo=github)](https://pi.dev)
-[![9Router](https://img.shields.io/badge/9Router-0.5.81-green?logo=npm)](https://www.npmjs.com/package/9router)
-[![OmniRoute](https://img.shields.io/badge/OmniRoute-3.8.50-orange?logo=npm)](https://www.npmjs.com/package/omniroute)
+[![Hermes Agent](https://img.shields.io/badge/Hermes%20Agent-v2026.9.24-purple?logo=github)](https://github.com/NousResearch/hermes-agent)
+[![PI Agent](https://img.shields.io/badge/PI%20Agent-1.0.2-brown?logo=github)](https://pi.dev)
+[![9Router](https://img.shields.io/badge/9Router-0.5.95-green?logo=npm)](https://www.npmjs.com/package/9router)
+[![OmniRoute](https://img.shields.io/badge/OmniRoute-3.8.51-orange?logo=npm)](https://www.npmjs.com/package/omniroute)
 [![Ollama](https://img.shields.io/badge/Ollama-0.33.2-yellow?logo=ollama)](https://github.com/ollama/ollama)
-[![Mnemon](https://img.shields.io/badge/Mnemon-0.2.8-pink?logo=github)](https://github.com/mnemon-dev/mnemon)
+[![Mnemon](https://img.shields.io/badge/Mnemon-0.2.10-pink?logo=github)](https://github.com/mnemon-dev/mnemon)
 
 
 Fork this repo before [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/gitricko/hermes-codespace)
