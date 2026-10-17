@@ -114,17 +114,31 @@ jobs:
           TEST_NAME="ci-mnemon-$(date +%s)-$$"
           echo "=== Mnemon Integration Test: $TEST_NAME ==="
 
+          # Retry helper: retry command up to 3 times with 5s delay on transient failures
+          retry() {
+            local max=3 delay=5 attempt=1
+            until "$@"; do
+              if [ $attempt -ge $max ]; then
+                echo "FAIL: Command failed after $max attempts: $*" >&2
+                return 1
+              fi
+              echo "WARN: Attempt $attempt/$max failed, retrying in ${delay}s..." >&2
+              sleep $delay
+              attempt=$((attempt + 1))
+            done
+          }
+
           echo "[1/3] Hermes remembers via mnemon_remember..."
-          hermes chat -q "my name is $TEST_NAME, remember this in mnemon" \
+          retry hermes chat -q "my name is $TEST_NAME, remember this in mnemon" \
             || { echo "FAIL: Hermes failed"; exit 1; }
 
           echo "[2/3] mnemon recall via CLI..."
-          mnemon recall "$TEST_NAME" --limit 5 2>&1 | grep -q "$TEST_NAME" \
+          retry mnemon recall "$TEST_NAME" --limit 5 2>&1 | grep -q "$TEST_NAME" \
             || { echo "FAIL: mnemon recall did not find $TEST_NAME"; exit 1; }
 
           echo "[3/3] Claude retrieves via mnemon..."
-          CLAUDE_OUTPUT=$( \
-            $HOME/.local/bin/claude --dangerously-skip-permissions -p \
+          CLAUDE_OUTPUT=$(
+            retry $HOME/.local/bin/claude --dangerously-skip-permissions -p \
             "Use mnemon recall to find my name. Reply with ONLY the name." 2>&1) || true
           echo "Claude: $CLAUDE_OUTPUT"
           echo "$CLAUDE_OUTPUT" | grep -q "$TEST_NAME" \
@@ -162,6 +176,9 @@ jobs:
           name: failure-logs-${{ github.run_id }}
           path: /tmp/failure-logs/
           if-no-files-found: warn
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: false
 
   # ─────────────────────────────────────────────────────────────────
   # Job 3: Lint & validation (for docs + runtime changes)
