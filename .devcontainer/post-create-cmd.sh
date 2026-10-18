@@ -2,10 +2,10 @@
 
 HERMES_VERSION="v2026.9.24"
 OMNIROUTE_VERSION=3.8.51
-NINE_ROUTER_VERSION=0.5.95
+NINE_ROUTER_VERSION=0.5.104
 MNEMON_VERSION=0.2.10
-PI_AGENT_VERSION=1.0.2
-HERDR_VERSION=0.9.3
+PI_AGENT_VERSION=1.3.0
+HERDR_VERSION=0.9.5
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
@@ -138,7 +138,7 @@ if command -v hermes &>/dev/null && [ -d "$HOME/.hermes/sessions" ] && [ -z "$(l
   # Populate default skill and .hermes.md
   echo "[$SCRIPT_NAME] Installing Skill: memory-automation.md"
   mkdir -p "$HOME/.hermes/skills/memory-automation"
-  cp ${SCRIPT_DIR}/skill-memory-automation.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
+  cp ${SCRIPT_DIR}/skills/memory-automation/SKILL.md "$HOME/.hermes/skills/memory-automation/SKILL.md"
 
   echo "[$SCRIPT_NAME] Populate .hermes.md"
   cp ${SCRIPT_DIR}/.hermes.md "$HOME/.hermes.md"
@@ -290,7 +290,7 @@ rm -rf /tmp/mnemon.tar.gz /tmp/mnemon
 HERDR_REPO=herdrdev/herdr
 HERDR_TAG="v${HERDR_VERSION}"
 HERDR_ASSET=herdr-linux-x86_64
-HERDR_SHA256=18a8dc65f1c2fa485884344356dea1cfd911c6f06cf46fa78e193f4087f4dba7
+HERDR_SHA256=14d9e8bc8b4a9e0118d77c32266f76d461f09b40342eb23752960bd89f59929d
 HERDR_MAX_BYTES=40000000
 
 echo "[$SCRIPT_NAME] Installing Herdr ${HERDR_VERSION}..."
